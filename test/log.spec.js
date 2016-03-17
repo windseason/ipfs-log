@@ -46,7 +46,7 @@ describe('Log', async(function() {
       try {
         const log = await(Log.create());
       } catch(e) {
-        assert.equal(e.message, 'Log requires ipfs instance');
+        assert.equal(e.message, 'Ipfs instance not defined');
       }
       done();
     }));
@@ -55,7 +55,7 @@ describe('Log', async(function() {
       try {
         const log = await(Log.create(ipfs));
       } catch(e) {
-        assert.equal(e.message, 'Log requires an id');
+        assert.equal(e.message, 'id is not defined');
       }
       done();
     }));
