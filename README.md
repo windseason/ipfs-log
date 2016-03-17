@@ -40,7 +40,12 @@ npm test
 ```
 
 ### API
+```javascript
+const Log = require('ipfs-log');
+```
+
 ### Class methods
+
 All class methods take an `ipfs-api` instance as the first parameter. See https://github.com/ipfs/js-ipfs-api for documentation.
 
 ```javascript
@@ -52,7 +57,6 @@ Create a log. Returns a `Promise` that resolves to a `Log` instance.
 
 ```javascript
 const ipfs = require('ipfs-api')();
-const Log = require('ipfs-log');
 Log.create(ipfs, 'id').then((log) => console.log(log));
 ```
 
