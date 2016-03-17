@@ -33,12 +33,6 @@ Log.create(ipfs, 'A')
   .catch((err) => console.error(err));
 ```
 
-### Tests
-```
-npm install
-npm test
-```
-
 ### API
 ```javascript
 const Log = require('ipfs-log');
@@ -56,9 +50,10 @@ const ipfs = require('ipfs-api')();
 Create a log. Returns a `Promise` that resolves to a `Log` instance.
 
 ```javascript
-const ipfs = require('ipfs-api')();
 Log.create(ipfs, 'id').then((log) => console.log(log));
 ```
+
+*See [Instance methods](https://github.com/haadcode/ipfs-log#instance-methods) on how to use the log instance*
 
 #### getIpfsHash(ipfs, log)
 Get the IPFS hash of this log. Returns a `Promise` that resolves to an IPFS `hash`.
@@ -125,6 +120,12 @@ Returns items in the current batch. Current batch are the items in the log that 
 ```javascript
 const snapshot = log.snapshot;
 // snapshot ==> { id: 'log id', items: ['A', 'B', 'C']}
+```
+
+### Tests
+```
+npm install
+npm test
 ```
 
 ### TODO
