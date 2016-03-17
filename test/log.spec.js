@@ -192,7 +192,7 @@ describe('Log', async(function() {
   });
 
   describe('add', () => {
-    it('adds an item to an empty list', async((done) => {
+    it('adds an item to an empty log', async((done) => {
       const log = await(Log.create(ipfs, 'A'));
       await(log.add("hello1"));
       const item = log.items[0];
@@ -204,7 +204,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('adds 100 items to a list', async((done) => {
+    it('adds 100 items to a log', async((done) => {
       const log = await(Log.create(ipfs, 'A'));
       const amount = 100;
 
@@ -220,7 +220,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('commits a list after batch size was reached', async((done) => {
+    it('commits the log after batch size was reached', async((done) => {
       const log = await(Log.create(ipfs, 'A'));
 
       for(let i = 1; i <= Log.batchSize; i ++) {
@@ -271,7 +271,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('joins lists two ways', async((done) => {
+    it('joins logs two ways', async((done) => {
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
       await(log2.add("helloB1"));
@@ -291,7 +291,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('joins lists twice', async((done) => {
+    it('joins logs twice', async((done) => {
       await(log1.add("helloA1"));
       await(log2.add("helloB1"));
       await(log2.join(log1));
@@ -309,7 +309,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('joins 4 lists to one', async((done) => {
+    it('joins 4 logs to one', async((done) => {
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
       await(log2.add("helloB1"));
@@ -332,7 +332,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('joins lists from 4 lists', async((done) => {
+    it('joins logs from 4 logs', async((done) => {
       await(log1.add("helloA1"));
       await(log1.join(log2));
       await(log2.add("helloB1"));
@@ -615,7 +615,7 @@ describe('Log', async(function() {
   });
 
   describe('clear', () => {
-    it('clears the list', async((done) => {
+    it('clears the log', async((done) => {
       const log1 = await(Log.create(ipfs, 'A'));
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));

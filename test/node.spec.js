@@ -15,7 +15,7 @@ const startIpfs = () => {
   });
 };
 
-describe('OrbitNode', function() {
+describe('Node', function() {
   this.timeout(15000);
   before(async((done) => {
     try {
