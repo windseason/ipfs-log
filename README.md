@@ -2,9 +2,9 @@
 
 An append-only log on IPFS. 
 
-`ipfs-log` uses a linked list of [IPFS](https://github.com/ipfs/ipfs) hashes (Merkle Tree) where each entry in the log points to the previous entry. The items are ordered on join based on the parent nodes and time of reception.
+`ipfs-log` is a partially ordered linked list of [IPFS](https://github.com/ipfs/ipfs) hashes where each entry in the log points to all known heads (a head is a node that is not referenced by other nodes in the log).
 
-Use cases:
+### Use cases
 - Track a version of a file
 - Create a feed of IPFS hashes
 - Messaging
