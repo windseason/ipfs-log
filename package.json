@@ -1,0 +1,19 @@
+{
+  "name": "ipfs-log",
+  "version": "1.0.0",
+  "description": "Append-only log for IPFS",
+  "main": "lib/log.js",
+  "author": "Haad",
+  "license": "MIT",
+  "dependencies": {
+    "lazy.js": "^0.4.2",
+    "lodash": "^4.6.1"
+  },
+  "devDependencies": {
+    "asyncawait": "^1.0.3",
+    "ipfsd-ctl": "^0.8.3"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
