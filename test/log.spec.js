@@ -425,8 +425,8 @@ describe('Log', async(function() {
       const node2 = await(Node.create(ipfs, 'two', node1))
       const items = await(log1._fetchRecursive(ipfs, node2.hash, [], 1000, 0));
       assert.equal(items.length, 2);
-      assert.equal(items[0].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
-      assert.equal(items[1].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
+      assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
+      assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
       done();
     }));
 
@@ -437,9 +437,9 @@ describe('Log', async(function() {
       const node3 = await(Node.create(ipfs, 'three', node2))
       const items = await(log1._fetchRecursive(ipfs, node3.hash, [], 1000, 0));
       assert.equal(items.length, 3);
-      assert.equal(items[2].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
+      assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
       assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
-      assert.equal(items[0].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
+      assert.equal(items[2].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
       done();
     }));
 
@@ -455,8 +455,8 @@ describe('Log', async(function() {
 
       const items = await(log1._fetchRecursive(ipfs, _.last(nodes).hash, [], 1000, 0));
       assert.equal(items.length, amount);
-      assert.equal(items[0].hash, _.last(nodes).hash);
-      assert.equal(_.last(items).hash, nodes[0].hash);
+      assert.equal(items[0].hash, nodes[0].hash);
+      assert.equal(_.last(items).hash, _.last(nodes).hash);
       done();
     }));
 
@@ -468,8 +468,8 @@ describe('Log', async(function() {
       const allHashes = log1.items.map((a) => a.hash);
       const items = await(log1._fetchRecursive(ipfs, node3.hash, allHashes, 1000, 0));
       assert.equal(items.length, 2);
-      assert.equal(items[0].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
-      assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
+      assert.equal(items[0].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
+      assert.equal(items[1].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
       done();
     }));
   });
