@@ -267,7 +267,7 @@ describe('Log', async(function() {
 
       const last = _.last(log1.items);
       assert.equal(last.next.length, 1);
-      assert.equal(last.next[0].hash, 'QmdZwCR96sP61aaTbcLj9DXy9EaiMhTXLRrTxPSXpcZCct');
+      assert.equal(last.next[0], 'QmdZwCR96sP61aaTbcLj9DXy9EaiMhTXLRrTxPSXpcZCct');
       done();
     }));
 
@@ -486,7 +486,7 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 1);
-      assert.equal(heads[0].hash, 'QmUEH5SEuRZhZ7RETwEX2df2BtTR2xUYZR3qBrhjnxqocb');
+      assert.equal(heads[0], 'QmUEH5SEuRZhZ7RETwEX2df2BtTR2xUYZR3qBrhjnxqocb');
       done();
     }));
 
@@ -500,7 +500,7 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 1);
-      assert.equal(heads[0].hash, 'Qma1PaYbyW1rZA4npPnuJzA3ov5Je4N9cvAn2p6Ju1iPQS');
+      assert.equal(heads[0], 'Qma1PaYbyW1rZA4npPnuJzA3ov5Je4N9cvAn2p6Ju1iPQS');
       done();
     }));
 
@@ -518,8 +518,8 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 2);
-      assert.equal(heads[0].hash, expectedHead2.hash);
-      assert.equal(heads[1].hash, expectedHead1.hash);
+      assert.equal(heads[0], expectedHead2.hash);
+      assert.equal(heads[1], expectedHead1.hash);
       done();
     }));
 
@@ -538,7 +538,7 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 1);
-      assert.equal(heads[0].hash, expectedHead.hash);
+      assert.equal(heads[0], expectedHead.hash);
       done();
     }));
 
@@ -562,8 +562,8 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 2);
-      assert.equal(heads[0].hash, expectedHead2.hash);
-      assert.equal(heads[1].hash, expectedHead1.hash);
+      assert.equal(heads[0], expectedHead2.hash);
+      assert.equal(heads[1], expectedHead1.hash);
       done();
     }));
 
@@ -587,9 +587,9 @@ describe('Log', async(function() {
 
       const heads = Log.findHeads(log1)
       assert.equal(heads.length, 3);
-      assert.equal(heads[0].hash, expectedHead3.hash);
-      assert.equal(heads[1].hash, expectedHead2.hash);
-      assert.equal(heads[2].hash, expectedHead1.hash);
+      assert.equal(heads[0], expectedHead3.hash);
+      assert.equal(heads[1], expectedHead2.hash);
+      assert.equal(heads[2], expectedHead1.hash);
       done();
     }));
   });
