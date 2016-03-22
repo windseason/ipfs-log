@@ -228,11 +228,4 @@ describe('Node', function() {
       done();
     }));
   });
-
-  describe('fetchPayload', () => {
-    it('TODO', async((done) => {
-      done();
-    }));
-  });
-
 });
