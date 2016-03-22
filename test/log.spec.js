@@ -383,7 +383,6 @@ describe('Log', async(function() {
       assert.equal(_.last(log3.items).payload, "first " + count);
 
       await(log3.join(other2));
-      // console.log(log3.items.map((a) => a.payload));
       assert.equal(log3.items.length, count * 2);
       assert.equal(log3.items[0].payload, "second 1");
       assert.equal(_.last(log3.items).payload, "second " + count);
@@ -411,7 +410,6 @@ describe('Log', async(function() {
       const other2 = await(Log.fromIpfsHash(ipfs, hash2));
       await(log3.join(other2));
 
-      // console.log(final.items.map((e) => e.comptactId))
       assert.equal(log3.items.length, count + count * 2);
       assert.equal(log3.items[0].payload, "second 1");
       assert.equal(log3.items[1].payload, "second 2");
@@ -420,12 +418,12 @@ describe('Log', async(function() {
     }));
   });
 
-  describe('fetchRecursive', () => {
+  describe('_fetchRecursive', () => {
     it('returns two items when neither are in the log', async((done) => {
       const log1 = await(Log.create(ipfs, 'A'));
       const node1 = await(Node.create(ipfs, 'one'))
       const node2 = await(Node.create(ipfs, 'two', node1))
-      const items = await(Log.fetchRecursive(ipfs, node2.hash, [], 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, node2.hash, [], 1000, 0));
       assert.equal(items.length, 2);
       assert.equal(items[0].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
       assert.equal(items[1].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
@@ -437,11 +435,11 @@ describe('Log', async(function() {
       const node1 = await(Node.create(ipfs, 'one'))
       const node2 = await(Node.create(ipfs, 'two', node1))
       const node3 = await(Node.create(ipfs, 'three', node2))
-      const items = await(Log.fetchRecursive(ipfs, node3.hash, [], 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, node3.hash, [], 1000, 0));
       assert.equal(items.length, 3);
-      assert.equal(items[0].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
-      assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
       assert.equal(items[2].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
+      assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
+      assert.equal(items[0].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
       done();
     }));
 
@@ -455,7 +453,7 @@ describe('Log', async(function() {
         nodes.push(n);
       }
 
-      const items = await(Log.fetchRecursive(ipfs, _.last(nodes).hash, [], 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, _.last(nodes).hash, [], 1000, 0));
       assert.equal(items.length, amount);
       assert.equal(items[0].hash, _.last(nodes).hash);
       assert.equal(_.last(items).hash, nodes[0].hash);
@@ -468,7 +466,7 @@ describe('Log', async(function() {
       const node2 = await(Node.create(ipfs, 'two', node1))
       const node3 = await(Node.create(ipfs, 'three', node2))
       const allHashes = log1.items.map((a) => a.hash);
-      const items = await(Log.fetchRecursive(ipfs, node3.hash, allHashes, 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, node3.hash, allHashes, 1000, 0));
       assert.equal(items.length, 2);
       assert.equal(items[0].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
       assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
@@ -746,7 +744,7 @@ describe('Log', async(function() {
       const res2 = log1.items.map((e) => e.hash).join(",");
 
       // commutativity: a + (b + c) == (a + b) + c
-      const len = (46 + 1) * 4 - 1; // 46 == ipfs hash, +1 == .join(","), * 4 == number of items, -1 == last item doesn't get a ',' from .join
+      const len = (46 + 1) * 4 - 1; // 46 == ipfs hash length, +1 == .join(","), * 4 == number of items, -1 == last item doesn't get a ',' from .join
       assert.equal(res1.length, len)
       assert.equal(res2.length, len)
       assert.equal(res1, res2);
