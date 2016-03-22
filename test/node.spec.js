@@ -73,7 +73,7 @@ describe('Node', function() {
     it('`next` parameter can be an instance of Node', async((done) => {
       const node1 = await(Node.create(ipfs, null));
       const node2 = await(Node.create(ipfs, null, node1));
-      assert.equal(typeof node2.next[0] === 'string', false);
+      assert.equal(typeof node2.next[0] === 'string', true);
       done();
     }));
 
@@ -169,7 +169,7 @@ describe('Node', function() {
       const payload = 'hello world';
       const node1 = await(Node.create(ipfs, payload));
       const node2 = await(Node.create(ipfs, payload, node1));
-      assert.equal(typeof node2.next[0] === 'string', false);
+      assert.equal(typeof node2.next[0] === 'string', true);
       assert.notEqual(node2.asJson, null);
       assert.equal(node2.asJson.payload, payload);
       assert.equal(node2.asJson.next.length, 1);
