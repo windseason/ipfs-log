@@ -612,20 +612,6 @@ describe('Log', async(function() {
     }));
   });
 
-  describe('clear', () => {
-    it('clears the log', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      await(log1.add("helloA1"));
-      await(log1.add("helloA2"));
-      await(log1.add("helloA3"));
-      log1.clear();
-      assert.equal(log1.items.length, 0);
-      assert.equal(log1._items.length, 0);
-      assert.equal(log1._currentBatch.length, 0);
-      done();
-    }));
-  });
-
   describe('_commit', () => {
     it('moves nodes from current batch to all known nodes', async((done) => {
       const log = await(Log.create(ipfs, 'A'));
