@@ -3,4 +3,4 @@ machine:
     version: 4.3.1
 dependencies:
   pre:
-    npm install -g npm@3.x.x
+    - npm install -g npm@3.x.x
