@@ -11,7 +11,10 @@ let ipfs;
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
-    ipfsd.disposableApi((err, ipfs) => resolve(ipfs));
+    ipfsd.disposableApi((err, ipfs) => {
+      if(err) console.error(err);
+      resolve(ipfs);
+    });
   });
 };
 
@@ -28,6 +31,13 @@ describe('Node', function() {
     done();
   }));
 
+  // after(async((done) => {
+  //   ipfs.stopDaemon(err => {
+  //     if (err) throw err
+  //     stopped = true
+  //   })
+  // }));
+
   describe('create', () => {
     it('creates a an empty node', async((done) => {
       const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
@@ -35,7 +45,6 @@ describe('Node', function() {
       assert.equal(node.payload, null);
       assert.equal(node.next.length, 0);
       assert.equal(node.hash, expectedHash);
-      assert.equal(node._ipfs, ipfs);
       done();
     }));
 
@@ -46,7 +55,6 @@ describe('Node', function() {
       assert.equal(node.payload, payload);
       assert.equal(node.next.length, 0);
       assert.equal(node.hash, expectedHash);
-      assert.equal(node._ipfs, ipfs);
       done();
     }));
 
@@ -59,7 +67,6 @@ describe('Node', function() {
       assert.equal(node2.payload, payload2);
       assert.equal(node2.next.length, 1);
       assert.equal(node2.hash, expectedHash);
-      assert.equal(node2._ipfs, ipfs);
       done();
     }));
 
@@ -99,7 +106,6 @@ describe('Node', function() {
       assert.equal(final.next.length, 1);
       assert.equal(final.next[0], node1.hash);
       assert.equal(final.hash, expectedHash);
-      assert.equal(final._ipfs, ipfs);
       done();
     }));
 

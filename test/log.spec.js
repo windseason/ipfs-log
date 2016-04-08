@@ -8,11 +8,14 @@ const ipfsd  = require('ipfsd-ctl');
 const Log    = require('../lib/log');
 const Node   = require('../lib/node');
 
-let ipfs;
+let ipfs, node;
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
-    ipfsd.disposableApi((err, ipfs) => resolve(ipfs));
+    ipfsd.disposableApi((err, ipfs) => {
+      if(err) console.error(err);
+      resolve(ipfs);
+    });
   });
 };
 
