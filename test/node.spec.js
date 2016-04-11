@@ -31,13 +31,6 @@ describe('Node', function() {
     done();
   }));
 
-  // after(async((done) => {
-  //   ipfs.stopDaemon(err => {
-  //     if (err) throw err
-  //     stopped = true
-  //   })
-  // }));
-
   describe('create', () => {
     it('creates a an empty node', async((done) => {
       const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
