@@ -6,7 +6,6 @@
   "author": "Haad",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^3.3.4",
     "lazy.js": "^0.4.2",
     "lodash": "^4.6.1"
   },
