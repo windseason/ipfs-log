@@ -2,6 +2,7 @@
 
 const _       = require('lodash');
 const Lazy    = require('lazy.js');
+const Buffer  = require('buffer').Buffer
 const Node    = require('./node');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch

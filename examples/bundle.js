@@ -23520,7 +23520,7 @@
 /* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {'use strict';
+	'use strict';
 
 	var _stringify = __webpack_require__(72);
 
@@ -23542,6 +23542,7 @@
 
 	var _ = __webpack_require__(221);
 	var Lazy = __webpack_require__(222);
+	var Buffer = __webpack_require__(18).Buffer;
 	var Node = __webpack_require__(224);
 
 	var MaxBatchSize = 10; // How many items to keep per local batch
@@ -23754,7 +23755,6 @@
 	}();
 
 	module.exports = Log;
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2).Buffer))
 
 /***/ },
 /* 189 */
