@@ -1,8 +1,10 @@
 # ipfs-log
 
-An append-only log on IPFS. 
+An append-only log on IPFS.
 
 `ipfs-log` is a partially ordered linked list of [IPFS](https://github.com/ipfs/ipfs) hashes where each entry in the log points to all known heads (a head is a node that is not referenced by other nodes in the log).
+
+The module works in **Node.js** and **Browsers**.
 
 ### Use cases
 - Track a version of a file
@@ -12,15 +14,16 @@ An append-only log on IPFS.
 
 *Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a KV-store and Event Log on IPFS*
 
-
 ### Install
 ```
 npm install ipfs-log
 ```
 
 ### Usage
-See `./examples` for more.
 
+See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for details and more examples.
+
+#### Node.js
 ```javascript
 const Log = require('ipfs-log');
 
@@ -31,6 +34,33 @@ Log.create(ipfs, 'A')
     });
   })
   .catch((err) => console.error(err));
+```
+
+#### Browser
+*The distribution package for browsers is located in [dist/ipfslog.min.js](https://github.com/haadcode/ipfs-log/tree/master/dist)*
+
+```html
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <script type="text/javascript" src="ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="ipfsapi.min.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      var ipfs = ipfsAPI();
+      Log.create(ipfs, 'A').then((log) => {
+        log.add('one').then((node1) => {
+          console.log('Node1:', node1.hash, node1.payload, node1);
+          log.add('two').then((node2) => {
+            console.log('Node2:', node2.hash, node2.payload, node2);
+            console.log("Node2.next:", node2.next[0]);
+          });
+        });
+      }).catch((err) => console.error(err));
+    </script>
+  </body>
+</html>
 ```
 
 ### API
@@ -126,6 +156,12 @@ const snapshot = log.snapshot;
 ```
 npm install
 npm test
+```
+
+### Build
+The build script will build the distribution file for browsers.
+```
+npm run build
 ```
 
 ### TODO
