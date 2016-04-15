@@ -1,7 +1,7 @@
 'use strict';
 
 const ipfsd = require('ipfsd-ctl');
-const Log   = require('../lib/log');
+const Log   = require('../src/log');
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {

@@ -1,7 +1,7 @@
 'use strict';
 
 const ipfsd = require('ipfsd-ctl');
-const Node  = require('../lib/node');
+const Node  = require('../src/node');
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
