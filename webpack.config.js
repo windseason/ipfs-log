@@ -5,23 +5,18 @@ module.exports = {
   output: {
     libraryTarget: 'var',
     library: 'Log',
-    filename: './dist/ipfs-log.min.js'
+    filename: './dist/ipfslog.min.js'
   },
-  // resolve: {
-  //   alias: {
-  //     fs: require.resolve('./src/fs-mock')
-  //   }
-  // },
   node: {
     console: false,
     process: 'mock'
   },
-  // plugins: [
-  //   new webpack.optimize.UglifyJsPlugin({
-  //     mangle: true,
-  //     compress: { warnings: false }
-  //   })
-  // ],
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      mangle: true,
+      compress: { warnings: false }
+    })
+  ],
   module: {
     loaders: [
       {

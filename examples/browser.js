@@ -1,16 +1,15 @@
 'use strict';
 
-const ipfsd = require('ipfs-api');
-const Log   = require('../src/log');
+const ipfsAPI = require('ipfs-api');
+const Log = require('../src/log');
 
 const ipfs = ipfsAPI();
 Log.create(ipfs, 'A').then((log) => {
   log.add('one').then((node1) => {
-    console.log('Node1:', node1.hash, node1.payload);
+    console.log('Node1:', node1.hash, node1.payload, node1);
     log.add('two').then((node2) => {
-      console.log('Node2:', node2.hash, node2.payload);
-      console.log("       next -->", node2.next[0].hash, node2.next[0].payload);
-      process.exit(0)
+      console.log('Node2:', node2.hash, node2.payload, node2);
+      console.log('Node2.next:', node2.next[0]);
     });
   });
 }).catch((err) => console.error(err));
