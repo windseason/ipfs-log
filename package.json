@@ -6,6 +6,7 @@
   "author": "Haad",
   "license": "MIT",
   "dependencies": {
+    "buffer": "^4.5.1",
     "lazy.js": "^0.4.2",
     "lodash": "^4.6.1"
   },

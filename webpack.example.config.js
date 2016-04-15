@@ -11,7 +11,8 @@ module.exports = {
     ],
     alias: {
       http: 'stream-http',
-      https: 'https-browserify'
+      https: 'https-browserify',
+      Buffer: 'buffer'
     }
   },
   module: {

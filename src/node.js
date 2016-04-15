@@ -1,5 +1,7 @@
 'use strict';
 
+const Buffer = require('buffer').Buffer
+
 class Node {
   constructor(payload, next) {
     this.payload = payload || null;
