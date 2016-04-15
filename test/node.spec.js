@@ -5,7 +5,7 @@ const assert = require('assert');
 const async  = require('asyncawait/async');
 const await  = require('asyncawait/await');
 const ipfsd  = require('ipfsd-ctl');
-const Node   = require('../lib/node');
+const Node   = require('../src/node');
 
 let ipfs;
 
