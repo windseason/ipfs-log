@@ -37,35 +37,28 @@ class Node {
 
   static create(ipfs, data, next) {
     if(!ipfs) throw new Error("Node requires ipfs instance")
-    return new Promise((resolve, reject) => {
-      const node = new Node(data, next);
-      Node.getIpfsHash(ipfs, node)
-        .then((hash) => {
-          node.hash = hash;
-          resolve(node);
-        }).catch(reject)
-    });
+    const node = new Node(data, next);
+    return Node.getIpfsHash(ipfs, node)
+      .then((hash) => {
+        node.hash = hash;
+        return node;
+      });
   }
 
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Node requires ipfs instance")
     if(!hash) throw new Error("Invalid hash: " + hash)
-    return new Promise((resolve, reject) => {
-      ipfs.object.get(hash)
-        .then((obj) => {
-          const f = JSON.parse(obj.Data)
-          Node.create(ipfs, f.payload, f.next).then(resolve).catch(reject);
-        }).catch(reject);
-    });
+    return ipfs.object.get(hash)
+      .then((obj) => {
+        const f = JSON.parse(obj.Data)
+        return Node.create(ipfs, f.payload, f.next);
+      });
   }
 
   static getIpfsHash(ipfs, node) {
     if(!ipfs) throw new Error("Node requires ipfs instance")
-    return new Promise((resolve, reject) => {
-      ipfs.object.put(new Buffer(JSON.stringify({ Data: JSON.stringify(node.asJson) })))
-        .then((res) => resolve(res.Hash))
-        .catch(reject);
-    });
+    return ipfs.object.put(new Buffer(JSON.stringify({ Data: JSON.stringify(node.asJson) })))
+      .then((res) => res.Hash)
   }
 
   static equals(a, b) {
