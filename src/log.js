@@ -41,6 +41,7 @@ class Log {
 
   join(other) {
     const current = Lazy(this._currentBatch).difference(this._items).toArray();
+    const diff    = _.differenceWith(other.items, current, Node.equals);
     const others  = _.differenceWith(other.items, this._items, Node.equals);
     const final   = _.unionWith(current, others, Node.equals);
     this._items   = this._items.concat(final);
@@ -56,7 +57,7 @@ class Log {
           return history;
         });
     });
-    return Promise.all(promises).then((r) => this);
+    return Promise.all(promises).then((r) => diff);
   }
 
   clear() {
