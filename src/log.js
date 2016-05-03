@@ -57,7 +57,7 @@ class Log {
           return history;
         });
     });
-    return Promise.all(promises).then((r) => diff);
+    return Promise.all(promises).then((r) => _.flatten(r.concat(diff)))
   }
 
   clear() {
