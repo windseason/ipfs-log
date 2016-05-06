@@ -1,18 +1,20 @@
 'use strict';
 
-const _       = require('lodash');
-const Lazy    = require('lazy.js');
-const Buffer  = require('buffer').Buffer
-const Node    = require('./node');
+const _            = require('lodash');
+const Lazy         = require('lazy.js');
+const Buffer       = require('buffer').Buffer
+const EventEmitter = require('events').EventEmitter;
+const Node         = require('./node');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch
 const MaxHistory   = 256; // How many items to fetch on join
 
 class Log {
-  constructor(ipfs, id, items) {
+  constructor(ipfs, id, name, opts) {
     this.id = id;
+    this.name = name;
     this._ipfs = ipfs;
-    this._items = items || [];
+    this._items = opts && opts.items ? opts.items : [];
     this._currentBatch = [];
   }
 
@@ -65,6 +67,11 @@ class Log {
     this._currentBatch = [];
   }
 
+  // Returns entrie after initialization
+  load() {
+    return Promise.resolve([]);
+  }
+
   _insert(node) {
     let indices = Lazy(node.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
     const index = indices.toArray().length > 0 ? Math.max(indices.max() + 1, 0) : 0; // find the largest index (latest parent)
@@ -97,23 +104,27 @@ class Log {
     });
   }
 
-  static create(ipfs, id, items) {
-    if(!ipfs) throw new Error("Ipfs instance not defined")
-    if(!id) throw new Error("id is not defined")
-    const log = new Log(ipfs, id, items);
-    return Promise.resolve(log);
-  }
+  // static create(ipfs, id, name, items) {
+  //   if(!ipfs) throw new Error("Ipfs instance not defined")
+  //   if(!id) throw new Error("id is not defined")
+  //   const log = new Log(ipfs, id, name, items);
+  //   return Promise.resolve(log);
+  // }
 
   static getIpfsHash(ipfs, log) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     const data = new Buffer(JSON.stringify({ Data: JSON.stringify(log.snapshot) }));
+  // console.log("DATA", log, log.snapshot);
     return ipfs.object.put(data)
-      .then((res) => res.Hash)
+      .then((res) => {
+        // console.log("RES", res)
+        return res.Hash;
+      })
   }
 
   static fromJson(ipfs, json) {
     return Promise.all(json.items.map((f) => Node.fromIpfsHash(ipfs, f)))
-      .then((items) => Log.create(ipfs, json.id, items));
+      .then((items) => new Log(ipfs, json.id, '', { items: items }));
   }
 
   static fromIpfsHash(ipfs, hash) {
