@@ -34,7 +34,7 @@ describe('Log', async(function() {
 
   describe('create', async(() => {
     it('creates an empty log', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       assert.equal(log.id, 'A');
       assert.equal(log._items instanceof Array, true);
       assert.equal(log._items.length, 0);
@@ -47,7 +47,7 @@ describe('Log', async(function() {
 
     it('throws an error if ipfs is not defined', async((done) => {
       try {
-        const log = await(Log.create());
+        const log = new Log();
       } catch(e) {
         assert.equal(e.message, 'Ipfs instance not defined');
       }
@@ -56,7 +56,7 @@ describe('Log', async(function() {
 
     it('throws an error if id is not defined', async((done) => {
       try {
-        const log = await(Log.create(ipfs));
+        const log = new Log(ipfs);
       } catch(e) {
         assert.equal(e.message, 'id is not defined');
       }
@@ -76,7 +76,7 @@ describe('Log', async(function() {
     };
 
     beforeEach(async((done) => {
-      log = await(Log.create(ipfs, 'A'));
+      log = new Log(ipfs, 'A');
       await(log.add("one"));
       await(log.add("two"));
       await(log.add("three"));
@@ -105,7 +105,7 @@ describe('Log', async(function() {
     describe('getIpfsHash', async(() => {
       it('returns the log as ipfs hash', async((done) => {
         const expectedHash = 'QmaRz4njJX2W8QYwWLa1jhEbYUdJhhqibsBbnRYuWgr1r7';
-        const log = await(Log.create(ipfs, 'A'));
+        const log = new Log(ipfs, 'A');
         const hash = await(Log.getIpfsHash(ipfs, log));
         assert.equal(hash, expectedHash);
         done();
@@ -116,7 +116,7 @@ describe('Log', async(function() {
           Links: [],
           Data: '{"id":"A","items":[]}'
         };
-        const log = await(Log.create(ipfs, 'A'));
+        const log = new Log(ipfs, 'A');
         const hash = await(Log.getIpfsHash(ipfs, log));
         const res = await(ipfs.object.get(hash));
         assert.equal(JSON.stringify(res), JSON.stringify(expectedData));
@@ -125,7 +125,7 @@ describe('Log', async(function() {
 
       it('throws an error if ipfs is not defined', async((done) => {
         try {
-          const log = await(Log.create(ipfs, 'A'));
+          const log = new Log(ipfs, 'A');
           const hash = await(Log.getIpfsHash(null, log));
         } catch(e) {
           assert.equal(e.message, 'Ipfs instance not defined');
@@ -137,7 +137,7 @@ describe('Log', async(function() {
     describe('fromIpfsHash', async(() => {
       it('creates an empty log from ipfs hash', async((done) => {
         const expectedData = { id: "A", items: [] };
-        const log = await(Log.create(ipfs, 'A'));
+        const log = new Log(ipfs, 'A');
         const hash = await(Log.getIpfsHash(ipfs, log));
         const res = await(Log.fromIpfsHash(ipfs, hash));
         assert.equal(JSON.stringify(res.snapshot), JSON.stringify(expectedData));
@@ -158,7 +158,7 @@ describe('Log', async(function() {
 
   describe('items', () => {
     it('returns all nodes in the log', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       let items = log.items;
       assert.equal(log.items instanceof Array, true);
       assert.equal(log.items.length, 0);
@@ -174,7 +174,7 @@ describe('Log', async(function() {
     }));
 
     it('returns all nodes from current batch and all known nodes', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       let items = log.items;
       assert.equal(log.items instanceof Array, true);
       assert.equal(log.items.length, 0);
@@ -196,7 +196,7 @@ describe('Log', async(function() {
 
   describe('add', () => {
     it('adds an item to an empty log', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       await(log.add("hello1"));
       const item = log.items[0];
       assert.equal(log.items.length, 1);
@@ -208,7 +208,7 @@ describe('Log', async(function() {
     }));
 
     it('adds 100 items to a log', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const amount = 100;
 
       for(let i = 1; i <= amount; i ++) {
@@ -224,7 +224,7 @@ describe('Log', async(function() {
     }));
 
     it('commits the log after batch size was reached', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
 
       for(let i = 1; i <= Log.batchSize; i ++) {
         await(log.add("hello" + i));
@@ -247,10 +247,10 @@ describe('Log', async(function() {
     let log1, log2, log3, log4;
 
     beforeEach(async((done) => {
-      log1 = await(Log.create(ipfs, 'A'));
-      log2 = await(Log.create(ipfs, 'B'));
-      log3 = await(Log.create(ipfs, 'C'));
-      log4 = await(Log.create(ipfs, 'D'));
+      log1 = new Log(ipfs, 'A');
+      log2 = new Log(ipfs, 'B');
+      log3 = new Log(ipfs, 'C');
+      log4 = new Log(ipfs, 'D');
       done();
     }));
 
@@ -423,7 +423,7 @@ describe('Log', async(function() {
 
   describe('_fetchRecursive', () => {
     it('returns two items when neither are in the log', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
+      const log1 = new Log(ipfs, 'A');
       const node1 = await(Node.create(ipfs, 'one'))
       const node2 = await(Node.create(ipfs, 'two', node1))
       const items = await(log1._fetchRecursive(ipfs, node2.hash, [], 1000, 0));
@@ -434,7 +434,7 @@ describe('Log', async(function() {
     }));
 
     it('returns three items when none are in the log', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
+      const log1 = new Log(ipfs, 'A');
       const node1 = await(Node.create(ipfs, 'one'))
       const node2 = await(Node.create(ipfs, 'two', node1))
       const node3 = await(Node.create(ipfs, 'three', node2))
@@ -447,7 +447,7 @@ describe('Log', async(function() {
     }));
 
     it('returns all items when none are in the log', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
+      const log1 = new Log(ipfs, 'A');
       let nodes = [];
       const amount = Log.batchSize * 4;
       for(let i = 1; i <= amount; i ++) {
@@ -464,7 +464,7 @@ describe('Log', async(function() {
     }));
 
     it('returns only the items that are not in the log', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
+      const log1 = new Log(ipfs, 'A');
       const node1 = await(log1.add('one'))
       const node2 = await(Node.create(ipfs, 'two', node1))
       const node3 = await(Node.create(ipfs, 'three', node2))
@@ -479,9 +479,9 @@ describe('Log', async(function() {
 
   describe('findHeads', () => {
     it('finds one head after one item', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
-      const log3 = await(Log.create(ipfs, 'C'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
+      const log3 = new Log(ipfs, 'C');
 
       await(log1.add("helloA1"));
 
@@ -492,9 +492,9 @@ describe('Log', async(function() {
     }));
 
     it('finds one head after two items', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
-      const log3 = await(Log.create(ipfs, 'C'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
+      const log3 = new Log(ipfs, 'C');
 
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
@@ -506,8 +506,8 @@ describe('Log', async(function() {
     }));
 
     it('finds two heads after a join', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
 
       await(log1.add("helloA1"));
       const expectedHead1 = await(log1.add("helloA2"));
@@ -525,8 +525,8 @@ describe('Log', async(function() {
     }));
 
     it('finds one head after two joins', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
 
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
@@ -544,9 +544,9 @@ describe('Log', async(function() {
     }));
 
     it('finds two heads after three joins', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
-      const log3 = await(Log.create(ipfs, 'C'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
+      const log3 = new Log(ipfs, 'C');
 
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
@@ -569,9 +569,9 @@ describe('Log', async(function() {
     }));
 
     it('finds three heads after three joins', async((done) => {
-      const log1 = await(Log.create(ipfs, 'A'));
-      const log2 = await(Log.create(ipfs, 'B'));
-      const log3 = await(Log.create(ipfs, 'C'));
+      const log1 = new Log(ipfs, 'A');
+      const log2 = new Log(ipfs, 'B');
+      const log3 = new Log(ipfs, 'C');
 
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
@@ -597,7 +597,7 @@ describe('Log', async(function() {
 
   describe('isReferencedInChain', () => {
     it('returns true if another node in the log references the given node', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const node1 = await(log.add('one'));
       const node2 = await(log.add('two'));
       const res = Log.isReferencedInChain(log, node1);
@@ -606,7 +606,7 @@ describe('Log', async(function() {
     }));
 
     it('returns false if no other node in the log references the given node', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const node1 = await(log.add('one'));
       const node2 = await(log.add('two'));
       const res = Log.isReferencedInChain(log, node2);
@@ -617,7 +617,7 @@ describe('Log', async(function() {
 
   describe('_commit', () => {
     it('moves nodes from current batch to all known nodes', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const node1 = await(log.add('one'));
       const node2 = await(log.add('two'));
 
@@ -634,7 +634,7 @@ describe('Log', async(function() {
 
   describe('_insert', () => {
     it('insert node to the log before current batch if parent is in current bathc', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const node1 = await(log.add('one'));
       const node2 = await(log.add('two'));
       const node3 = await(Node.create(ipfs, 'three', node1))
@@ -647,7 +647,7 @@ describe('Log', async(function() {
     }));
 
     it('insert to the log after the parent when parent is not in the current batch', async((done) => {
-      const log = await(Log.create(ipfs, 'A'));
+      const log = new Log(ipfs, 'A');
       const node1 = await(log.add('one'));
       const node2 = await(log.add('two'));
       const node3 = await(Node.create(ipfs, 'three', node1))
@@ -663,9 +663,9 @@ describe('Log', async(function() {
     let log1, log2, log3;
 
     beforeEach(async((done) => {
-      log1 = await(Log.create(ipfs, 'A'));
-      log2 = await(Log.create(ipfs, 'B'));
-      log3 = await(Log.create(ipfs, 'C'));
+      log1 = new Log(ipfs, 'A');
+      log2 = new Log(ipfs, 'B');
+      log3 = new Log(ipfs, 'C');
       done();
     }));
 
@@ -683,9 +683,9 @@ describe('Log', async(function() {
 
       const res1 = log1.items.map((e) => e.hash).join(",");
 
-      log1 = await(Log.create(ipfs, 'A'));
-      log2 = await(Log.create(ipfs, 'B'));
-      log3 = await(Log.create(ipfs, 'C'));
+      log1 = new Log(ipfs, 'A');
+      log2 = new Log(ipfs, 'B');
+      log3 = new Log(ipfs, 'C');
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
       await(log2.add("helloB1"));
@@ -719,8 +719,8 @@ describe('Log', async(function() {
 
       const res1 = log2.items.map((e) => e.hash).join(",");
 
-      log1 = await(Log.create(ipfs, 'A'));
-      log2 = await(Log.create(ipfs, 'B'));
+      log1 = new Log(ipfs, 'A');
+      log2 = new Log(ipfs, 'B');
       await(log1.add("helloA1"))
       await(log1.add("helloA2"))
       await(log2.join(log1))
