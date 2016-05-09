@@ -17,7 +17,6 @@ class Log {
     this._items = opts && opts.items ? opts.items : [];
     this.options = opts || { maxHistory: MaxHistory };
     this._currentBatch = [];
-    this._oldHeads = [];
     this._heads = [];
   }
 
@@ -71,7 +70,7 @@ class Log {
     this._currentBatch = [];
   }
 
-  // Returns entrie after initialization
+  // Returns entries after initialization
   load() {
     return Promise.resolve([]);
   }
