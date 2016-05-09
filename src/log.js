@@ -15,7 +15,10 @@ class Log {
     this.name = name;
     this._ipfs = ipfs;
     this._items = opts && opts.items ? opts.items : [];
+    this.options = opts || { maxHistory: MaxHistory };
     this._currentBatch = [];
+    this._oldHeads = [];
+    this._heads = [];
   }
 
   get items() {
@@ -33,9 +36,9 @@ class Log {
     if(this._currentBatch.length >= MaxBatchSize)
       this._commit();
 
-    const heads = Log.findHeads(this);
-    return Node.create(this._ipfs, data, heads)
+    return Node.create(this._ipfs, data, this._heads)
       .then((node) => {
+        this._heads = [node.hash];
         this._currentBatch.push(node);
         return node;
       });
@@ -53,9 +56,10 @@ class Log {
     const nexts = _.flatten(other.items.map((f) => f.next));
     const promises = nexts.map((f) => {
       let all = this.items.map((a) => a.hash);
-      return this._fetchRecursive(this._ipfs, f, all, MaxHistory, 0)
+      return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory, 0)
         .then((history) => {
           history.forEach((b) => this._insert(b));
+          this._heads = Log.findHeads(this);
           return history;
         });
     });
@@ -104,22 +108,11 @@ class Log {
     });
   }
 
-  // static create(ipfs, id, name, items) {
-  //   if(!ipfs) throw new Error("Ipfs instance not defined")
-  //   if(!id) throw new Error("id is not defined")
-  //   const log = new Log(ipfs, id, name, items);
-  //   return Promise.resolve(log);
-  // }
-
   static getIpfsHash(ipfs, log) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     const data = new Buffer(JSON.stringify({ Data: JSON.stringify(log.snapshot) }));
-  // console.log("DATA", log, log.snapshot);
     return ipfs.object.put(data)
-      .then((res) => {
-        // console.log("RES", res)
-        return res.Hash;
-      })
+      .then((res) => res.Hash)
   }
 
   static fromJson(ipfs, json) {
@@ -147,13 +140,8 @@ class Log {
   }
 
   static get batchSize() {
-    return MaxBatchSize;
+    return MaxBatchSize
   }
-
-  static get maxHistory() {
-    return MaxHistory;
-  }
-
 }
 
 module.exports = Log;

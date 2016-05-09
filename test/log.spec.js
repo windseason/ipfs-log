@@ -164,12 +164,14 @@ describe('Log', async(function() {
       assert.equal(log.items.length, 0);
       await(log.add("hello1"));
       await(log.add("hello2"));
+      await(log.add("hello3"));
       assert.equal(log.items instanceof Array, true);
-      assert.equal(log.items.length, 2);
+      assert.equal(log.items.length, 3);
       assert.equal(log.items[0].payload, 'hello1');
       assert.equal(log.items[1].payload, 'hello2');
+      assert.equal(log.items[2].payload, 'hello3');
       assert.equal(log._items.length, 0);
-      assert.equal(log._currentBatch.length, 2);
+      assert.equal(log._currentBatch.length, 3);
       done();
     }));
 
@@ -485,7 +487,8 @@ describe('Log', async(function() {
 
       await(log1.add("helloA1"));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 1);
       assert.equal(heads[0], 'QmUEH5SEuRZhZ7RETwEX2df2BtTR2xUYZR3qBrhjnxqocb');
       done();
@@ -499,7 +502,8 @@ describe('Log', async(function() {
       await(log1.add("helloA1"));
       await(log1.add("helloA2"));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 1);
       assert.equal(heads[0], 'Qma1PaYbyW1rZA4npPnuJzA3ov5Je4N9cvAn2p6Ju1iPQS');
       done();
@@ -517,7 +521,8 @@ describe('Log', async(function() {
 
       await(log1.join(log2));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 2);
       assert.equal(heads[0], expectedHead2.hash);
       assert.equal(heads[1], expectedHead1.hash);
@@ -537,7 +542,8 @@ describe('Log', async(function() {
       const expectedHead = await(log1.add("helloA4"));
       await(log1.join(log2));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 1);
       assert.equal(heads[0], expectedHead.hash);
       done();
@@ -561,7 +567,8 @@ describe('Log', async(function() {
       const expectedHead2 = await(log2.add("helloB3"));
       await(log1.join(log2));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 2);
       assert.equal(heads[0], expectedHead2.hash);
       assert.equal(heads[1], expectedHead1.hash);
@@ -586,7 +593,8 @@ describe('Log', async(function() {
       await(log1.join(log2));
       await(log1.join(log3));
 
-      const heads = Log.findHeads(log1)
+      // const heads = Log.findHeads(log1)
+      const heads = log1._heads;
       assert.equal(heads.length, 3);
       assert.equal(heads[0], expectedHead3.hash);
       assert.equal(heads[1], expectedHead2.hash);
