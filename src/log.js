@@ -38,17 +38,16 @@ class Log {
     return Node.create(this._ipfs, data, this._heads)
       .then((node) => {
         this._heads = [node.hash];
-        this._currentBatch.push(node);
+        this._currentBatch[this._currentBatch.length] = node;
         return node;
       });
   }
 
   join(other) {
-    const current = Lazy(this._currentBatch).difference(this._items).toArray();
-    const diff    = _.differenceWith(other.items, current, Node.equals);
-    const others  = _.differenceWith(other.items, this._items, Node.equals);
-    const final   = _.unionWith(current, others, Node.equals);
-    this._items   = this._items.concat(final);
+    const diff   = _.differenceWith(other.items, this._currentBatch, Node.equals);
+    const others = _.differenceWith(other.items, this._items, Node.equals);
+    const final  = _.unionWith(this._currentBatch, others, Node.equals);
+    this._items  = this._items.concat(final);
     this._currentBatch = [];
 
     // Fetch history
@@ -83,8 +82,7 @@ class Log {
   }
 
   _commit() {
-    const current = Lazy(this._currentBatch).difference(this._items).toArray();
-    this._items = this._items.concat(current);
+    this._items = this._items.concat(this._currentBatch);
     this._currentBatch = [];
   }
 
