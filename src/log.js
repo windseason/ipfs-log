@@ -2,10 +2,10 @@
 
 const _            = require('lodash');
 const Lazy         = require('lazy.js');
-const Buffer       = require('buffer').Buffer
 const EventEmitter = require('events').EventEmitter;
+const Promise      = require('bluebird');
+const Buffer       = require('buffer').Buffer
 const Node         = require('./node');
-const Promise = require('bluebird');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch
 const MaxHistory   = 256; // How many items to fetch on join
@@ -112,9 +112,12 @@ class Log {
 
   static getIpfsHash(ipfs, log) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
-    const data = new Buffer(JSON.stringify({ Data: JSON.stringify(log.snapshot) }));
+    const data = new Buffer(JSON.stringify(log.snapshot));
     return ipfs.object.put(data)
-      .then((res) => res.Hash)
+      .then((res) => {
+        // console.log("RES", res.toJSON())
+        return res.toJSON().Hash
+      })
   }
 
   static fromJson(ipfs, json) {
@@ -125,8 +128,11 @@ class Log {
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     if(!hash) throw new Error("Invalid hash: " + hash)
-    return ipfs.object.get(hash)
-      .then((res) => Log.fromJson(ipfs, JSON.parse(res.Data)));
+    return ipfs.object.get(hash, { enc: 'base58' })
+      .then((res) => {
+        console.log("RES", res)
+        return Log.fromJson(ipfs, JSON.parse(res.toJSON().Data))
+      });
   }
 
   static findHeads(log) {

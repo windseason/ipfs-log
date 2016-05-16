@@ -48,17 +48,20 @@ class Node {
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Node requires ipfs instance")
     if(!hash) throw new Error("Invalid hash: " + hash)
-    return ipfs.object.get(hash)
+      console.log(hash)
+    return ipfs.object.get(hash, { enc: 'base58' })
       .then((obj) => {
-        const f = JSON.parse(obj.Data)
+        const f = JSON.parse(obj.toJSON().Data)
         return Node.create(ipfs, f.payload, f.next);
       });
   }
 
   static getIpfsHash(ipfs, node) {
     if(!ipfs) throw new Error("Node requires ipfs instance")
-    return ipfs.object.put(new Buffer(JSON.stringify({ Data: JSON.stringify(node.asJson) })))
-      .then((res) => res.Hash)
+    return ipfs.object.put(new Buffer(JSON.stringify(node.asJson)))
+      .then((res) => {
+          return res.toJSON().Hash
+        })
   }
 
   static equals(a, b) {

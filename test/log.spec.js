@@ -7,6 +7,10 @@ const await  = require('asyncawait/await');
 const ipfsd  = require('ipfsd-ctl');
 const Log    = require('../src/log');
 const Node   = require('../src/node');
+var IPFS = require('ipfs')
+
+// var IPFS = require('ipfs')
+// var ipfs = new IPFS()
 
 let ipfs, node;
 
@@ -20,10 +24,11 @@ const startIpfs = () => {
 };
 
 describe('Log', async(function() {
-  this.timeout(20000);
+  // this.timeout(20000);
   before(async((done) => {
     try {
-      ipfs = await(startIpfs());
+      // ipfs = await(startIpfs());
+      ipfs = new IPFS();
     } catch(e) {
       console.log(e);
       assert.equal(e, null);
@@ -112,14 +117,20 @@ describe('Log', async(function() {
       }));
 
       it('log serialized to ipfs contains the correct data', async((done) => {
-        const expectedData = {
-          Links: [],
-          Data: '{"id":"A","items":[]}'
-        };
+        const expectedData = { id: "A", items: [] };
+        // const expectedData = {
+        //   Data: '{"id":"A","items":[]}',
+        //   Links: [],
+        //   "Hash":"QmaRz4njJX2W8QYwWLa1jhEbYUdJhhqibsBbnRYuWgr1r7",
+        //   "Size":23
+        // };
         const log = new Log(ipfs, 'A');
         const hash = await(Log.getIpfsHash(ipfs, log));
-        const res = await(ipfs.object.get(hash));
-        assert.equal(JSON.stringify(res), JSON.stringify(expectedData));
+        const res = await(ipfs.object.get(hash, { enc: 'base58' }));
+        const result = JSON.parse(res.toJSON().Data);
+        // assert.equal(JSON.stringify(res.toJSON().Data), JSON.stringify(expectedData));
+        assert.equal(result.id, expectedData.id);
+        assert.equal(result.items.length, expectedData.items.length);
         done();
       }));
 

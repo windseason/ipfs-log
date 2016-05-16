@@ -6,14 +6,22 @@ const async  = require('asyncawait/async');
 const await  = require('asyncawait/await');
 const ipfsd  = require('ipfsd-ctl');
 const Node   = require('../src/node');
+var IPFS = require('ipfs')
 
 let ipfs;
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
-    ipfsd.disposableApi((err, ipfs) => {
-      if(err) console.error(err);
-      resolve(ipfs);
+    // ipfsd.disposableApi((err, ipfs) => {
+    //   if(err) console.error(err);
+    //   resolve(ipfs);
+    // });
+    ipfsd.local((err, node) => {
+      if(err) reject(err);
+      node.startDaemon((err, ipfs) => {
+        if(err) reject(err);
+        resolve(ipfs);
+      });
     });
   });
 };
@@ -22,7 +30,8 @@ describe('Node', function() {
   this.timeout(20000);
   before(async((done) => {
     try {
-      ipfs = await(startIpfs());
+      // ipfs = await(startIpfs());
+      ipfs = new IPFS();
     } catch(e) {
       console.log(e);
       assert.equals(e, null);
@@ -35,6 +44,7 @@ describe('Node', function() {
     it('creates a an empty node', async((done) => {
       const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
       const node = await(Node.create(ipfs));
+      console.log(node)
       assert.equal(node.payload, null);
       assert.equal(node.next.length, 0);
       assert.equal(node.hash, expectedHash);
