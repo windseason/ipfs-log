@@ -6,21 +6,6 @@ module.exports = {
   output: {
     filename: './examples/browser/bundle.js'
   },
-  resolveLoader: {
-    root: path.join(__dirname, 'node_modules')
-  },
-  resolve: {
-    modulesDirectories: [
-      'node_modules',
-      path.join(__dirname, 'node_modules')
-    ],
-    alias: {
-      // fs: require.resolve('./node_modules/logplease/src/fs-mock'),
-      http: 'stream-http',
-      https: 'https-browserify',
-      Buffer: 'buffer'
-    }
-  },
   module: {
     loaders: [{
       test: /\.js$/,
@@ -32,7 +17,7 @@ module.exports = {
       }
     }, {
       test: /\.js$/,
-      include: /node_modules\/(hoek|qs|wreck|boom|ipfs|)/,
+      include: /node_modules\/(hoek|qs|wreck|boom|ipfs-.+)/,
       loader: 'babel',
       query: {
         presets: require.resolve('babel-preset-es2015'),
@@ -48,13 +33,16 @@ module.exports = {
     }]
   },
   node: {
-    Buffer: true
+    console: false,
+    process: 'mock',
+    Buffer: 'buffer'
   },
   externals: {
     net: '{}',
     fs: '{}',
     tls: '{}',
     console: '{}',
-    'require-dir': '{}'
+    'require-dir': '{}',
+    mkdirp: {}
   }
 };
