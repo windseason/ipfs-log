@@ -5,6 +5,7 @@ const Lazy         = require('lazy.js');
 const Buffer       = require('buffer').Buffer
 const EventEmitter = require('events').EventEmitter;
 const Node         = require('./node');
+const Promise = require('bluebird');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch
 const MaxHistory   = 256; // How many items to fetch on join
@@ -16,6 +17,7 @@ class Log {
     this._ipfs = ipfs;
     this._items = opts && opts.items ? opts.items : [];
     this.options = opts || { maxHistory: MaxHistory };
+    if(!this.options.maxHistory) this.options.maxHistory = MaxHistory;
     this._currentBatch = [];
     this._heads = [];
   }
@@ -52,16 +54,18 @@ class Log {
 
     // Fetch history
     const nexts = _.flatten(other.items.map((f) => f.next));
-    const promises = nexts.map((f) => {
+    return Promise.map(nexts, (f) => {
       let all = this.items.map((a) => a.hash);
       return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory, 0)
         .then((history) => {
-          history.forEach((b) => this._insert(b));
-          this._heads = Log.findHeads(this);
-          return history;
+          let h = _.differenceWith(history, this._items, Node.equals);
+          h.forEach((b) => this._insert(b));
+          return h;
         });
-    });
-    return Promise.all(promises).then((r) => _.flatten(r.concat(diff)))
+    }, { concurrency: 1 }).then((r) => {
+      this._heads = Log.findHeads(this);
+      return _.flatten(r).concat(diff)
+    })
   }
 
   clear() {
@@ -90,6 +94,7 @@ class Log {
     const isReferenced = (list, item) => Lazy(list).reverse().find((f) => f === item) !== undefined;
     let result = [];
 
+
     // If the given hash is in the given log (all) or if we're at maximum depth, return
     if(isReferenced(all, hash) || depth >= amount)
       return Promise.resolve(result);
@@ -100,8 +105,8 @@ class Log {
       all.push(hash);
       depth ++;
 
-      const promises = node.next.map((f) => this._fetchRecursive(ipfs, f, all, amount, depth));
-      return Promise.all(promises).then((res) => _.flatten(res.concat(result)));
+      return Promise.map(node.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
+        .then((res) => _.flatten(res.concat(result)))
     });
   }
 
