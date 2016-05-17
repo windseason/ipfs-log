@@ -1,10 +1,10 @@
 'use strict';
 
-var IPFS = require('ipfs')
+const IPFS = require('exports?Ipfs!ipfs/dist/index.js')
 // const ipfsAPI = require('ipfs-api');
 const Log = require('../../src/log');
 
-      var ipfs = new IPFS();
+var ipfs = new IPFS();
 // const ipfs = ipfsAPI();
 const log = new Log(ipfs, 'A');
 
