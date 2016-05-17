@@ -114,10 +114,7 @@ class Log {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     const data = new Buffer(JSON.stringify(log.snapshot));
     return ipfs.object.put(data)
-      .then((res) => {
-        // console.log("RES", res.toJSON())
-        return res.toJSON().Hash
-      })
+      .then((res) => res.toJSON().Hash);
   }
 
   static fromJson(ipfs, json) {
@@ -129,10 +126,7 @@ class Log {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     if(!hash) throw new Error("Invalid hash: " + hash)
     return ipfs.object.get(hash, { enc: 'base58' })
-      .then((res) => {
-        console.log("RES", res)
-        return Log.fromJson(ipfs, JSON.parse(res.toJSON().Data))
-      });
+      .then((res) => Log.fromJson(ipfs, JSON.parse(res.toJSON().Data)));
   }
 
   static findHeads(log) {

@@ -1,24 +1,32 @@
 'use strict';
 
-const await   = require('asyncawait/await');
-const async   = require('asyncawait/async');
-const ipfsd = require('ipfsd-ctl');
+const await = require('asyncawait/await');
+const async = require('asyncawait/async');
 const Log   = require('../src/log');
-const Node   = require('../src/node');
+const Node  = require('../src/node');
+// const ipfsd = require('ipfsd-ctl');
+const IPFS  = require('ipfs')
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
+    // Use disposable ipfs api with a local daemon
     // ipfsd.disposableApi((err, ipfs) => {
     //   if(err) console.error(err);
     //   resolve(ipfs);
     // });
-    ipfsd.local((err, node) => {
-      if(err) reject(err);
-      node.startDaemon((err, ipfs) => {
-        if(err) reject(err);
-        resolve(ipfs);
-      });
-    });
+    // Use a local running daemon
+    // ipfsd.local((err, node) => {
+    //   if(err) reject(err);
+    //   node.startDaemon((err, ipfs) => {
+    //     if(err) reject(err);
+    //     resolve(ipfs);
+    //   });
+    // });
+    // Use js-ipfs daemon
+    const ipfs = new IPFS();
+    ipfs.goOnline(() => {
+      resolve(ipfs)
+    })
   });
 };
 

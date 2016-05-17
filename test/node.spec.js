@@ -4,25 +4,32 @@ const _      = require('lodash');
 const assert = require('assert');
 const async  = require('asyncawait/async');
 const await  = require('asyncawait/await');
-const ipfsd  = require('ipfsd-ctl');
 const Node   = require('../src/node');
-var IPFS = require('ipfs')
+// const ipfsd  = require('ipfsd-ctl');
+const IPFS   = require('ipfs')
 
 let ipfs;
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
+    // Use disposable ipfs api with a local daemon
     // ipfsd.disposableApi((err, ipfs) => {
     //   if(err) console.error(err);
     //   resolve(ipfs);
     // });
-    ipfsd.local((err, node) => {
-      if(err) reject(err);
-      node.startDaemon((err, ipfs) => {
-        if(err) reject(err);
-        resolve(ipfs);
-      });
-    });
+    // Use a local running daemon
+    // ipfsd.local((err, node) => {
+    //   if(err) reject(err);
+    //   node.startDaemon((err, ipfs) => {
+    //     if(err) reject(err);
+    //     resolve(ipfs);
+    //   });
+    // });
+    // Use js-ipfs daemon
+    const ipfs = new IPFS();
+    ipfs.goOnline(() => {
+      resolve(ipfs)
+    })
   });
 };
 
@@ -44,7 +51,6 @@ describe('Node', function() {
     it('creates a an empty node', async((done) => {
       const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
       const node = await(Node.create(ipfs));
-      console.log(node)
       assert.equal(node.payload, null);
       assert.equal(node.next.length, 0);
       assert.equal(node.hash, expectedHash);

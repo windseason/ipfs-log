@@ -3,10 +3,10 @@
     <meta charset="utf-8">
   </head>
   <body>
-    <script type="text/javascript" src="../dist/ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="../node_modules/ipfs-api/dist/index.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/ipfs/dist/index.js" charset="utf-8"></script>
     <script type="text/javascript">
-      var ipfs = window.IpfsApi();
+      const ipfs = new window.Ipfs();
       const log = new Log(ipfs, 'A')
       log.add('one').then((node1) => {
         console.log('Node1:', node1.hash, node1.payload, node1);

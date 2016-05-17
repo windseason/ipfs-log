@@ -1,13 +1,11 @@
 'use strict';
 
 const IPFS = require('exports?Ipfs!ipfs/dist/index.js')
-// const ipfsAPI = require('ipfs-api');
 const Log = require('../../src/log');
+// const ipfsAPI = require('ipfs-api');
+const ipfs = new IPFS();
 
-var ipfs = new IPFS();
-// const ipfs = ipfsAPI();
 const log = new Log(ipfs, 'A');
-
 log.add('one').then((node1) => {
   console.log('Node1:', node1.hash, node1.payload, node1);
   log.add('two').then((node2) => {
