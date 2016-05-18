@@ -43,6 +43,6 @@ module.exports = {
     tls: '{}',
     console: '{}',
     'require-dir': '{}',
-    mkdirp: {}
+    mkdirp: '{}'
   }
 };
