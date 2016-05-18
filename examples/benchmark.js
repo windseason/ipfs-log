@@ -3,7 +3,7 @@
 const await = require('asyncawait/await');
 const async = require('asyncawait/async');
 const Log   = require('../src/log');
-const Node  = require('../src/node');
+const Entry = require('../src/entry');
 // const ipfsd = require('ipfsd-ctl');
 const IPFS  = require('ipfs')
 
@@ -57,7 +57,7 @@ let run = (() => {
       // timer.start();
       // const data = new Buffer(JSON.stringify({ Data: JSON.stringify(totalQueries) }));
       // await(ipfs.object.put(data));
-      // await(Node.create(ipfs, totalQueries, []));
+      // await(Entry.create(ipfs, totalQueries, []));
       await(log.add(totalQueries));
       // console.log(`${timer.stop(true)} ms`);
       totalQueries ++;

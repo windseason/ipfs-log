@@ -6,11 +6,12 @@ const ipfs = new IPFS();
 
 const log = new Log(ipfs, 'A');
 
-log.add('one').then((node1) => {
-  console.log('Node1:', node1.hash, node1.payload);
-  log.add('two').then((node2) => {
-    console.log('Node2:', node2.hash, node2.payload);
-    console.log("       next -->", node2.next[0]);
-    process.exit(0)
+log.add('one')
+  .then((entry1) => {
+    console.log('Entry1:', entry1.hash, entry1.payload);
+    return log.add('two');
+  })
+  .then((entry2) => {
+    console.log('Entry2:', entry2.hash, entry2.payload);
+    console.log('Entry2.next:', entry2.next[0]); // == entry1.hash
   });
-});

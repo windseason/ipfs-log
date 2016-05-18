@@ -12,7 +12,7 @@ The module works in **Node.js** and **Browsers**.
 - Messaging
 - CRDTs
 
-*Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a KV-store and Event Log on IPFS*
+*Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on IPFS*
 
 ### Install
 ```
@@ -25,15 +25,20 @@ See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for de
 
 #### Node.js
 ```javascript
-const Log = require('ipfs-log');
+const IPFS = require('ipfs')
+const Log  = require('ipfs-log');
 
-Log.create(ipfs, 'A')
-  .then((log) => {
-    log.add('one').then((node) => {
-      console.log('Node:', node.hash, node.payload);
-    });
+const log = new Log(new IPFS(), 'A');
+
+log.add('one')
+  .then((entry1) => {
+    console.log('Entry1:', entry1.hash, entry1.payload);
+    return log.add('two');
   })
-  .catch((err) => console.error(err));
+  .then((entry2) => {
+    console.log('Entry2:', entry2.hash, entry2.payload);
+    console.log('Entry2.next:', entry2.next[0]); // == entry1.hash
+  });
 ```
 
 #### Browser
@@ -45,19 +50,20 @@ Log.create(ipfs, 'A')
     <meta charset="utf-8">
   </head>
   <body>
-    <script type="text/javascript" src="ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="ipfsapi.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/ipfs/dist/index.js" charset="utf-8"></script>
     <script type="text/javascript">
-      var ipfs = ipfsAPI();
-      Log.create(ipfs, 'A').then((log) => {
-        log.add('one').then((node1) => {
-          console.log('Node1:', node1.hash, node1.payload, node1);
-          log.add('two').then((node2) => {
-            console.log('Node2:', node2.hash, node2.payload, node2);
-            console.log("Node2.next:", node2.next[0]);
-          });
+      const ipfs = new window.Ipfs();
+      const log = new Log(ipfs, 'A')
+      log.add('one')
+        .then((entry1) => {
+          console.log('Entry1:', entry1.hash, entry1.payload, entry1);
+          return log.add('two')
+        })
+        .then((entry2) => {
+          console.log('Entry2:', entry2.hash, entry2.payload, entry2);
+          console.log("Entry2.next:", entry2.next[0]);
         });
-      }).catch((err) => console.error(err));
     </script>
   </body>
 </html>
@@ -68,52 +74,18 @@ Log.create(ipfs, 'A')
 const Log = require('ipfs-log');
 ```
 
-### Class methods
-
-All class methods take an `ipfs-api` instance as the first parameter. See https://github.com/ipfs/js-ipfs-api for documentation.
-
-```javascript
-const ipfs = require('ipfs-api')();
-```
-
-#### create(ipfs, id, [items])
-Create a log. Returns a `Promise` that resolves to a `Log` instance.
-
-```javascript
-Log.create(ipfs, 'id').then((log) => console.log(log));
-```
-
-*See [Instance methods](https://github.com/haadcode/ipfs-log#instance-methods) on how to use the log instance*
-
-#### getIpfsHash(ipfs, log)
-Get the IPFS hash of this log. Returns a `Promise` that resolves to an IPFS `hash`.
-
-```javascript
-Log.getIpfsHash(ipfs, log).then((hash) => console.log(hash));
-```
-
-#### fromIpfsHash(ipfs, hash)
-Create a log from an IPFS hash. Returns a `Promise` that resolves to a `Log` instance.
-
-```javascript
-Log.fromIpfsHash(ipfs, hash).then((log) => console.log(log));
-```
-
-#### fromSnapshot(ipfs, snapshot)
-Create a log from a log snapshot. Returns a `Promise` that resolves a `Log` instance.
-
-```javascript
-Log.create(ipfs, 'id').then((log) => {
-  // Add items to the log    
-});
-
-const snapshot = log.snapshot;
-
-Log.fromSnapshot(ipfs, snapshot).then((log) => console.log(log));
-```
-
-
 ### Instance methods
+#### constructor(ipfs, id, name, [items])
+Create a log. The first argument is an `ipfs` instance which can be of type `js-ipfs` or `js-ipfs-api`. See https://github.com/ipfs/js-ipfs-api for IPFS api documentation.
+
+```javascript
+const ipfs = require('ipfs')(); // ipfs javascript implementation
+// Or
+const ipfs = require('ipfs-api')(); // local ipfs daemon (go-ipfs)
+
+const log = new Log(ipfs, 'userid', 'name of the log');
+```
+
 #### add(data)
 Add a log entry. Returns the added `node`.
 
@@ -150,6 +122,48 @@ Returns items in the current batch. Current batch are the items in the log that 
 ```javascript
 const snapshot = log.snapshot;
 // snapshot ==> { id: 'log id', items: ['A', 'B', 'C']}
+```
+
+### Class methods
+
+All class methods take an `ipfs` instance as the first parameter. The ipfs can be of `js-ipfs` or `js-ipfs-api`. See https://github.com/ipfs/js-ipfs-api for IPFS api documentation.
+
+```javascript
+const ipfs = require('ipfs')(); // js-ipfs
+// Or
+const ipfs = require('ipfs-api')(); // local ipfs daemon
+```
+
+*See [Instance methods](https://github.com/haadcode/ipfs-log#instance-methods) on how to use the log instance*
+
+#### getIpfsHash(ipfs, log)
+Get the IPFS hash of this log. Returns a `Promise` that resolves to an IPFS `hash`.
+
+```javascript
+Log.getIpfsHash(ipfs, log).then((hash) => console.log(hash));
+// ==> 'Qm...abc123'
+```
+
+#### fromIpfsHash(ipfs, hash)
+Create a log from an IPFS hash. Returns a `Promise` that resolves to a `Log` instance.
+
+```javascript
+Log.fromIpfsHash(ipfs, hash).then((log) => console.log(log));
+// ==> instance of Log
+```
+
+#### fromSnapshot(ipfs, snapshot)
+Create a log from a log snapshot. Returns a `Promise` that resolves a `Log` instance.
+
+```javascript
+const original = new Log(ipfs, 'id')
+
+// Add items to the original log
+// ...
+
+const snapshot = original.snapshot;
+Log.fromSnapshot(ipfs, snapshot).then((log) => console.log(log));
+// ==> log is instance of Log and contains the same entries as original log
 ```
 
 ### Tests

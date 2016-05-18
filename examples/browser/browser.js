@@ -6,10 +6,12 @@ const Log = require('../../src/log');
 const ipfs = new IPFS();
 
 const log = new Log(ipfs, 'A');
-log.add('one').then((node1) => {
-  console.log('Node1:', node1.hash, node1.payload, node1);
-  log.add('two').then((node2) => {
-    console.log('Node2:', node2.hash, node2.payload, node2);
-    console.log('Node2.next:', node2.next[0]);
+log.add('one')
+  .then((entry1) => {
+    console.log('Entry1:', entry1.hash, entry1.payload, entry1);
+    return log.add('two')
+  })
+  .then((entry2) => {
+    console.log('Entry2:', entry2.hash, entry2.payload, entry2);
+    console.log('Entry2.next:', entry2.next[0]);
   });
-});

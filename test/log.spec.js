@@ -5,11 +5,11 @@ const assert = require('assert');
 const async  = require('asyncawait/async');
 const await  = require('asyncawait/await');
 const Log    = require('../src/log');
-const Node   = require('../src/node');
+const Entry  = require('../src/entry');
 // const ipfsd  = require('ipfsd-ctl');
 const IPFS   = require('ipfs')
 
-let ipfs, node;
+let ipfs, entry;
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
@@ -179,7 +179,7 @@ describe('Log', async(function() {
   }));
 
   describe('items', () => {
-    it('returns all nodes in the log', async((done) => {
+    it('returns all entrys in the log', async((done) => {
       const log = new Log(ipfs, 'A');
       let items = log.items;
       assert.equal(log.items instanceof Array, true);
@@ -197,7 +197,7 @@ describe('Log', async(function() {
       done();
     }));
 
-    it('returns all nodes from current batch and all known nodes', async((done) => {
+    it('returns all entrys from current batch and all known entrys', async((done) => {
       const log = new Log(ipfs, 'A');
       let items = log.items;
       assert.equal(log.items instanceof Array, true);
@@ -448,9 +448,9 @@ describe('Log', async(function() {
   describe('_fetchRecursive', () => {
     it('returns two items when neither are in the log', async((done) => {
       const log1 = new Log(ipfs, 'A');
-      const node1 = await(Node.create(ipfs, 'one'))
-      const node2 = await(Node.create(ipfs, 'two', node1))
-      const items = await(log1._fetchRecursive(ipfs, node2.hash, [], 1000, 0));
+      const entry1 = await(Entry.create(ipfs, 'one'))
+      const entry2 = await(Entry.create(ipfs, 'two', entry1))
+      const items = await(log1._fetchRecursive(ipfs, entry2.hash, [], 1000, 0));
       assert.equal(items.length, 2);
       assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
       assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
@@ -459,10 +459,10 @@ describe('Log', async(function() {
 
     it('returns three items when none are in the log', async((done) => {
       const log1 = new Log(ipfs, 'A');
-      const node1 = await(Node.create(ipfs, 'one'))
-      const node2 = await(Node.create(ipfs, 'two', node1))
-      const node3 = await(Node.create(ipfs, 'three', node2))
-      const items = await(log1._fetchRecursive(ipfs, node3.hash, [], 1000, 0));
+      const entry1 = await(Entry.create(ipfs, 'one'))
+      const entry2 = await(Entry.create(ipfs, 'two', entry1))
+      const entry3 = await(Entry.create(ipfs, 'three', entry2))
+      const items = await(log1._fetchRecursive(ipfs, entry3.hash, [], 1000, 0));
       assert.equal(items.length, 3);
       assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
       assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
@@ -472,28 +472,28 @@ describe('Log', async(function() {
 
     it('returns all items when none are in the log', async((done) => {
       const log1 = new Log(ipfs, 'A');
-      let nodes = [];
+      let entrys = [];
       const amount = Log.batchSize * 4;
       for(let i = 1; i <= amount; i ++) {
-        const prev = _.last(nodes);
-        const n = await(Node.create(ipfs, 'node' + i, prev ? prev : null))
-        nodes.push(n);
+        const prev = _.last(entrys);
+        const n = await(Entry.create(ipfs, 'entry' + i, prev ? prev : null))
+        entrys.push(n);
       }
 
-      const items = await(log1._fetchRecursive(ipfs, _.last(nodes).hash, [], 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, _.last(entrys).hash, [], 1000, 0));
       assert.equal(items.length, amount);
-      assert.equal(items[0].hash, nodes[0].hash);
-      assert.equal(_.last(items).hash, _.last(nodes).hash);
+      assert.equal(items[0].hash, entrys[0].hash);
+      assert.equal(_.last(items).hash, _.last(entrys).hash);
       done();
     }));
 
     it('returns only the items that are not in the log', async((done) => {
       const log1 = new Log(ipfs, 'A');
-      const node1 = await(log1.add('one'))
-      const node2 = await(Node.create(ipfs, 'two', node1))
-      const node3 = await(Node.create(ipfs, 'three', node2))
+      const entry1 = await(log1.add('one'))
+      const entry2 = await(Entry.create(ipfs, 'two', entry1))
+      const entry3 = await(Entry.create(ipfs, 'three', entry2))
       const allHashes = log1.items.map((a) => a.hash);
-      const items = await(log1._fetchRecursive(ipfs, node3.hash, allHashes, 1000, 0));
+      const items = await(log1._fetchRecursive(ipfs, entry3.hash, allHashes, 1000, 0));
       assert.equal(items.length, 2);
       assert.equal(items[0].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
       assert.equal(items[1].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
@@ -626,30 +626,30 @@ describe('Log', async(function() {
   });
 
   describe('isReferencedInChain', () => {
-    it('returns true if another node in the log references the given node', async((done) => {
+    it('returns true if another entry in the log references the given entry', async((done) => {
       const log = new Log(ipfs, 'A');
-      const node1 = await(log.add('one'));
-      const node2 = await(log.add('two'));
-      const res = Log.isReferencedInChain(log, node1);
+      const entry1 = await(log.add('one'));
+      const entry2 = await(log.add('two'));
+      const res = Log.isReferencedInChain(log, entry1);
       assert.equal(res, true)
       done();
     }));
 
-    it('returns false if no other node in the log references the given node', async((done) => {
+    it('returns false if no other entry in the log references the given entry', async((done) => {
       const log = new Log(ipfs, 'A');
-      const node1 = await(log.add('one'));
-      const node2 = await(log.add('two'));
-      const res = Log.isReferencedInChain(log, node2);
+      const entry1 = await(log.add('one'));
+      const entry2 = await(log.add('two'));
+      const res = Log.isReferencedInChain(log, entry2);
       assert.equal(res, false)
       done();
     }));
   });
 
   describe('_commit', () => {
-    it('moves nodes from current batch to all known nodes', async((done) => {
+    it('moves entrys from current batch to all known entrys', async((done) => {
       const log = new Log(ipfs, 'A');
-      const node1 = await(log.add('one'));
-      const node2 = await(log.add('two'));
+      const entry1 = await(log.add('one'));
+      const entry2 = await(log.add('two'));
 
       assert.equal(log._items.length, 0)
       assert.equal(log._currentBatch.length, 2)
@@ -663,12 +663,12 @@ describe('Log', async(function() {
   });
 
   describe('_insert', () => {
-    it('insert node to the log before current batch if parent is in current bathc', async((done) => {
+    it('insert entry to the log before current batch if parent is in current bathc', async((done) => {
       const log = new Log(ipfs, 'A');
-      const node1 = await(log.add('one'));
-      const node2 = await(log.add('two'));
-      const node3 = await(Node.create(ipfs, 'three', node1))
-      log._insert(node3);
+      const entry1 = await(log.add('one'));
+      const entry2 = await(log.add('two'));
+      const entry3 = await(Entry.create(ipfs, 'three', entry1))
+      log._insert(entry3);
       assert.equal(log.items.length, 3)
       assert.equal(log.items[0].payload, 'three')
       assert.equal(log._items.length, 1)
@@ -678,11 +678,11 @@ describe('Log', async(function() {
 
     it('insert to the log after the parent when parent is not in the current batch', async((done) => {
       const log = new Log(ipfs, 'A');
-      const node1 = await(log.add('one'));
-      const node2 = await(log.add('two'));
-      const node3 = await(Node.create(ipfs, 'three', node1))
+      const entry1 = await(log.add('one'));
+      const entry2 = await(log.add('two'));
+      const entry3 = await(Entry.create(ipfs, 'three', entry1))
       log._commit();
-      log._insert(node3);
+      log._insert(entry3);
       assert.equal(log.items.length, 3)
       assert.equal(log.items[1].payload, 'three')
       done();

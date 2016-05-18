@@ -5,7 +5,7 @@ const Lazy         = require('lazy.js');
 const EventEmitter = require('events').EventEmitter;
 const Promise      = require('bluebird');
 const Buffer       = require('buffer').Buffer
-const Node         = require('./node');
+const Entry         = require('./entry');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch
 const MaxHistory   = 256; // How many items to fetch on join
@@ -37,18 +37,18 @@ class Log {
     if(this._currentBatch.length >= MaxBatchSize)
       this._commit();
 
-    return Node.create(this._ipfs, data, this._heads)
-      .then((node) => {
-        this._heads = [node.hash];
-        this._currentBatch[this._currentBatch.length] = node;
-        return node;
+    return Entry.create(this._ipfs, data, this._heads)
+      .then((entry) => {
+        this._heads = [entry.hash];
+        this._currentBatch[this._currentBatch.length] = entry;
+        return entry;
       });
   }
 
   join(other) {
-    const diff   = _.differenceWith(other.items, this._currentBatch, Node.equals);
-    const others = _.differenceWith(other.items, this._items, Node.equals);
-    const final  = _.unionWith(this._currentBatch, others, Node.equals);
+    const diff   = _.differenceWith(other.items, this._currentBatch, Entry.equals);
+    const others = _.differenceWith(other.items, this._items, Entry.equals);
+    const final  = _.unionWith(this._currentBatch, others, Entry.equals);
     this._items  = this._items.concat(final);
     this._currentBatch = [];
 
@@ -58,7 +58,7 @@ class Log {
       let all = this.items.map((a) => a.hash);
       return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory, 0)
         .then((history) => {
-          let h = _.differenceWith(history, this._items, Node.equals);
+          let h = _.differenceWith(history, this._items, Entry.equals);
           h.forEach((b) => this._insert(b));
           return h;
         });
@@ -78,11 +78,11 @@ class Log {
     return Promise.resolve([]);
   }
 
-  _insert(node) {
-    let indices = Lazy(node.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
+  _insert(entry) {
+    let indices = Lazy(entry.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
     const index = indices.toArray().length > 0 ? Math.max(indices.max() + 1, 0) : 0; // find the largest index (latest parent)
-    this._items.splice(index, 0, node);
-    return node;
+    this._items.splice(index, 0, entry);
+    return entry;
   }
 
   _commit() {
@@ -99,13 +99,13 @@ class Log {
     if(isReferenced(all, hash) || depth >= amount)
       return Promise.resolve(result);
 
-    // Create the node and add it to the result
-    return Node.fromIpfsHash(ipfs, hash).then((node) => {
-      result.push(node);
+    // Create the entry and add it to the result
+    return Entry.fromIpfsHash(ipfs, hash).then((entry) => {
+      result.push(entry);
       all.push(hash);
       depth ++;
 
-      return Promise.map(node.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
+      return Promise.map(entry.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
         .then((res) => _.flatten(res.concat(result)))
     });
   }
@@ -118,7 +118,7 @@ class Log {
   }
 
   static fromJson(ipfs, json) {
-    return Promise.all(json.items.map((f) => Node.fromIpfsHash(ipfs, f)))
+    return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
       .then((items) => new Log(ipfs, json.id, '', { items: items }));
   }
 
