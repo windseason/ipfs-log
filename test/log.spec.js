@@ -7,13 +7,13 @@ const await  = require('asyncawait/await');
 const Log    = require('../src/log');
 const Entry  = require('../src/entry');
 const ipfsd  = require('ipfsd-ctl');
-const IPFS   = require('ipfs')
 
-let ipfs;
+let ipfs, ipfsDaemon;
 const IpfsApis = [{
   // js-ipfs
   start: () => {
     return new Promise((resolve, reject) => {
+      const IPFS = require('ipfs')
       const ipfs = new IPFS();
       ipfs.goOnline(() => resolve(ipfs));
     });
@@ -25,29 +25,34 @@ const IpfsApis = [{
     return new Promise((resolve, reject) => {
       ipfsd.local((err, node) => {
         if(err) reject(err);
-        node.startDaemon((err, ipfs) => {
+        ipfsDaemon = node;
+        ipfsDaemon.startDaemon((err, ipfs) => {
           if(err) reject(err);
           resolve(ipfs);
         });
       });
     });
   },
-  stop: () => Promise.resolve()
+  stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
 }];
 
 IpfsApis.forEach(function(ipfsApi) {
 
-  describe('Log', async(function() {
-    // this.timeout(20000);
+  describe('Log', function() {
+    this.timeout(40000);
     before(async((done) => {
       try {
-        // ipfs = await(startIpfs());
-        ipfs = new IPFS();
+        ipfs = await(ipfsApi.start());
       } catch(e) {
         console.log(e);
         assert.equal(e, null);
       }
       this.timeout(2000);
+      done();
+    }));
+
+    after(async((done) => {
+      await(ipfsApi.stop());
       done();
     }));
 
@@ -790,6 +795,6 @@ IpfsApis.forEach(function(ipfsApi) {
         done();
       }));
     });
-  }));
+  });
 
 });
