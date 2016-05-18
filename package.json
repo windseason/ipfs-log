@@ -8,7 +8,6 @@
   "dependencies": {
     "bluebird": "^3.3.5",
     "buffer": "^4.5.1",
-    "ipfs": "^0.5.0",
     "lazy.js": "^0.4.2",
     "lodash": "^4.6.1"
   },
@@ -21,6 +20,7 @@
     "brfs": "^1.4.3",
     "exports-loader": "^0.6.3",
     "idb-plus-blob-store": "^1.1.2",
+    "ipfs": "^0.5.0",
     "ipfs-api": "^4.0.2",
     "ipfsd-ctl": "^0.13.0",
     "json-loader": "^0.5.4",
