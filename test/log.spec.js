@@ -15,10 +15,12 @@ const IpfsApis = [{
     return new Promise((resolve, reject) => {
       const IPFS = require('ipfs')
       const ipfs = new IPFS();
-      ipfs.goOnline(() => resolve(ipfs));
+      // ipfs.goOnline(() => resolve(ipfs));
+      resolve(ipfs);
     });
   },
-  stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
+  stop: () => Promise.resolve()
+  // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
 }, {
   // js-ipfs-api via local daemon
   start: () => {
