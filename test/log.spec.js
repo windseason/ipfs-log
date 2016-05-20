@@ -7,21 +7,29 @@ const await  = require('asyncawait/await');
 const Log    = require('../src/log');
 const Entry  = require('../src/entry');
 const ipfsd  = require('ipfsd-ctl');
+const MemIpfs = require('./mem-ipfs');
 
 let ipfs, ipfsDaemon;
-const IpfsApis = [{
+const IpfsApis = [
+{
+  // mem-ipfs
+  start: () => Promise.resolve(MemIpfs),
+  stop: () => Promise.resolve()
+},
+{
   // js-ipfs
   start: () => {
     return new Promise((resolve, reject) => {
       const IPFS = require('ipfs')
       const ipfs = new IPFS();
-      // ipfs.goOnline(() => resolve(ipfs));
+      ipfs.goOnline(() => resolve(ipfs));
       resolve(ipfs);
     });
   },
   stop: () => Promise.resolve()
   // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
-}, {
+},
+{
   // js-ipfs-api via local daemon
   start: () => {
     return new Promise((resolve, reject) => {
@@ -41,7 +49,8 @@ const IpfsApis = [{
   },
   stop: () => Promise.resolve()
   // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
-}];
+}
+];
 
 IpfsApis.forEach(function(ipfsApi) {
 
