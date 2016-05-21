@@ -2,7 +2,6 @@
 
 const _            = require('lodash');
 const Lazy         = require('lazy.js');
-const EventEmitter = require('events').EventEmitter;
 const Promise      = require('bluebird');
 const Buffer       = require('buffer').Buffer
 const Entry         = require('./entry');
