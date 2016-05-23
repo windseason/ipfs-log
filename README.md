@@ -70,6 +70,10 @@ log.add('one')
 ```
 
 ### API
+
+**TODO: document [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).**
+
+
 ```javascript
 const Log = require('ipfs-log');
 ```
@@ -101,6 +105,8 @@ const log = new Log(ipfs, 'userid', 'name of the log');
 
 #### add(data)
 Add a log entry. Returns the added `node`.
+
+`data` can be any type of data: Number, String, Object, etc. It can also be an instance of [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).
 
 ```javascript
 log.add({ some: 'data' });
