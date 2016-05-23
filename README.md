@@ -28,7 +28,7 @@ See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for de
 const IPFS = require('ipfs')
 const Log  = require('ipfs-log');
 
-const log = new Log(new IPFS(), 'A');
+const log = new Log(new IPFS(), 'A', 'db name', { maxHistory: 1000 });
 
 log.add('one')
   .then((entry1) => {
@@ -75,8 +75,21 @@ const Log = require('ipfs-log');
 ```
 
 ### Instance methods
-#### constructor(ipfs, id, name, [items])
+#### constructor(ipfs, id, [name], [options])
 Create a log. The first argument is an `ipfs` instance which can be of type `js-ipfs` or `js-ipfs-api`. See https://github.com/ipfs/js-ipfs-api for IPFS api documentation.
+
+`ipfs` is an instance of IPFS (`ipfs` or `ipfs-api`)
+
+`id` is a unique log identifier. Usually this should be a user id or similar.
+
+`name` is the name of the log for convenience purposes.
+
+`options` are the following:
+```javscript
+{
+  maxHistory: 1000 // number of item to fetch at sync
+}
+```
 
 ```javascript
 const ipfs = require('ipfs')(); // ipfs javascript implementation
