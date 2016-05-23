@@ -20,7 +20,7 @@
     "brfs": "^1.4.3",
     "exports-loader": "^0.6.3",
     "idb-plus-blob-store": "^1.1.2",
-    "ipfs": "^0.6.1",
+    "ipfs": "^0.7.0",
     "ipfs-api": "^4.1.0",
     "ipfs-merkle-dag": "^0.6.0",
     "ipfsd-ctl": "^0.14.0",
@@ -33,7 +33,7 @@
     "webpack": "^2.1.0-beta.7"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "./node_modules/.bin/mocha",
     "build": "npm run build:dist && npm run build:examples",
     "build:dist": "./node_modules/.bin/webpack --config webpack.config.js",
     "build:examples": "./node_modules/.bin/webpack --config webpack.example.config.js"
