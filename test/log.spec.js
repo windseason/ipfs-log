@@ -308,6 +308,25 @@ IpfsApis.forEach(function(ipfsApi) {
 
         done();
       }));
+
+      it('adds an Entry to the log', async((done) => {
+        const expectedHash = 'QmW94BLFbGNbaPjgGasX1rV9aYdE2qxnQnUBf9PbLkiBUo';
+        const payload1 = 'hello world';
+        const payload2 = 'hello again';
+        const entry1 = await(Entry.create(ipfs, payload1));
+        const entry2 = await(Entry.create(ipfs, payload2, entry1));
+
+        const log = new Log(ipfs, 'A');
+        await(log.add(entry1));
+        await(log.add(entry2));
+
+        assert.equal(log.items.length, 2);
+        assert.equal(log.items[0] instanceof Entry, true);
+        assert.equal(log.items[0].payload, payload1);
+        assert.equal(log.items[1] instanceof Entry, true);
+        assert.equal(log.items[1].payload, payload2);
+        done();
+      }));
     });
 
     describe('join', () => {

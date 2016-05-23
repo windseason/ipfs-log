@@ -36,6 +36,12 @@ class Log {
     if(this._currentBatch.length >= MaxBatchSize)
       this._commit();
 
+    if(data instanceof Entry) {
+      this._heads = [data.hash];
+      this._currentBatch[this._currentBatch.length] = data;
+      return data;
+    }
+
     return Entry.create(this._ipfs, data, this._heads)
       .then((entry) => {
         this._heads = [entry.hash];
