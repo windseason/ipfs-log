@@ -81,6 +81,7 @@ class Log {
     let indices = Lazy(entry.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
     const index = indices.toArray().length > 0 ? Math.max(indices.max() + 1, 0) : 0; // find the largest index (latest parent)
     this._items.splice(index, 0, entry);
+    this._heads = Log.findHeads(this);
     return entry;
   }
 

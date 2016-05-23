@@ -21,7 +21,7 @@ const IpfsApis = [
     return new Promise((resolve, reject) => {
       const IPFS = require('ipfs')
       const ipfs = new IPFS();
-      ipfs.goOnline(() => resolve(ipfs));
+      // ipfs.goOnline(() => resolve(ipfs));
       resolve(ipfs);
     });
   },
