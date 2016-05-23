@@ -16,40 +16,40 @@ const IpfsApis = [
   start: () => Promise.resolve(MemIpfs),
   stop: () => Promise.resolve()
 },
-{
-  // js-ipfs
-  start: () => {
-    return new Promise((resolve, reject) => {
-      const IPFS = require('ipfs')
-      const ipfs = new IPFS();
-      ipfs.goOnline(() => resolve(ipfs));
-      resolve(ipfs);
-    });
-  },
-  stop: () => Promise.resolve()
-  // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
-},
-{
-  // js-ipfs-api via local daemon
-  start: () => {
-    return new Promise((resolve, reject) => {
-      ipfsd.disposableApi((err, ipfs) => {
-        if(err) console.error(err);
-        resolve(ipfs);
-      });
-      // ipfsd.local((err, node) => {
-      //   if(err) reject(err);
-      //   ipfsDaemon = node;
-      //   ipfsDaemon.startDaemon((err, ipfs) => {
-      //     if(err) reject(err);
-      //     resolve(ipfs);
-      //   });
-      // });
-    });
-  },
-  stop: () => Promise.resolve()
-  // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
-}
+// {
+//   // js-ipfs
+//   start: () => {
+//     return new Promise((resolve, reject) => {
+//       const IPFS = require('ipfs')
+//       const ipfs = new IPFS();
+//       ipfs.goOnline(() => resolve(ipfs));
+//       resolve(ipfs);
+//     });
+//   },
+//   stop: () => Promise.resolve()
+//   // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
+// },
+// {
+//   // js-ipfs-api via local daemon
+//   start: () => {
+//     return new Promise((resolve, reject) => {
+//       ipfsd.disposableApi((err, ipfs) => {
+//         if(err) console.error(err);
+//         resolve(ipfs);
+//       });
+//       // ipfsd.local((err, node) => {
+//       //   if(err) reject(err);
+//       //   ipfsDaemon = node;
+//       //   ipfsDaemon.startDaemon((err, ipfs) => {
+//       //     if(err) reject(err);
+//       //     resolve(ipfs);
+//       //   });
+//       // });
+//     });
+//   },
+//   stop: () => Promise.resolve()
+//   // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
+// }
 ];
 
 IpfsApis.forEach(function(ipfsApi) {
@@ -102,6 +102,25 @@ IpfsApis.forEach(function(ipfsApi) {
         }
         done();
       }));
+
+      it('takes maxHistory as an option', async((done) => {
+        const log = new Log(ipfs, 'A', 'db', { maxHistory: 100 });
+        assert.equal(log.options.maxHistory, 100);
+        done();
+      }));
+
+      it('sets maxHistory if not provided in options', async((done) => {
+        const log = new Log(ipfs, 'A', 'db');
+        assert.equal(log.options.maxHistory, 256);
+        done();
+      }));
+
+      it('sets maxHistory if other options are provided', async((done) => {
+        const log = new Log(ipfs, 'A', 'db', { hello: "world" });
+        assert.equal(log.options.maxHistory, 256);
+        done();
+      }));
+
     }));
 
     describe('serialize', async(() => {

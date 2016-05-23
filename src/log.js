@@ -16,7 +16,7 @@ class Log {
     this._ipfs = ipfs;
     this._items = opts && opts.items ? opts.items : [];
     this.options = opts || { maxHistory: MaxHistory };
-    if(!this.options.maxHistory) this.options.maxHistory = MaxHistory;
+    this.options.maxHistory = this.options.maxHistory ? this.options.maxHistory : MaxHistory;
     this._currentBatch = [];
     this._heads = [];
   }
