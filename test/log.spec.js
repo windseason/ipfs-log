@@ -149,6 +149,19 @@ IpfsApis.forEach(function(ipfsApi) {
         }));
       }));
 
+
+      describe('fromJson', () => {
+        it('throws an error when log is not instance of Log', async((done) => {
+          const str = JSON.stringify(log.snapshot, null, 2)
+          try {
+            await(Log.fromJson(ipfs, {}));
+          } catch(e) {
+            assert.equal(e.message, 'Not a Log instance');
+            done();
+          }
+        }));
+      });
+
       describe('fromSnapshot', () => {
         it('creates a log from a snapshot', async((done) => {
           const str = JSON.stringify(log.snapshot, null, 2)
@@ -218,6 +231,16 @@ IpfsApis.forEach(function(ipfsApi) {
           assert.equal(res.items[2].hash, expectedData.items[2]);
           done();
         }));
+
+        it('throws an error when data from hash is not instance of Log', async((done) => {
+          try {
+            await(Log.fromIpfsHash(ipfs, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR'));
+          } catch(e) {
+            assert.equal(e.message, 'Not a Log instance');
+            done();
+          }
+        }));
+
       }));
     }));
 
@@ -338,6 +361,15 @@ IpfsApis.forEach(function(ipfsApi) {
         log3 = new Log(ipfs, 'C');
         log4 = new Log(ipfs, 'D');
         done();
+      }));
+
+      it('throws an error if passed argument is not an instance of Log', async((done) => {
+        try {
+          await(log1.join({}));
+        } catch(e) {
+          assert.equal(e.message, 'The log to join must be an instance of Log');
+          done();
+        }
       }));
 
       it('joins only unique items', async((done) => {

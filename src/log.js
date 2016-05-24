@@ -51,6 +51,7 @@ class Log {
   }
 
   join(other) {
+    if(!other.items) throw new Error("The log to join must be an instance of Log")
     const diff   = _.differenceWith(other.items, this._currentBatch, Entry.equals);
     const others = _.differenceWith(other.items, this._items, Entry.equals);
     const final  = _.unionWith(this._currentBatch, others, Entry.equals);
@@ -124,6 +125,7 @@ class Log {
   }
 
   static fromJson(ipfs, json) {
+    if(!json.items) throw new Error("Not a Log instance")
     return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
       .then((items) => new Log(ipfs, json.id, '', { items: items }));
   }
