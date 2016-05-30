@@ -52,9 +52,11 @@ class Log {
 
   join(other) {
     if(!other.items) throw new Error("The log to join must be an instance of Log")
-    const diff   = _.differenceWith(other.items, this._currentBatch, Entry.equals);
-    const others = _.differenceWith(other.items, this._items, Entry.equals);
-    const final  = _.unionWith(this._currentBatch, others, Entry.equals);
+    let st = new Date().getTime();
+    const diff   = _.differenceWith(other.items, this.items, Entry.equals);
+    // const diff   = _.differenceWith(other.items, this._currentBatch, Entry.equals);
+    // const others = _.differenceWith(other.items, this._items, Entry.equals);
+    const final  = _.unionWith(this._currentBatch, diff, Entry.equals);
     this._items  = this._items.concat(final);
     this._currentBatch = [];
 
@@ -70,6 +72,8 @@ class Log {
         });
     }, { concurrency: 1 }).then((r) => {
       this._heads = Log.findHeads(this);
+      let et = new Date().getTime();
+      // console.log("Log.join took " + (et - st)  + "ms");
       return _.flatten(r).concat(diff)
     })
   }
