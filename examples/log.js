@@ -2,8 +2,8 @@
 
 const IPFS = require('ipfs')
 const Log  = require('../src/log');
-const ipfs = new IPFS();
 
+const ipfs = new IPFS();
 const log = new Log(ipfs, 'A');
 
 log.add('one')

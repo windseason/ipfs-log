@@ -73,7 +73,7 @@ IpfsApis.forEach(function(ipfsApi) {
     }));
 
     describe('create', async(() => {
-      it('creates an empty log', async((done) => {
+      it('creates an empty log', () => {
         const log = new Log(ipfs, 'A');
         assert.equal(log.id, 'A');
         assert.equal(log._items instanceof Array, true);
@@ -82,8 +82,7 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log._currentBatch.length, 0);
         assert.equal(log._ipfs, ipfs);
         assert.equal(log.hash, null);
-        done();
-      }));
+      });
 
       it('throws an error if ipfs is not defined', async((done) => {
         try {
@@ -100,6 +99,12 @@ IpfsApis.forEach(function(ipfsApi) {
         } catch(e) {
           assert.equal(e.message, 'id is not defined');
         }
+        done();
+      }));
+
+      it('default maxHistory is 256', async((done) => {
+        const log = new Log(ipfs, 'A', 'db');
+        assert.equal(log.options.maxHistory, 256);
         done();
       }));
 

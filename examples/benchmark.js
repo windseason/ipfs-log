@@ -53,13 +53,7 @@ let run = (() => {
   startIpfs().then(async((ipfs) => {
     const log = new Log(ipfs, 'A');
     for(var i = 0; i < 20000; i ++) {
-      // let timer = new Timer();
-      // timer.start();
-      // const data = new Buffer(JSON.stringify({ Data: JSON.stringify(totalQueries) }));
-      // await(ipfs.object.put(data));
-      // await(Entry.create(ipfs, totalQueries, []));
       await(log.add(totalQueries));
-      // console.log(`${timer.stop(true)} ms`);
       totalQueries ++;
       lastTenSeconds ++;
       queriesPerSecond ++;
