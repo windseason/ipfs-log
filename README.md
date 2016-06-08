@@ -1,29 +1,60 @@
 # ipfs-log
 
-An append-only log on IPFS.
+> An append-only log on IPFS.
 
-`ipfs-log` is a partially ordered linked list of [IPFS](https://github.com/ipfs/ipfs) hashes where each entry in the log points to all known heads (a head is a node that is not referenced by other nodes in the log).
+`ipfs-log` is a *partially ordered linked list* of [IPFS](https://github.com/ipfs/ipfs) objects. 
+
+This module provides a data-agnostic transport mechanism using IPFS with the ability to traverse the history. Every entry in the log is saved in IPFS and each points to a hash of previous entry(ies). Logs can be forked and joined back together.
+
+```
+entry0 <-- entry1 <-- entry2 ...
+```
 
 The module works in **Node.js** and **Browsers**.
 
-### Use cases
-- Track a version of a file
-- Create a feed of IPFS hashes
-- Messaging
+## Use cases
 - CRDTs
+- Database operations log
+- Feed of data
+- Track a version of a file
+- Messaging
 
 *Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on IPFS*
 
-### Install
+## Install
 ```
 npm install ipfs-log
 ```
 
-### Usage
+## Usage
 
-See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for details and more examples.
+See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for more details.
 
-#### Node.js
+### Quick Example
+```javascript
+const IPFS = require('ipfs')
+const Log  = require('ipfs-log');
+
+const ipfs = new IPFS();
+const log  = new Log(ipfs, 'A');
+
+log.add({ some: 'data' })
+  .then(() => log.add('text'))
+  .then(() => console.log(log.items))
+
+// [Entry {
+//    payload: { some: 'data' },
+//    hash: 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD',
+//    next: [] 
+//  },
+//  Entry {
+//    payload: 'text',
+//    hash: 'QmdNFpoyXLNdR8Wx5LYZBLcXH8aAEopSMnnubWLn4AciCZ',
+//    next: [ 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD' ] 
+//  }]
+```
+
+### Node.js
 ```javascript
 const IPFS = require('ipfs')
 const Log  = require('ipfs-log');
@@ -41,7 +72,7 @@ log.add('one')
   });
 ```
 
-#### Browser
+### Browser
 *The distribution package for browsers is located in [dist/ipfslog.min.js](https://github.com/haadcode/ipfs-log/tree/master/dist)*
 
 ```html
@@ -69,18 +100,24 @@ log.add('one')
 </html>
 ```
 
-### API
+## API
 
-**TODO: document [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).**
-
-
+### Log
 ```javascript
 const Log = require('ipfs-log');
 ```
 
-### Instance methods
-#### constructor(ipfs, id, [name], [options])
+#### Instance methods
+##### constructor(ipfs, id, [name], [options])
 Create a log. The first argument is an `ipfs` instance which can be of type `js-ipfs` or `js-ipfs-api`. See https://github.com/ipfs/js-ipfs-api for IPFS api documentation.
+
+```javascript
+const ipfs = require('ipfs')(); // ipfs javascript implementation
+// Or
+const ipfs = require('ipfs-api')(); // local ipfs daemon (go-ipfs)
+
+const log = new Log(ipfs, 'userid', 'name of the log');
+```
 
 `ipfs` is an instance of IPFS (`ipfs` or `ipfs-api`)
 
@@ -95,55 +132,57 @@ Create a log. The first argument is an `ipfs` instance which can be of type `js-
 }
 ```
 
-```javascript
-const ipfs = require('ipfs')(); // ipfs javascript implementation
-// Or
-const ipfs = require('ipfs-api')(); // local ipfs daemon (go-ipfs)
-
-const log = new Log(ipfs, 'userid', 'name of the log');
-```
-
-#### add(data)
-Add a log entry. Returns the added `node`.
+##### add(data)
+Add a log entry. The new entry gets the references to previous entries automatically. Returns a *Promise* that resolves to the added `Entry`.
 
 `data` can be any type of data: Number, String, Object, etc. It can also be an instance of [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).
 
 ```javascript
-log.add({ some: 'data' });
-log.add('text');
-// log1.items ==> [{ some: 'data' },  'text']
+log.add({ some: 'data' })
+  .then(() => log.add('text'))
+  .then(() => console.log(log.items))
+
+// [Entry {
+//    payload: { some: 'data' },
+//    hash: 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD',
+//    next: [] 
+//  },
+//  Entry {
+//    payload: 'text',
+//    hash: 'QmdNFpoyXLNdR8Wx5LYZBLcXH8aAEopSMnnubWLn4AciCZ',
+//    next: [ 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD' ] 
+//  }]
 ```
 
-#### join(other)
-Joins the log with `other` log. Fetches history up to 256 items, ie. items that are not in this log but referred to in items in `other`.
+##### join(other)
+Joins the log with `other` log. Fetches history up to `options.maxHistory` items, ie. items that are not in this log but referred to in items in `other`. Returns a *Promise* that resolves to an `Array` of items that were added.
 
 ```javascript
-// log1.items ==> ['A', 'B']
-// log2.items ==> ['C', 'D']
+// log1.items ==> ['A', 'B', 'C']
+// log2.items ==> ['C', 'D', 'E']
 
-log1.join(log2);
-// log1.items ==> ['A', 'B', 'C', 'D']
+log1.join(log2).then((added) => console.log(added)); // ==> ['D', 'E']
+
+// log1.items ==> ['A', 'B', 'C', 'D', 'E']
 ```
 
-#### clear()
-Empties the log.
+##### items
+Returns an `Array` of all items in the log.
 
-#### items
-Returns all items in the log.
 ```javascript
 const items = log.items;
 // items ==> ['A', 'B', 'C']
 ```
 
-#### snapshot
-Returns items in the current batch. Current batch are the items in the log that have been added after the latest sync with another log.
+##### snapshot
+Returns a *snapshot* of the log with items in the current batch. Current batch are the items in the log that have been added locally after the latest join with another log.
 
 ```javascript
 const snapshot = log.snapshot;
 // snapshot ==> { id: 'log id', items: ['A', 'B', 'C']}
 ```
 
-### Class methods
+#### Class methods
 
 All class methods take an `ipfs` instance as the first parameter. The ipfs can be of `js-ipfs` or `js-ipfs-api`. See https://github.com/ipfs/js-ipfs-api for IPFS api documentation.
 
@@ -155,7 +194,7 @@ const ipfs = require('ipfs-api')(); // local ipfs daemon
 
 *See [Instance methods](https://github.com/haadcode/ipfs-log#instance-methods) on how to use the log instance*
 
-#### getIpfsHash(ipfs, log)
+##### getIpfsHash(ipfs, log)
 Get the IPFS hash of this log. Returns a `Promise` that resolves to an IPFS `hash`.
 
 ```javascript
@@ -163,7 +202,7 @@ Log.getIpfsHash(ipfs, log).then((hash) => console.log(hash));
 // ==> 'Qm...abc123'
 ```
 
-#### fromIpfsHash(ipfs, hash)
+##### fromIpfsHash(ipfs, hash)
 Create a log from an IPFS hash. Returns a `Promise` that resolves to a `Log` instance.
 
 ```javascript
@@ -171,7 +210,7 @@ Log.fromIpfsHash(ipfs, hash).then((log) => console.log(log));
 // ==> instance of Log
 ```
 
-#### fromSnapshot(ipfs, snapshot)
+##### fromSnapshot(ipfs, snapshot)
 Create a log from a log snapshot. Returns a `Promise` that resolves a `Log` instance.
 
 ```javascript
@@ -185,19 +224,23 @@ Log.fromSnapshot(ipfs, snapshot).then((log) => console.log(log));
 // ==> log is instance of Log and contains the same entries as original log
 ```
 
-### Tests
+### Entry
+
+**TODO: document [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).**
+
+## Tests
 ```
 npm install
 npm test
 ```
 
-### Build
+## Build
 The build script will build the distribution file for browsers.
 ```
 npm run build
 ```
 
-### TODO
+## TODO
 - Node.js Stream API
 - Support for encrypting the hashes
 - Support for payload encryption
