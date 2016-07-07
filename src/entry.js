@@ -45,14 +45,35 @@ class Entry {
       });
   }
 
+  static from(ipfs, data, nexts) {
+    if(!ipfs) throw new Error("Entry requires ipfs instance")
+    if(data instanceof Entry) return Promise.resolve(data);
+    const entry = new Entry(data, nexts);
+    return Entry.getIpfsHash(ipfs, entry)
+      .then((hash) => {
+        entry.hash = hash;
+        return entry;
+      });
+  }
+
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Entry requires ipfs instance")
     if(!hash) throw new Error("Invalid hash: " + hash)
-    return ipfs.object.get(hash, { enc: 'base58' })
-      .then((obj) => {
-        const f = JSON.parse(obj.toJSON().Data)
-        return Entry.create(ipfs, f.payload, f.next);
+    const get = (hash) => {
+      return new Promise((resolve, reject) => {
+        ipfs.object.get(hash, { enc: 'base58' })
+          .then((obj) => {
+            if(obj.toJSON().Size === 0)
+              resolve(get(hash));
+            else
+              resolve(obj);
+          })
       });
+    };
+    return get(hash).then((obj) => {
+      const f = JSON.parse(obj.toJSON().Data)
+      return Entry.create(ipfs, f.payload, f.next);
+    });
   }
 
   static getIpfsHash(ipfs, entry) {

@@ -1,60 +1,18 @@
 'use strict';
 
-const _      = require('lodash');
-const assert = require('assert');
-const async  = require('asyncawait/async');
-const await  = require('asyncawait/await');
-const Log    = require('../src/log');
-const Entry  = require('../src/entry');
-const ipfsd  = require('ipfsd-ctl');
-const MemIpfs = require('./mem-ipfs');
+const _        = require('lodash');
+const assert   = require('assert');
+const async    = require('asyncawait/async');
+const await    = require('asyncawait/await');
+const IpfsApis = require('./ipfs-test-apis');
+const Log      = require('../src/log');
+const Entry    = require('../src/entry');
 
 let ipfs, ipfsDaemon;
-const IpfsApis = [
-{
-  // mem-ipfs
-  start: () => Promise.resolve(MemIpfs),
-  stop: () => Promise.resolve()
-},
-{
-  // js-ipfs
-  start: () => {
-    return new Promise((resolve, reject) => {
-      const IPFS = require('ipfs')
-      const ipfs = new IPFS();
-      // ipfs.goOnline(() => resolve(ipfs));
-      resolve(ipfs);
-    });
-  },
-  stop: () => Promise.resolve()
-  // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
-},
-{
-  // js-ipfs-api via local daemon
-  start: () => {
-    return new Promise((resolve, reject) => {
-      ipfsd.disposableApi((err, ipfs) => {
-        if(err) console.error(err);
-        resolve(ipfs);
-      });
-      // ipfsd.local((err, node) => {
-      //   if(err) reject(err);
-      //   ipfsDaemon = node;
-      //   ipfsDaemon.startDaemon((err, ipfs) => {
-      //     if(err) reject(err);
-      //     resolve(ipfs);
-      //   });
-      // });
-    });
-  },
-  stop: () => Promise.resolve()
-  // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
-}
-];
 
 IpfsApis.forEach(function(ipfsApi) {
 
-  describe('Log', function() {
+  describe('Log with ' + ipfsApi.name, function() {
     this.timeout(40000);
     before(async((done) => {
       try {
@@ -190,17 +148,10 @@ IpfsApis.forEach(function(ipfsApi) {
 
         it('log serialized to ipfs contains the correct data', async((done) => {
           const expectedData = { id: "A", items: [] };
-          // const expectedData = {
-          //   Data: '{"id":"A","items":[]}',
-          //   Links: [],
-          //   "Hash":"QmaRz4njJX2W8QYwWLa1jhEbYUdJhhqibsBbnRYuWgr1r7",
-          //   "Size":23
-          // };
           const log = new Log(ipfs, 'A');
           const hash = await(Log.getIpfsHash(ipfs, log));
           const res = await(ipfs.object.get(hash, { enc: 'base58' }));
           const result = JSON.parse(res.toJSON().Data);
-          // assert.equal(JSON.stringify(res.toJSON().Data), JSON.stringify(expectedData));
           assert.equal(result.id, expectedData.id);
           assert.equal(result.items.length, expectedData.items.length);
           done();
@@ -608,7 +559,6 @@ IpfsApis.forEach(function(ipfsApi) {
 
         await(log1.add("helloA1"));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], 'QmUEH5SEuRZhZ7RETwEX2df2BtTR2xUYZR3qBrhjnxqocb');
@@ -623,7 +573,6 @@ IpfsApis.forEach(function(ipfsApi) {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], 'Qma1PaYbyW1rZA4npPnuJzA3ov5Je4N9cvAn2p6Ju1iPQS');
@@ -642,7 +591,6 @@ IpfsApis.forEach(function(ipfsApi) {
 
         await(log1.join(log2));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 2);
         assert.equal(heads[0], expectedHead2.hash);
@@ -663,7 +611,6 @@ IpfsApis.forEach(function(ipfsApi) {
         const expectedHead = await(log1.add("helloA4"));
         await(log1.join(log2));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], expectedHead.hash);
@@ -688,7 +635,6 @@ IpfsApis.forEach(function(ipfsApi) {
         const expectedHead2 = await(log2.add("helloB3"));
         await(log1.join(log2));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 2);
         assert.equal(heads[0], expectedHead2.hash);
@@ -714,7 +660,6 @@ IpfsApis.forEach(function(ipfsApi) {
         await(log1.join(log2));
         await(log1.join(log3));
 
-        // const heads = Log.findHeads(log1)
         const heads = log1._heads;
         assert.equal(heads.length, 3);
         assert.equal(heads[0], expectedHead3.hash);

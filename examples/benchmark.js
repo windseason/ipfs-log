@@ -4,16 +4,16 @@ const await = require('asyncawait/await');
 const async = require('asyncawait/async');
 const Log   = require('../src/log');
 const Entry = require('../src/entry');
-// const ipfsd = require('ipfsd-ctl');
+const ipfsd = require('ipfsd-ctl');
 const IPFS  = require('ipfs')
 
 const startIpfs = () => {
   return new Promise((resolve, reject) => {
     // Use disposable ipfs api with a local daemon
-    // ipfsd.disposableApi((err, ipfs) => {
-    //   if(err) console.error(err);
-    //   resolve(ipfs);
-    // });
+    ipfsd.disposableApi((err, ipfs) => {
+      if(err) console.error(err);
+      resolve(ipfs);
+    });
     // Use a local running daemon
     // ipfsd.local((err, node) => {
     //   if(err) reject(err);
@@ -23,10 +23,10 @@ const startIpfs = () => {
     //   });
     // });
     // Use js-ipfs daemon
-    const ipfs = new IPFS();
-    ipfs.goOnline(() => {
-      resolve(ipfs)
-    })
+    // const ipfs = new IPFS();
+    // ipfs.goOnline(() => {
+    //   resolve(ipfs)
+    // })
   });
 };
 

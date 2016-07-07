@@ -36,45 +36,41 @@ class Log {
     if(this._currentBatch.length >= MaxBatchSize)
       this._commit();
 
-    if(data instanceof Entry) {
-      this._heads = [data.hash];
-      this._currentBatch[this._currentBatch.length] = data;
-      return data;
-    }
-
-    return Entry.create(this._ipfs, data, this._heads)
+    return Entry.from(this._ipfs, data, this._heads)
       .then((entry) => {
         this._heads = [entry.hash];
-        this._currentBatch[this._currentBatch.length] = entry;
+        this._currentBatch.push(entry);
         return entry;
       });
   }
 
   join(other) {
     if(!other.items) throw new Error("The log to join must be an instance of Log")
-    let st = new Date().getTime();
+    // let st = new Date().getTime();
     const diff   = _.differenceWith(other.items, this.items, Entry.equals);
-    // const diff   = _.differenceWith(other.items, this._currentBatch, Entry.equals);
-    // const others = _.differenceWith(other.items, this._items, Entry.equals);
     const final  = _.unionWith(this._currentBatch, diff, Entry.equals);
     this._items  = this._items.concat(final);
     this._currentBatch = [];
 
+    const nexts = Lazy(diff)
+      .map((f) => f.next)
+      .flatten()
+      .take(this.options.maxHistory)
+      .toArray();
+
     // Fetch history
-    const nexts = _.flatten(other.items.map((f) => f.next));
     return Promise.map(nexts, (f) => {
       let all = this.items.map((a) => a.hash);
-      return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory, 0)
+      return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory - nexts.length, 0)
         .then((history) => {
-          let h = _.differenceWith(history, this._items, Entry.equals);
-          h.forEach((b) => this._insert(b));
-          return h;
+          history.forEach((b) => this._insert(b));
+          return history;
         });
-    }, { concurrency: 1 }).then((r) => {
+    }, { concurrency: 1 }).then((res) => {
       this._heads = Log.findHeads(this);
-      let et = new Date().getTime();
+      // let et = new Date().getTime();
       // console.log("Log.join took " + (et - st)  + "ms");
-      return _.flatten(r).concat(diff)
+      return _.flatten(res).concat(diff)
     })
   }
 
@@ -83,16 +79,10 @@ class Log {
     this._currentBatch = [];
   }
 
-  // Returns entries after initialization
-  load() {
-    return Promise.resolve([]);
-  }
-
   _insert(entry) {
     let indices = Lazy(entry.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
     const index = indices.toArray().length > 0 ? Math.max(indices.max() + 1, 0) : 0; // find the largest index (latest parent)
     this._items.splice(index, 0, entry);
-    this._heads = Log.findHeads(this);
     return entry;
   }
 
@@ -105,20 +95,20 @@ class Log {
     const isReferenced = (list, item) => Lazy(list).reverse().find((f) => f === item) !== undefined;
     let result = [];
 
-
     // If the given hash is in the given log (all) or if we're at maximum depth, return
     if(isReferenced(all, hash) || depth >= amount)
       return Promise.resolve(result);
 
     // Create the entry and add it to the result
-    return Entry.fromIpfsHash(ipfs, hash).then((entry) => {
-      result.push(entry);
-      all.push(hash);
-      depth ++;
+    return Entry.fromIpfsHash(ipfs, hash)
+      .then((entry) => {
+        result.push(entry);
+        all.push(hash);
+        depth ++;
 
-      return Promise.map(entry.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
-        .then((res) => _.flatten(res.concat(result)))
-    });
+        return Promise.map(entry.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
+          .then((res) => _.flatten(res.concat(result)))
+      });
   }
 
   static getIpfsHash(ipfs, log) {
@@ -128,17 +118,17 @@ class Log {
       .then((res) => res.toJSON().Hash);
   }
 
-  static fromJson(ipfs, json) {
-    if(!json.items) throw new Error("Not a Log instance")
-    return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
-      .then((items) => new Log(ipfs, json.id, '', { items: items }));
-  }
-
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     if(!hash) throw new Error("Invalid hash: " + hash)
     return ipfs.object.get(hash, { enc: 'base58' })
       .then((res) => Log.fromJson(ipfs, JSON.parse(res.toJSON().Data)));
+  }
+
+  static fromJson(ipfs, json) {
+    if(!json.items) throw new Error("Not a Log instance")
+    return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
+      .then((items) => new Log(ipfs, json.id, '', { items: items }));
   }
 
   static findHeads(log) {

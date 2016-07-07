@@ -4,7 +4,7 @@ const IPFS = require('ipfs')
 const Entry = require('../src/entry');
 const ipfs = new IPFS();
 
-Entry.create(ipfs, 'Hello world!')
+Entry.from(ipfs, 'Hello world!')
   .then((entry) => {
     console.log('Entry:', entry.hash, entry.payload);
     return entry;

@@ -1,58 +1,17 @@
 'use strict';
 
-const _       = require('lodash');
-const assert  = require('assert');
-const async   = require('asyncawait/async');
-const await   = require('asyncawait/await');
-const Entry   = require('../src/entry');
-const ipfsd   = require('ipfsd-ctl');
-const MemIpfs = require('./mem-ipfs');
+const _        = require('lodash');
+const assert   = require('assert');
+const async    = require('asyncawait/async');
+const await    = require('asyncawait/await');
+const IpfsApis = require('./ipfs-test-apis');
+const Entry    = require('../src/entry');
 
 let ipfs, ipfsDaemon;
-const IpfsApis = [
-{
-  // mem-ipfs
-  start: () => Promise.resolve(MemIpfs),
-  stop: () => Promise.resolve()
-},
-{
-  // js-ipfs
-  start: () => {
-    return new Promise((resolve, reject) => {
-      const IPFS = require('ipfs')
-      const ipfs = new IPFS();
-      // ipfs.goOnline(() => resolve(ipfs));
-      resolve(ipfs);
-    });
-  },
-  stop: () => Promise.resolve()
-},
-{
-  // js-ipfs-api via local daemon
-  start: () => {
-    return new Promise((resolve, reject) => {
-      ipfsd.disposableApi((err, ipfs) => {
-        if(err) console.error(err);
-        resolve(ipfs);
-      });
-      // ipfsd.local((err, node) => {
-      //   if(err) reject(err);
-      //   ipfsDaemon = node;
-      //   ipfsDaemon.startDaemon((err, ipfs) => {
-      //     if(err) reject(err);
-      //     resolve(ipfs);
-      //   });
-      // });
-    });
-  },
-  stop: () => Promise.resolve()
-  // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
-}
-];
 
 IpfsApis.forEach(function(ipfsApi) {
 
-  describe('Entry', function() {
+  describe('Entry with ' + ipfsApi.name, function() {
     this.timeout(40000);
     before(async((done) => {
       try {
@@ -73,7 +32,6 @@ IpfsApis.forEach(function(ipfsApi) {
     describe('create', () => {
       it('creates a an empty entry', async((done) => {
         const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
-        // console.log(ipfs)
         const entry = await(Entry.create(ipfs));
         assert.equal(entry.payload, null);
         assert.equal(entry.next.length, 0);
