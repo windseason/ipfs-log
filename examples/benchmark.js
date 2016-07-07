@@ -38,19 +38,22 @@ let lastTenSeconds = 0;
 let store;
 
 let run = (() => {
-  setInterval(() => {
-    seconds ++;
-    if(seconds % 10 === 0) {
-      console.log(`--> Average of ${lastTenSeconds/10} q/s in the last 10 seconds`);
-      if(lastTenSeconds === 0)
-        throw new Error("Problems!");
-      lastTenSeconds = 0;
-    }
-    console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`);
-    queriesPerSecond = 0;
-  }, 1000);
+  console.log("Starting IPFS...");
 
   startIpfs().then(async((ipfs) => {
+    // Output metrics at 1 second interval
+    setInterval(() => {
+      seconds ++;
+      if(seconds % 10 === 0) {
+        console.log(`--> Average of ${lastTenSeconds/10} q/s in the last 10 seconds`);
+        if(lastTenSeconds === 0)
+          throw new Error("Problems!");
+        lastTenSeconds = 0;
+      }
+      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`);
+      queriesPerSecond = 0;
+    }, 1000);
+
     const log = new Log(ipfs, 'A');
     for(var i = 0; i < 20000; i ++) {
       await(log.add(totalQueries));
