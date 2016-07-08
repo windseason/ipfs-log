@@ -15,8 +15,11 @@ class Log {
     this.name = name;
     this._ipfs = ipfs;
     this._items = opts && opts.items ? opts.items : [];
-    this.options = opts || { maxHistory: MaxHistory };
-    this.options.maxHistory = this.options.maxHistory ? this.options.maxHistory : MaxHistory;
+
+    this.options = { maxHistory: MaxHistory };
+    Object.assign(this.options, opts);
+    delete this.options.items;
+
     this._currentBatch = [];
     this._heads = [];
   }
@@ -118,17 +121,22 @@ class Log {
       .then((res) => res.toJSON().Hash);
   }
 
-  static fromIpfsHash(ipfs, hash) {
+  static fromIpfsHash(ipfs, hash, options) {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     if(!hash) throw new Error("Invalid hash: " + hash)
+    if(!options) options = {};
     return ipfs.object.get(hash, { enc: 'base58' })
-      .then((res) => Log.fromJson(ipfs, JSON.parse(res.toJSON().Data)));
+      .then((res) => Log.fromJson(ipfs, JSON.parse(res.toJSON().Data), options));
   }
 
-  static fromJson(ipfs, json) {
+  static fromJson(ipfs, json, options) {
     if(!json.items) throw new Error("Not a Log instance")
+    if(!options) options = {};
     return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
-      .then((items) => new Log(ipfs, json.id, '', { items: items }));
+      .then((items) => {
+        Object.assign(options, { items: items });
+        return new Log(ipfs, json.id, '', options);
+      });
   }
 
   static findHeads(log) {
