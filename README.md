@@ -4,6 +4,19 @@
 
 `ipfs-log` is a *partially ordered linked list* of [IPFS](https://github.com/ipfs/ipfs) objects. 
 
+## Table of Contents
+
+- [Background](#background)
+- [Install](#install)
+- [Usage](#usage)
+- [API](#api)
+- [Tests](#tests)
+- [Build](#build)
+- [Contribute](#contribute)
+- [License](#license)
+
+## Background
+
 This module provides a data-agnostic transport mechanism using IPFS with the ability to traverse the history. Every entry in the log is saved in IPFS and each points to a hash of previous entry(ies). Logs can be forked and joined back together.
 
 ```
@@ -12,14 +25,16 @@ entry0 <-- entry1 <-- entry2 ...
 
 The module works in **Node.js** and **Browsers**.
 
-## Use cases
+
+IPFS Log has a few use cases:
+
 - CRDTs
 - Database operations log
 - Feed of data
 - Track a version of a file
 - Messaging
 
-*Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on IPFS*
+It was originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on [IPFS](https://github.com/ipfs/ipfs).
 
 ## Requirements
 
@@ -300,3 +315,18 @@ Starting benchmark...
 --> Average of 125 q/s in the last 10 seconds
 ...
 ```
+
+
+## Contribute
+
+PRs and [issues](https://github.com/haadcode/ipfs-log/issues) are gladly accepted! Take a look at the open issues, too, to see if there is anything that you could do or someone else has already done. Here are some things I know I need:
+
+### TODO
+
+- Node.js Stream API
+- Support for encrypting the hashes
+- Support for payload encryption
+
+## License
+
+[MIT](LICENSE) © 2016 Haadcode
