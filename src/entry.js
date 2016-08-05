@@ -1,7 +1,5 @@
 'use strict';
 
-const Buffer = require('buffer').Buffer
-
 class Entry {
   constructor(payload, next) {
     this.payload = payload || null;
@@ -59,21 +57,11 @@ class Entry {
   static fromIpfsHash(ipfs, hash) {
     if(!ipfs) throw new Error("Entry requires ipfs instance")
     if(!hash) throw new Error("Invalid hash: " + hash)
-    const get = (hash) => {
-      return new Promise((resolve, reject) => {
-        ipfs.object.get(hash, { enc: 'base58' })
-          .then((obj) => {
-            if(obj.toJSON().Size === 0)
-              resolve(get(hash));
-            else
-              resolve(obj);
-          })
+    return ipfs.object.get(hash, { enc: 'base58' })
+      .then((obj) => {
+        const f = JSON.parse(obj.toJSON().Data)
+        return Entry.create(ipfs, f.payload, f.next);
       });
-    };
-    return get(hash).then((obj) => {
-      const f = JSON.parse(obj.toJSON().Data)
-      return Entry.create(ipfs, f.payload, f.next);
-    });
   }
 
   static getIpfsHash(ipfs, entry) {

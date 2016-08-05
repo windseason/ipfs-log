@@ -100,6 +100,13 @@ log.add('one')
 </html>
 ```
 
+#### Building the examples
+
+```
+npm install
+npm run build
+```
+
 ## API
 
 ### Log

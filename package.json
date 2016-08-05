@@ -9,7 +9,9 @@
     "bluebird": "^3.3.5",
     "buffer": "^4.5.1",
     "lazy.js": "^0.4.2",
-    "lodash": "^4.6.1"
+    "lodash.differencewith": "^4.4.0",
+    "lodash.flatten": "^4.3.0",
+    "lodash.unionwith": "^4.5.0"
   },
   "devDependencies": {
     "asyncawait": "^1.0.3",

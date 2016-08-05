@@ -1,10 +1,11 @@
 'use strict';
 
-const _            = require('lodash');
-const Lazy         = require('lazy.js');
-const Promise      = require('bluebird');
-const Buffer       = require('buffer').Buffer
-const Entry         = require('./entry');
+const unionWith = require('lodash.unionwith')
+const differenceWith = require('lodash.differencewith')
+const flatten = require('lodash.flatten')
+const Lazy    = require('lazy.js');
+const Promise = require('bluebird');
+const Entry   = require('./entry');
 
 const MaxBatchSize = 10;  // How many items to keep per local batch
 const MaxHistory   = 256; // How many items to fetch on join
@@ -50,8 +51,8 @@ class Log {
   join(other) {
     if(!other.items) throw new Error("The log to join must be an instance of Log")
     // let st = new Date().getTime();
-    const diff   = _.differenceWith(other.items, this.items, Entry.equals);
-    const final  = _.unionWith(this._currentBatch, diff, Entry.equals);
+    const diff   = differenceWith(other.items, this.items, Entry.equals);
+    const final  = unionWith(this._currentBatch, diff, Entry.equals);
     this._items  = this._items.concat(final);
     this._currentBatch = [];
 
@@ -73,7 +74,7 @@ class Log {
       this._heads = Log.findHeads(this);
       // let et = new Date().getTime();
       // console.log("Log.join took " + (et - st)  + "ms");
-      return _.flatten(res).concat(diff)
+      return flatten(res).concat(diff)
     })
   }
 
@@ -110,7 +111,7 @@ class Log {
         depth ++;
 
         return Promise.map(entry.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
-          .then((res) => _.flatten(res.concat(result)))
+          .then((res) => flatten(res.concat(result)))
       });
   }
 
