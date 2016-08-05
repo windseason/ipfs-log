@@ -39,6 +39,6 @@
     "build": "npm run build:dist && npm run build:examples",
     "build:dist": "./node_modules/.bin/webpack --config webpack.config.js",
     "build:examples": "./node_modules/.bin/webpack --config webpack.example.config.js",
-    "stats": "./node_modules/.bin/webpack webpack --json > stats.json"
+    "stats": "./node_modules/.bin/webpack --json > stats.json"
   }
 }
