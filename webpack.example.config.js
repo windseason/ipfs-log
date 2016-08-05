@@ -6,6 +6,17 @@ module.exports = {
   output: {
     filename: './examples/browser/bundle.js'
   },
+  node: {
+    console: false,
+    process: 'mock',
+    Buffer: 'buffer'
+  },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      mangle: true,
+      compress: { warnings: false }
+    })
+  ],
   module: {
     loaders: [{
       test: /\.js$/,
@@ -31,11 +42,6 @@ module.exports = {
       test: /\.js$/,
       loader: 'transform?brfs'
     }]
-  },
-  node: {
-    console: false,
-    process: 'mock',
-    Buffer: 'buffer'
   },
   externals: {
     net: '{}',
