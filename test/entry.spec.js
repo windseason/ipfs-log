@@ -13,20 +13,17 @@ IpfsApis.forEach(function(ipfsApi) {
 
   describe('Entry with ' + ipfsApi.name, function() {
     this.timeout(40000);
-    before(async((done) => {
+    before(async(() => {
       try {
         ipfs = await(ipfsApi.start());
       } catch(e) {
         console.log(e);
         assert.equal(e, null);
       }
-      this.timeout(2000);
-      done();
     }));
 
-    after(async((done) => {
+    after(async(() => {
       await(ipfsApi.stop());
-      done();
     }));
 
     describe('create', () => {
