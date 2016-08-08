@@ -112,31 +112,6 @@ IpfsApis.forEach(function(ipfsApi) {
         }));
       }));
 
-
-      describe('fromJson', () => {
-        it('throws an error when log is not instance of Log', async((done) => {
-          const str = JSON.stringify(log.snapshot, null, 2)
-          try {
-            await(Log.fromJson(ipfs, {}));
-          } catch(e) {
-            assert.equal(e.message, 'Not a Log instance');
-            done();
-          }
-        }));
-      });
-
-      describe('fromSnapshot', () => {
-        it('creates a log from a snapshot', async((done) => {
-          const str = JSON.stringify(log.snapshot, null, 2)
-          const res = await(Log.fromJson(ipfs, JSON.parse(str)));
-          assert.equal(res.items.length, 3);
-          assert.equal(res.items[0].hash, expectedData.items[0]);
-          assert.equal(res.items[1].hash, expectedData.items[1]);
-          assert.equal(res.items[2].hash, expectedData.items[2]);
-          done();
-        }));
-      });
-
       describe('getIpfsHash', async(() => {
         it('returns the log as ipfs hash', async((done) => {
           const expectedHash = 'QmaRz4njJX2W8QYwWLa1jhEbYUdJhhqibsBbnRYuWgr1r7';

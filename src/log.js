@@ -119,18 +119,15 @@ class Log {
     if(!ipfs) throw new Error("Ipfs instance not defined")
     if(!hash) throw new Error("Invalid hash: " + hash)
     if(!options) options = {};
+    let logData;
     return ipfs.object.get(hash, { enc: 'base58' })
-      .then((res) => Log.fromJson(ipfs, JSON.parse(res.toJSON().Data), options));
-  }
-
-  static fromJson(ipfs, json, options) {
-    if(!json.items) throw new Error("Not a Log instance")
-    if(!options) options = {};
-    return Promise.all(json.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
-      .then((items) => {
-        Object.assign(options, { items: items });
-        return new Log(ipfs, json.id, '', options);
-      });
+      .then((res) => logData = JSON.parse(res.toJSON().Data))
+      .then((res) => {
+        if(!logData.items) throw new Error("Not a Log instance")
+        return Promise.all(logData.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
+      })
+      .then((items) => Object.assign(options, { items: items }))
+      .then((items) => new Log(ipfs, logData.id, '', options))
   }
 
   static findHeads(log) {
