@@ -42,16 +42,18 @@ log.add({ some: 'data' })
   .then(() => log.add('text'))
   .then(() => console.log(log.items))
 
-// [Entry {
-//    payload: { some: 'data' },
-//    hash: 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD',
-//    next: [] 
-//  },
-//  Entry {
-//    payload: 'text',
-//    hash: 'QmdNFpoyXLNdR8Wx5LYZBLcXH8aAEopSMnnubWLn4AciCZ',
-//    next: [ 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD' ] 
-//  }]
+// [
+//   Entry {
+//     payload: { some: 'data' },
+//     hash: 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD',
+//     next: [] 
+//   },
+//   Entry {
+//     payload: 'text',
+//     hash: 'QmdNFpoyXLNdR8Wx5LYZBLcXH8aAEopSMnnubWLn4AciCZ',
+//     next: [ 'QmYiefTHzCLNroCfKw7YTUy9Yo53sCfwzyU5p7SBBxTcmD' ] 
+//   }
+// ]
 ```
 
 ### Node.js
