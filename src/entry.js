@@ -5,22 +5,12 @@ class Entry {
     this.payload = payload || null;
     this.hash = null;
     this.next = next ? (next instanceof Array ? next : [next]) : [];
-
-    // Convert instances of Entry to its hash
-    this.next = this.next.map((f) => {
-      if(f instanceof Entry)
-        return f.hash;
-      return f;
-    })
+    this.next = this.next.map((next) => next instanceof Entry ? next.hash : next) // Convert instances of Entry to hashes
   }
 
   get asJson() {
     let res = { payload: this.payload }
-    let next = this.next.map((f) => {
-      if(f instanceof Entry)
-        return f.hash
-      return f;
-    });
+    let next = this.next.map((entry) => entry instanceof Entry ? entry.hash : entry) // Convert instances of Entry to hashes
     Object.assign(res, { next: next });
     return res;
   }
@@ -35,23 +25,20 @@ class Entry {
 
   static create(ipfs, data, next) {
     if(!ipfs) throw new Error("Entry requires ipfs instance")
+    if(data instanceof Entry) return Promise.resolve(data);
     const entry = new Entry(data, next);
-    return Entry.getIpfsHash(ipfs, entry)
+    return Entry.getIpfsHash(ipfs, entry.asJson)
       .then((hash) => {
         entry.hash = hash;
         return entry;
       });
   }
 
-  static from(ipfs, data, nexts) {
+  static getIpfsHash(ipfs, entry) {
     if(!ipfs) throw new Error("Entry requires ipfs instance")
-    if(data instanceof Entry) return Promise.resolve(data);
-    const entry = new Entry(data, nexts);
-    return Entry.getIpfsHash(ipfs, entry)
-      .then((hash) => {
-        entry.hash = hash;
-        return entry;
-      });
+    const data = new Buffer(JSON.stringify(entry))
+    return ipfs.object.put(data)
+      .then((res) => res.toJSON().Hash);
   }
 
   static fromIpfsHash(ipfs, hash) {
@@ -62,12 +49,6 @@ class Entry {
         const f = JSON.parse(obj.toJSON().Data)
         return Entry.create(ipfs, f.payload, f.next);
       });
-  }
-
-  static getIpfsHash(ipfs, entry) {
-    if(!ipfs) throw new Error("Entry requires ipfs instance")
-    return ipfs.object.put(new Buffer(JSON.stringify(entry.asJson)))
-      .then((res) => res.toJSON().Hash);
   }
 
   static equals(a, b) {

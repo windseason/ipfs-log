@@ -146,7 +146,7 @@ IpfsApis.forEach(function(ipfsApi) {
       it('returns an ipfs hash', async((done) => {
         const expectedHash = 'QmfAouPZ2Cu3Cjbjm63RVeWJt6L9QjTSyFLe9SK5dWXN1j';
         const entry = await(Entry.create(ipfs));
-        const hash = await(Entry.getIpfsHash(ipfs, entry));
+        const hash = await(Entry.getIpfsHash(ipfs, entry.asJson));
         assert.equal(hash, expectedHash);
         done();
       }));

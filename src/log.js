@@ -40,7 +40,7 @@ class Log {
     if(this._currentBatch.length >= MaxBatchSize)
       this._commit();
 
-    return Entry.from(this._ipfs, data, this._heads)
+    return Entry.create(this._ipfs, data, this._heads)
       .then((entry) => {
         this._heads = [entry.hash];
         this._currentBatch.push(entry);
@@ -50,8 +50,8 @@ class Log {
 
   join(other) {
     if(!other.items) throw new Error("The log to join must be an instance of Log")
-    // let st = new Date().getTime();
     const diff   = differenceWith(other.items, this.items, Entry.equals);
+    // TODO: need deterministic sorting for the union
     const final  = unionWith(this._currentBatch, diff, Entry.equals);
     this._items  = this._items.concat(final);
     this._currentBatch = [];
@@ -72,15 +72,8 @@ class Log {
         });
     }, { concurrency: 1 }).then((res) => {
       this._heads = Log.findHeads(this);
-      // let et = new Date().getTime();
-      // console.log("Log.join took " + (et - st)  + "ms");
       return flatten(res).concat(diff)
     })
-  }
-
-  clear() {
-    this._items = [];
-    this._currentBatch = [];
   }
 
   _insert(entry) {
