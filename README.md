@@ -217,20 +217,6 @@ Log.fromIpfsHash(ipfs, hash).then((log) => console.log(log));
 // ==> instance of Log
 ```
 
-##### fromSnapshot(ipfs, snapshot)
-Create a log from a log snapshot. Returns a `Promise` that resolves a `Log` instance.
-
-```javascript
-const original = new Log(ipfs, 'id')
-
-// Add items to the original log
-// ...
-
-const snapshot = original.snapshot;
-Log.fromSnapshot(ipfs, snapshot).then((log) => console.log(log));
-// ==> log is instance of Log and contains the same entries as original log
-```
-
 ### Entry
 
 **TODO: document [Entry](https://github.com/haadcode/ipfs-log/blob/master/examples/entry.js).**
