@@ -39,46 +39,40 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.hash, null);
       });
 
-      it('throws an error if ipfs is not defined', async((done) => {
+      it('throws an error if ipfs is not defined', async(() => {
         try {
           const log = new Log();
         } catch(e) {
           assert.equal(e.message, 'Ipfs instance not defined');
         }
-        done();
       }));
 
-      it('throws an error if id is not defined', async((done) => {
+      it('throws an error if id is not defined', async(() => {
         try {
           const log = new Log(ipfs);
         } catch(e) {
           assert.equal(e.message, 'id is not defined');
         }
-        done();
       }));
 
-      it('default maxHistory is 256', async((done) => {
+      it('default maxHistory is 256', async(() => {
         const log = new Log(ipfs, 'A', 'db');
         assert.equal(log.options.maxHistory, 256);
-        done();
       }));
 
-      it('takes maxHistory as an option', async((done) => {
+      it('takes maxHistory as an option', async(() => {
         const log = new Log(ipfs, 'A', 'db', { maxHistory: 100 });
         assert.equal(log.options.maxHistory, 100);
-        done();
       }));
 
-      it('sets maxHistory if not provided in options', async((done) => {
+      it('sets maxHistory if not provided in options', async(() => {
         const log = new Log(ipfs, 'A', 'db');
         assert.equal(log.options.maxHistory, 256);
-        done();
       }));
 
-      it('sets maxHistory if other options are provided', async((done) => {
+      it('sets maxHistory if other options are provided', async(() => {
         const log = new Log(ipfs, 'A', 'db', { hello: "world" });
         assert.equal(log.options.maxHistory, 256);
-        done();
       }));
 
     }));
@@ -94,31 +88,28 @@ IpfsApis.forEach(function(ipfsApi) {
         ]
       };
 
-      beforeEach(async((done) => {
+      beforeEach(async(() => {
         log = new Log(ipfs, 'A');
         await(log.add("one"));
         await(log.add("two"));
         await(log.add("three"));
-        done();
       }));
 
       describe('snapshot', async(() => {
-        it('returns the current batch of items', async((done) => {
+        it('returns the current batch of items', async(() => {
           assert.equal(JSON.stringify(log.snapshot), JSON.stringify(expectedData));
-          done();
         }));
       }));
 
       describe('getIpfsHash', async(() => {
-        it('returns the log as ipfs hash', async((done) => {
+        it('returns the log as ipfs hash', async(() => {
           const expectedHash = 'QmaRz4njJX2W8QYwWLa1jhEbYUdJhhqibsBbnRYuWgr1r7';
           const log = new Log(ipfs, 'A');
           const hash = await(Log.getIpfsHash(ipfs, log));
           assert.equal(hash, expectedHash);
-          done();
         }));
 
-        it('log serialized to ipfs contains the correct data', async((done) => {
+        it('log serialized to ipfs contains the correct data', async(() => {
           const expectedData = { id: "A", items: [] };
           const log = new Log(ipfs, 'A');
           const hash = await(Log.getIpfsHash(ipfs, log));
@@ -126,46 +117,41 @@ IpfsApis.forEach(function(ipfsApi) {
           const result = JSON.parse(res.toJSON().Data);
           assert.equal(result.id, expectedData.id);
           assert.equal(result.items.length, expectedData.items.length);
-          done();
         }));
 
-        it('throws an error if ipfs is not defined', async((done) => {
+        it('throws an error if ipfs is not defined', async(() => {
           try {
             const log = new Log(ipfs, 'A');
             const hash = await(Log.getIpfsHash(null, log));
           } catch(e) {
             assert.equal(e.message, 'Ipfs instance not defined');
           }
-          done();
         }));
       }));
 
       describe('fromIpfsHash', async(() => {
-        it('creates an empty log from ipfs hash', async((done) => {
+        it('creates an empty log from ipfs hash', async(() => {
           const expectedData = { id: "A", items: [] };
           const log = new Log(ipfs, 'A');
           const hash = await(Log.getIpfsHash(ipfs, log));
           const res = await(Log.fromIpfsHash(ipfs, hash));
           assert.equal(JSON.stringify(res.snapshot), JSON.stringify(expectedData));
-          done();
         }));
 
-        it('creates a log from ipfs hash', async((done) => {
+        it('creates a log from ipfs hash', async(() => {
           const hash = await(Log.getIpfsHash(ipfs, log));
           const res = await(Log.fromIpfsHash(ipfs, hash));
           assert.equal(res.items.length, 3);
           assert.equal(res.items[0].hash, expectedData.items[0]);
           assert.equal(res.items[1].hash, expectedData.items[1]);
           assert.equal(res.items[2].hash, expectedData.items[2]);
-          done();
         }));
 
-        it('throws an error when data from hash is not instance of Log', async((done) => {
+        it('throws an error when data from hash is not instance of Log', async(() => {
           try {
             await(Log.fromIpfsHash(ipfs, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR'));
           } catch(e) {
             assert.equal(e.message, 'Not a Log instance');
-            done();
           }
         }));
 
@@ -173,7 +159,7 @@ IpfsApis.forEach(function(ipfsApi) {
     }));
 
     describe('items', () => {
-      it('returns all entrys in the log', async((done) => {
+      it('returns all entrys in the log', async(() => {
         const log = new Log(ipfs, 'A');
         let items = log.items;
         assert.equal(log.items instanceof Array, true);
@@ -188,10 +174,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items[2].payload, 'hello3');
         assert.equal(log._items.length, 0);
         assert.equal(log._currentBatch.length, 3);
-        done();
       }));
 
-      it('returns all entrys from current batch and all known entrys', async((done) => {
+      it('returns all entrys from current batch and all known entrys', async(() => {
         const log = new Log(ipfs, 'A');
         let items = log.items;
         assert.equal(log.items instanceof Array, true);
@@ -208,12 +193,11 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items[2].payload, 'hello3');
         assert.equal(log._items.length, 2);
         assert.equal(log._currentBatch.length, 1);
-        done();
       }));
     });
 
     describe('add', () => {
-      it('adds an item to an empty log', async((done) => {
+      it('adds an item to an empty log', async(() => {
         const log = new Log(ipfs, 'A');
         await(log.add("hello1"));
         const item = log.items[0];
@@ -222,10 +206,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log._items.length, 0);
         assert.equal(item, log._currentBatch[0]);
         assert.equal(item.payload, 'hello1');
-        done();
       }));
 
-      it('adds 100 items to a log', async((done) => {
+      it('adds 100 items to a log', async(() => {
         const log = new Log(ipfs, 'A');
         const amount = 100;
 
@@ -237,11 +220,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items.length, amount);
         assert.equal(last.payload, 'hello' + amount);
         assert.notEqual(last.next.length, 0);
-
-        done();
       }));
 
-      it('commits the log after batch size was reached', async((done) => {
+      it('commits the log after batch size was reached', async(() => {
         const log = new Log(ipfs, 'A');
 
         for(let i = 1; i <= Log.batchSize; i ++) {
@@ -256,11 +237,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items.length, Log.batchSize);
         assert.equal(item.payload, 'hello' + Log.batchSize);
         assert.notEqual(item.next.length, 0);
-
-        done();
       }));
 
-      it('adds an Entry to the log', async((done) => {
+      it('adds an Entry to the log', async(() => {
         const expectedHash = 'QmW94BLFbGNbaPjgGasX1rV9aYdE2qxnQnUBf9PbLkiBUo';
         const payload1 = 'hello world';
         const payload2 = 'hello again';
@@ -276,31 +255,28 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items[0].payload, payload1);
         assert.equal(log.items[1] instanceof Entry, true);
         assert.equal(log.items[1].payload, payload2);
-        done();
       }));
     });
 
     describe('join', () => {
       let log1, log2, log3, log4;
 
-      beforeEach(async((done) => {
+      beforeEach(async(() => {
         log1 = new Log(ipfs, 'A');
         log2 = new Log(ipfs, 'B');
         log3 = new Log(ipfs, 'C');
         log4 = new Log(ipfs, 'D');
-        done();
       }));
 
-      it('throws an error if passed argument is not an instance of Log', async((done) => {
+      it('throws an error if passed argument is not an instance of Log', async(() => {
         try {
           await(log1.join({}));
         } catch(e) {
           assert.equal(e.message, 'The log to join must be an instance of Log');
-          done();
         }
       }));
 
-      it('joins only unique items', async((done) => {
+      it('joins only unique items', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log2.add("helloB1"));
@@ -317,10 +293,9 @@ IpfsApis.forEach(function(ipfsApi) {
         const last = _.last(log1.items);
         assert.equal(last.next.length, 1);
         assert.equal(last.next[0], 'QmdZwCR96sP61aaTbcLj9DXy9EaiMhTXLRrTxPSXpcZCct');
-        done();
       }));
 
-      it('joins logs two ways', async((done) => {
+      it('joins logs two ways', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log2.add("helloB1"));
@@ -337,10 +312,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log2._currentBatch.length, 0);
         assert.equal(log2._items.length, 4);
         assert.equal(lastItem2.payload, 'helloA2');
-        done();
       }));
 
-      it('joins logs twice', async((done) => {
+      it('joins logs twice', async(() => {
         await(log1.add("helloA1"));
         await(log2.add("helloB1"));
         await(log2.join(log1));
@@ -355,10 +329,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log2._items.length, 4);
         assert.equal(secondItem.payload, 'helloA1');
         assert.equal(lastItem.payload, 'helloA2');
-        done();
       }));
 
-      it('joins 4 logs to one', async((done) => {
+      it('joins 4 logs to one', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log2.add("helloB1"));
@@ -378,10 +351,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log1._items.length, 8);
         assert.equal(secondItem.payload, 'helloA2');
         assert.equal(lastItem.payload, 'helloD2');
-        done();
       }));
 
-      it('joins logs from 4 logs', async((done) => {
+      it('joins logs from 4 logs', async(() => {
         await(log1.add("helloA1"));
         await(log1.join(log2));
         await(log2.add("helloB1"));
@@ -409,10 +381,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(secondItem.payload, 'helloD2');
         assert.equal(lastItem1.payload, 'helloC2');
         assert.equal(lastItem2.payload, 'helloD4');
-        done();
       }));
 
-      it('fetches items from history on join', async((done) => {
+      it('fetches items from history on join', async(() => {
         const count = 32;
         for(let i = 1; i < count + 1; i ++) {
           await(log1.add("first " + i));
@@ -435,10 +406,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log3.items.length, count * 2);
         assert.equal(log3.items[0].payload, "second 1");
         assert.equal(_.last(log3.items).payload, "second " + count);
-        done();
       }));
 
-      it('orders fetched items correctly', async((done) => {
+      it('orders fetched items correctly', async(() => {
         const count = Log.batchSize * 3;
         for(let i = 1; i < (count * 2) + 1; i ++)
           await(log1.add("first " + i));
@@ -463,12 +433,11 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log3.items[0].payload, "second 1");
         assert.equal(log3.items[1].payload, "second 2");
         assert.equal(_.last(log3.items).payload, "second " + count);
-        done();
       }));
     });
 
     describe('_fetchRecursive', () => {
-      it('returns two items when neither are in the log', async((done) => {
+      it('returns two items when neither are in the log', async(() => {
         const log1 = new Log(ipfs, 'A');
         const entry1 = await(Entry.create(ipfs, 'one'))
         const entry2 = await(Entry.create(ipfs, 'two', entry1))
@@ -476,10 +445,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(items.length, 2);
         assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
         assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
-        done();
       }));
 
-      it('returns three items when none are in the log', async((done) => {
+      it('returns three items when none are in the log', async(() => {
         const log1 = new Log(ipfs, 'A');
         const entry1 = await(Entry.create(ipfs, 'one'))
         const entry2 = await(Entry.create(ipfs, 'two', entry1))
@@ -489,10 +457,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(items[0].hash, 'QmRMUN4WJdpYydRLpbipaNoLQNXiw9ifRpPht5APaLFqrR');
         assert.equal(items[1].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
         assert.equal(items[2].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
-        done();
       }));
 
-      it('returns all items when none are in the log', async((done) => {
+      it('returns all items when none are in the log', async(() => {
         const log1 = new Log(ipfs, 'A');
         let entrys = [];
         const amount = Log.batchSize * 4;
@@ -506,10 +473,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(items.length, amount);
         assert.equal(items[0].hash, entrys[0].hash);
         assert.equal(_.last(items).hash, _.last(entrys).hash);
-        done();
       }));
 
-      it('returns only the items that are not in the log', async((done) => {
+      it('returns only the items that are not in the log', async(() => {
         const log1 = new Log(ipfs, 'A');
         const entry1 = await(log1.add('one'))
         const entry2 = await(Entry.create(ipfs, 'two', entry1))
@@ -519,12 +485,11 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(items.length, 2);
         assert.equal(items[0].hash, 'Qmcpgub1qRG5XHed1qNciwb74uasUhQVEhP35oaZZ7UWbi');
         assert.equal(items[1].hash, 'QmQM4Xg6EGGGEKRYu3jX3cpTcXK53XvSgQpxZd2qGY1L2V');
-        done();
       }));
     });
 
     describe('findHeads', () => {
-      it('finds one head after one item', async((done) => {
+      it('finds one head after one item', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
         const log3 = new Log(ipfs, 'C');
@@ -534,10 +499,9 @@ IpfsApis.forEach(function(ipfsApi) {
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], 'QmUEH5SEuRZhZ7RETwEX2df2BtTR2xUYZR3qBrhjnxqocb');
-        done();
       }));
 
-      it('finds one head after two items', async((done) => {
+      it('finds one head after two items', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
         const log3 = new Log(ipfs, 'C');
@@ -548,10 +512,9 @@ IpfsApis.forEach(function(ipfsApi) {
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], 'Qma1PaYbyW1rZA4npPnuJzA3ov5Je4N9cvAn2p6Ju1iPQS');
-        done();
       }));
 
-      it('finds two heads after a join', async((done) => {
+      it('finds two heads after a join', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
 
@@ -567,10 +530,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(heads.length, 2);
         assert.equal(heads[0], expectedHead2.hash);
         assert.equal(heads[1], expectedHead1.hash);
-        done();
       }));
 
-      it('finds one head after two joins', async((done) => {
+      it('finds one head after two joins', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
 
@@ -586,10 +548,9 @@ IpfsApis.forEach(function(ipfsApi) {
         const heads = log1._heads;
         assert.equal(heads.length, 1);
         assert.equal(heads[0], expectedHead.hash);
-        done();
       }));
 
-      it('finds two heads after three joins', async((done) => {
+      it('finds two heads after three joins', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
         const log3 = new Log(ipfs, 'C');
@@ -611,10 +572,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(heads.length, 2);
         assert.equal(heads[0], expectedHead2.hash);
         assert.equal(heads[1], expectedHead1.hash);
-        done();
       }));
 
-      it('finds three heads after three joins', async((done) => {
+      it('finds three heads after three joins', async(() => {
         const log1 = new Log(ipfs, 'A');
         const log2 = new Log(ipfs, 'B');
         const log3 = new Log(ipfs, 'C');
@@ -637,32 +597,29 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(heads[0], expectedHead3.hash);
         assert.equal(heads[1], expectedHead2.hash);
         assert.equal(heads[2], expectedHead1.hash);
-        done();
       }));
     });
 
     describe('isReferencedInChain', () => {
-      it('returns true if another entry in the log references the given entry', async((done) => {
+      it('returns true if another entry in the log references the given entry', async(() => {
         const log = new Log(ipfs, 'A');
         const entry1 = await(log.add('one'));
         const entry2 = await(log.add('two'));
         const res = Log.isReferencedInChain(log, entry1);
         assert.equal(res, true)
-        done();
       }));
 
-      it('returns false if no other entry in the log references the given entry', async((done) => {
+      it('returns false if no other entry in the log references the given entry', async(() => {
         const log = new Log(ipfs, 'A');
         const entry1 = await(log.add('one'));
         const entry2 = await(log.add('two'));
         const res = Log.isReferencedInChain(log, entry2);
         assert.equal(res, false)
-        done();
       }));
     });
 
     describe('_commit', () => {
-      it('moves entrys from current batch to all known entrys', async((done) => {
+      it('moves entrys from current batch to all known entrys', async(() => {
         const log = new Log(ipfs, 'A');
         const entry1 = await(log.add('one'));
         const entry2 = await(log.add('two'));
@@ -674,12 +631,11 @@ IpfsApis.forEach(function(ipfsApi) {
 
         assert.equal(log._items.length, 2)
         assert.equal(log._currentBatch.length, 0)
-        done();
       }));
     });
 
     describe('_insert', () => {
-      it('insert entry to the log before current batch if parent is in current bathc', async((done) => {
+      it('insert entry to the log before current batch if parent is in current bathc', async(() => {
         const log = new Log(ipfs, 'A');
         const entry1 = await(log.add('one'));
         const entry2 = await(log.add('two'));
@@ -689,10 +645,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(log.items[0].payload, 'three')
         assert.equal(log._items.length, 1)
         assert.equal(log._items[0].payload, 'three')
-        done();
       }));
 
-      it('insert to the log after the parent when parent is not in the current batch', async((done) => {
+      it('insert to the log after the parent when parent is not in the current batch', async(() => {
         const log = new Log(ipfs, 'A');
         const entry1 = await(log.add('one'));
         const entry2 = await(log.add('two'));
@@ -701,21 +656,19 @@ IpfsApis.forEach(function(ipfsApi) {
         log._insert(entry3);
         assert.equal(log.items.length, 3)
         assert.equal(log.items[1].payload, 'three')
-        done();
       }));
     });
 
     describe('is a CRDT', () => {
       let log1, log2, log3;
 
-      beforeEach(async((done) => {
+      beforeEach(async(() => {
         log1 = new Log(ipfs, 'A');
         log2 = new Log(ipfs, 'B');
         log3 = new Log(ipfs, 'C');
-        done();
       }));
 
-      it('join is associative', async((done) => {
+      it('join is associative', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log2.add("helloB1"));
@@ -750,10 +703,9 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(res1.length, len)
         assert.equal(res2.length, len)
         assert.equal(res1, res2);
-        done();
       }));
 
-      it('join is commutative', async((done) => {
+      it('join is commutative', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log2.join(log1));
@@ -783,11 +735,10 @@ IpfsApis.forEach(function(ipfsApi) {
         assert.equal(res1.length, len)
         assert.equal(res2.length, len)
         assert.equal(res1, res2);
-        done();
       }));
 
 
-      it('join is idempotent', async((done) => {
+      it('join is idempotent', async(() => {
         await(log1.add("helloA1"));
         await(log1.add("helloA2"));
         await(log1.add("helloA3"));
@@ -800,7 +751,6 @@ IpfsApis.forEach(function(ipfsApi) {
 
         assert.equal(log1.id, 'A');
         assert.equal(log1.items.length, 3);
-        done();
       }));
     });
   });
