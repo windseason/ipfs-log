@@ -1,7 +1,5 @@
 'use strict';
 
-const await = require('asyncawait/await');
-const async = require('asyncawait/async');
 const Log   = require('../src/log');
 const Entry = require('../src/entry');
 const ipfsd = require('ipfsd-ctl');
@@ -11,7 +9,7 @@ const startIpfs = () => {
   return new Promise((resolve, reject) => {
     // Use disposable ipfs api with a local daemon
     ipfsd.disposableApi((err, ipfs) => {
-      if(err) console.error(err);
+      if(err) reject(err)
       resolve(ipfs);
     });
     // Use a local running daemon
@@ -35,12 +33,28 @@ let totalQueries = 0;
 let seconds = 0;
 let queriesPerSecond = 0;
 let lastTenSeconds = 0;
-let store;
+let log;
+
+const queryLoop = () => {
+  log.add(totalQueries)
+    .then(() => {
+      totalQueries ++;
+      lastTenSeconds ++;
+      queriesPerSecond ++;
+      setTimeout(() => {
+        process.nextTick(queryLoop);
+      }, 0)
+    })
+    .catch((e) => {
+      console.log(e)
+      process.exit(0);
+    })
+}
 
 let run = (() => {
-  console.log("Starting IPFS...");
+  console.log("Starting benchmark...");
 
-  startIpfs().then(async((ipfs) => {
+  startIpfs().then((ipfs) => {
     // Output metrics at 1 second interval
     setInterval(() => {
       seconds ++;
@@ -54,17 +68,10 @@ let run = (() => {
       queriesPerSecond = 0;
     }, 1000);
 
-    const log = new Log(ipfs, 'A');
-    for(var i = 0; i < 20000; i ++) {
-      await(log.add(totalQueries));
-      totalQueries ++;
-      lastTenSeconds ++;
-      queriesPerSecond ++;
-    }
+    log = new Log(ipfs, 'A');
+    queryLoop()
+  }).catch((e) => console.error(e))
 
-    process.exit(0);
-
-  })).catch((e) => console.error(e));
 })();
 
 module.exports = run;
