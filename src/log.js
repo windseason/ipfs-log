@@ -50,10 +50,11 @@ class Log {
 
   join(other) {
     if(!other.items) throw new Error("The log to join must be an instance of Log")
-    const diff   = differenceWith(other.items, this.items, Entry.equals);
+    const newItems = other.items.slice(0, Math.max(this.options.maxHistory, 1))
+    const diff     = differenceWith(newItems, this.items, Entry.equals);
     // TODO: need deterministic sorting for the union
-    const final  = unionWith(this._currentBatch, diff, Entry.equals);
-    this._items  = this._items.concat(final);
+    const final    = unionWith(this._currentBatch, diff, Entry.equals);
+    this._items    = this._items.concat(final);
     this._currentBatch = [];
 
     const nexts = Lazy(diff)
