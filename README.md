@@ -21,6 +21,10 @@ The module works in **Node.js** and **Browsers**.
 
 *Originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on IPFS*
 
+## Requirements
+
+- Node.js v6.0.0 or newer
+
 ## Install
 
 ```
