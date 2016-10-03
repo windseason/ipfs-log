@@ -1,5 +1,5 @@
-const webpack = require('webpack');
-const path = require('path');
+const webpack = require('webpack')
+const path = require('path')
 
 module.exports = {
   entry: './examples/browser/browser.js',
@@ -13,7 +13,7 @@ module.exports = {
   },
   plugins: [
     new webpack.optimize.UglifyJsPlugin({
-      mangle: true,
+      mangle: false,
       compress: { warnings: false }
     })
   ],
@@ -51,4 +51,4 @@ module.exports = {
     'require-dir': '{}',
     mkdirp: '{}'
   }
-};
+}

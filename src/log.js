@@ -3,17 +3,16 @@
 const unionWith = require('lodash.unionwith')
 const differenceWith = require('lodash.differencewith')
 const flatten = require('lodash.flatten')
-const Lazy    = require('lazy.js')
+const take = require('lodash.take')
 const Promise = require('bluebird')
-const Entry   = require('./entry')
+const Entry = require('./entry')
 
 const MaxBatchSize = 10  // How many items to keep per local batch
 const MaxHistory   = 256 // How many items to fetch on join
 
 class Log {
-  constructor(ipfs, id, name, opts) {
+  constructor(ipfs, id, opts) {
     this.id = id
-    this.name = name
     this._ipfs = ipfs
     this._items = opts && opts.items ? opts.items : []
 
@@ -51,17 +50,13 @@ class Log {
   join(other) {
     if (!other.items) throw new Error("The log to join must be an instance of Log")
     const newItems = other.items.slice(0, Math.max(this.options.maxHistory, 1))
-    const diff     = differenceWith(newItems, this.items, Entry.equals)
+    const diff     = differenceWith(newItems, this.items, Entry.compare)
     // TODO: need deterministic sorting for the union
-    const final    = unionWith(this._currentBatch, diff, Entry.equals)
+    const final    = unionWith(this._currentBatch, diff, Entry.compare)
     this._items    = this._items.concat(final)
     this._currentBatch = []
 
-    const nexts = Lazy(diff)
-      .map((f) => f.next)
-      .flatten()
-      .take(this.options.maxHistory)
-      .toArray()
+    const nexts = take(flatten(diff.map((f) => f.next)), this.options.maxHistory)
 
     // Fetch history
     return Promise.map(nexts, (f) => {
@@ -78,8 +73,8 @@ class Log {
   }
 
   _insert(entry) {
-    let indices = Lazy(entry.next).map((next) => Lazy(this._items).map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
-    const index = indices.toArray().length > 0 ? Math.max(indices.max() + 1, 0) : 0 // find the largest index (latest parent)
+    let indices = entry.next.map((next) => this._items.map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
+    const index = indices.length > 0 ? Math.max(Math.max.apply(null, indices) + 1, 0) : 0 // find the largest index (latest parent)
     this._items.splice(index, 0, entry)
     return entry
   }
@@ -90,7 +85,7 @@ class Log {
   }
 
   _fetchRecursive(ipfs, hash, all, amount, depth) {
-    const isReferenced = (list, item) => Lazy(list).reverse().find((f) => f === item) !== undefined
+    const isReferenced = (list, item) => list.reverse().find((f) => f === item) !== undefined
     let result = []
 
     // If the given hash is in the given log (all) or if we're at maximum depth, return
@@ -128,19 +123,18 @@ class Log {
         return Promise.all(logData.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
       })
       .then((items) => Object.assign(options, { items: items }))
-      .then((items) => new Log(ipfs, logData.id, '', options))
+      .then((items) => new Log(ipfs, logData.id, options))
   }
 
   static findHeads(log) {
-    return Lazy(log.items)
+    return log.items
       .reverse()
       .filter((f) => !Log.isReferencedInChain(log, f))
       .map((f) => f.hash)
-      .toArray()
   }
 
   static isReferencedInChain(log, item) {
-    return Lazy(log.items).reverse().find((e) => e.hasChild(item)) !== undefined
+    return log.items.reverse().find((e) => Entry.hasChild(e, item)) !== undefined
   }
 
   static get batchSize() {

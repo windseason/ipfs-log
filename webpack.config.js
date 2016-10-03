@@ -1,4 +1,4 @@
-const webpack = require('webpack');
+const webpack = require('webpack')
 
 module.exports = {
   entry: './src/log.js',
@@ -14,7 +14,7 @@ module.exports = {
   },
   plugins: [
     new webpack.optimize.UglifyJsPlugin({
-      mangle: true,
+      mangle: false,
       compress: { warnings: false }
     })
   ],
@@ -45,4 +45,4 @@ module.exports = {
     tls: '{}',
     'require-dir': '{}'
   }
-};
+}

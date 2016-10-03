@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
 const IPFS    = require('ipfs')
-const ipfsd   = require('ipfsd-ctl');
-const MemIpfs = require('./mem-ipfs');
+const ipfsd   = require('ipfsd-ctl')
+const MemIpfs = require('./mem-ipfs')
 
 const IpfsApis = [
   {
@@ -16,10 +16,10 @@ const IpfsApis = [
     name: 'js-ipfs',
     start: () => {
       return new Promise((resolve, reject) => {
-        const ipfs = new IPFS();
-        // ipfs.goOnline(() => resolve(ipfs));
-        resolve(ipfs);
-      });
+        const ipfs = new IPFS()
+        // ipfs.goOnline(() => resolve(ipfs))
+        resolve(ipfs)
+      })
     },
     stop: () => Promise.resolve()
     // stop: () => new Promise((resolve, reject) => ipfs.goOffline(resolve))
@@ -30,22 +30,22 @@ const IpfsApis = [
     start: () => {
       return new Promise((resolve, reject) => {
         ipfsd.disposableApi((err, ipfs) => {
-          if(err) console.error(err);
-          resolve(ipfs);
-        });
+          if(err) console.error(err)
+          resolve(ipfs)
+        })
         // ipfsd.local((err, node) => {
-        //   if(err) reject(err);
-        //   ipfsDaemon = node;
+        //   if(err) reject(err)
+        //   ipfsDaemon = node
         //   ipfsDaemon.startDaemon((err, ipfs) => {
-        //     if(err) reject(err);
-        //     resolve(ipfs);
-        //   });
-        // });
-      });
+        //     if(err) reject(err)
+        //     resolve(ipfs)
+        //   })
+        // })
+      })
     },
     stop: () => Promise.resolve()
     // stop: () => new Promise((resolve, reject) => ipfsDaemon.stopDaemon(resolve))
   }
-];
+]
 
-module.exports = IpfsApis;
+module.exports = IpfsApis
