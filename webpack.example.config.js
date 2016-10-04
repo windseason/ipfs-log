@@ -2,14 +2,14 @@ const webpack = require('webpack')
 const path = require('path')
 
 module.exports = {
-  entry: './examples/browser/browser.js',
+  entry: './examples/browser/index.js',
   output: {
     filename: './examples/browser/bundle.js'
   },
   node: {
     console: false,
     process: 'mock',
-    Buffer: 'buffer'
+    Buffer: true
   },
   plugins: [
     new webpack.optimize.UglifyJsPlugin({
@@ -37,10 +37,6 @@ module.exports = {
     }, {
       test: /\.json$/,
       loader: 'json'
-    }],
-    postLoaders: [{
-      test: /\.js$/,
-      loader: 'transform?brfs'
     }]
   },
   externals: {

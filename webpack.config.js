@@ -10,7 +10,7 @@ module.exports = {
   node: {
     console: false,
     process: 'mock',
-    Buffer: 'buffer'
+    Buffer: true
   },
   plugins: [
     new webpack.optimize.UglifyJsPlugin({
