@@ -4,7 +4,7 @@ const _        = require('lodash')
 const assert   = require('assert')
 const async    = require('asyncawait/async')
 const await    = require('asyncawait/await')
-const IpfsApis = require('./ipfs-test-apis')
+const IpfsApis = require('ipfs-test-apis')
 const Entry    = require('../src/entry')
 
 let ipfs, ipfsDaemon
