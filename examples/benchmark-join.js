@@ -9,10 +9,14 @@ let totalQueries = 0
 let seconds = 0
 let queriesPerSecond = 0
 let lastTenSeconds = 0
-let log
+let log1, log2
 
 const queryLoop = () => {
-  log.add(totalQueries)
+  const add1 = log1.add(totalQueries)
+  const add2 = log2.add(totalQueries)
+
+  Promise.all([add1])
+    .then(() => log1.join(log2))
     .then(() => {
       totalQueries ++
       lastTenSeconds ++
@@ -49,7 +53,8 @@ let run = (() => {
       queriesPerSecond = 0
     }, 1000)
 
-    log = new Log(ipfs, 'A')
+    log1 = new Log(ipfs, 'A')
+    log2 = new Log(ipfs, 'B')
     queryLoop()
   })
 
