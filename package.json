@@ -5,6 +5,13 @@
   "main": "src/log.js",
   "author": "Haad",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/haadcode/ipfs-log"
+  },
+  "engines": {
+    "node": "^6.x.x"
+  },
   "dependencies": {
     "bluebird": "^3.3.5",
     "lodash.differencewith": "^4.4.0",
@@ -24,6 +31,7 @@
     "fs-pull-blob-store": "^0.3.0",
     "idb-plus-blob-store": "^1.1.2",
     "ipfs": "^0.18.0",
+    "ipfs-daemon": "^0.3.0-beta.2",
     "ipfs-merkle-dag": "^0.6.0",
     "ipfs-test-apis": "^0.1.0-beta.2",
     "json-loader": "^0.5.4",
