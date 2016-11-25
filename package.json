@@ -1,6 +1,6 @@
 {
   "name": "ipfs-log",
-  "version": "1.6.0-beta.3",
+  "version": "1.6.0-beta.4",
   "description": "Append-only log for IPFS",
   "main": "src/log.js",
   "author": "Haad",
