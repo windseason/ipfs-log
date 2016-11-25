@@ -1,6 +1,6 @@
 'use strict'
 
-const IPFS = require('exports?Ipfs!ipfs/dist/index.js')
+const IPFS = require('ipfs-api')
 const Log = require('../../src/log')
 
 const ipfs = new IPFS()
@@ -8,7 +8,7 @@ const log = new Log(ipfs, 'A')
 
 const outputElm = document.getElementById('output')
 outputElm.innerHTML = ""
-outputElm.innerHTML += "> <b>const IPFS = require('exports?Ipfs!ipfs/dist/index.js')</b>\n"
+outputElm.innerHTML += "> <b>const IPFS = require('ipfs-api')</b>\n"
 outputElm.innerHTML += "> <b>const Log = require('ipfs-log')</b>\n\n"
 outputElm.innerHTML += "> <b>const ipfs = new IPFS()</b>\n"
 outputElm.innerHTML += "> <b>const log = new Log(ipfs, 'uid')</b>\n\n"
