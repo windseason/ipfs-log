@@ -114,7 +114,7 @@ IpfsApis.forEach(function(ipfsApi) {
           const log = new Log(ipfs, 'A')
           const hash = await(Log.getIpfsHash(ipfs, log))
           const res = await(ipfs.object.get(hash, { enc: 'base58' }))
-          const result = JSON.parse(res.toJSON().Data)
+          const result = JSON.parse(res.toJSON().data)
           assert.equal(result.id, expectedData.id)
           assert.equal(result.items.length, expectedData.items.length)
         }))

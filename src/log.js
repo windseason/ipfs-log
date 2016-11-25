@@ -109,7 +109,7 @@ class Log {
     if (!ipfs) throw new Error("Ipfs instance not defined")
     const data = new Buffer(JSON.stringify(log.snapshot))
     return ipfs.object.put(data)
-      .then((res) => res.toJSON().Hash)
+      .then((res) => res.toJSON().multihash)
   }
 
   static fromIpfsHash(ipfs, hash, options) {
@@ -118,7 +118,7 @@ class Log {
     if (!options) options = {}
     let logData
     return ipfs.object.get(hash, { enc: 'base58' })
-      .then((res) => logData = JSON.parse(res.toJSON().Data))
+      .then((res) => logData = JSON.parse(res.toJSON().data))
       .then((res) => {
         if (!logData.items) throw new Error("Not a Log instance")
         return Promise.all(logData.items.map((f) => Entry.fromIpfsHash(ipfs, f)))

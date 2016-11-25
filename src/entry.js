@@ -34,7 +34,7 @@ module.exports = class Entry {
     if (!ipfs) throw new Error("Entry requires ipfs instance")
     const data = new Buffer(JSON.stringify(entry))
     return ipfs.object.put(data)
-      .then((res) => res.toJSON().Hash)
+      .then((res) => res.toJSON().multihash)
   }
 
   // Returns a Promise<Entry>
@@ -46,7 +46,7 @@ module.exports = class Entry {
     if (!hash) throw new Error("Invalid hash: " + hash)
     return ipfs.object.get(hash, { enc: 'base58' })
       .then((obj) => {
-        const data = JSON.parse(obj.toJSON().Data)
+        const data = JSON.parse(obj.toJSON().data)
         const entry = {
           hash: hash,
           payload: data.payload,
