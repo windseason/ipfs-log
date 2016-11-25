@@ -13,7 +13,7 @@ let ipfs, ipfsDaemon
 IpfsApis.forEach(function(ipfsApi) {
 
   describe('Log with ' + ipfsApi.name, function() {
-    this.timeout(20000)
+    this.timeout(40000)
     before(async(() => {
       try {
         ipfs = await(ipfsApi.start())
