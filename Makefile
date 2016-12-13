@@ -1,18 +1,19 @@
-all: deps test build
+all: build
 
 deps:
-	@npm install
+	npm install
 
-test:
-	@npm run test
+test: deps
+	npm run test
 	
-build:
-	@npm run build
+build: test
+	npm run build
 	@echo "Build success!"
 	@echo "Built: 'dist/', 'examples/browser/'"
 
 clean:
 	rm -rf ipfs/
 	rm -rf node_modules/
+	rm -rf /tmp/ipfs-log-benchmark/
 
-.PHONY: all deps test clean
+.PHONY: test

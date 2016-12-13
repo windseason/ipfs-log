@@ -12,8 +12,8 @@ let lastTenSeconds = 0
 let log1, log2
 
 const queryLoop = () => {
-  const add1 = log1.add(totalQueries)
-  const add2 = log2.add(totalQueries)
+  const add1 = log1.add("a" + totalQueries)
+  const add2 = log2.add("b" + totalQueries)
 
   Promise.all([add1])
     .then(() => log1.join(log2))
@@ -32,7 +32,11 @@ const queryLoop = () => {
 let run = (() => {
   console.log("Starting benchmark...")
 
-  const ipfs = new IPFS({ Flags: [] })
+  const ipfs = new IPFS({
+    IpfsDataDir: '/tmp/ipfs-log-benchmark',
+    Flags: [], 
+    Bootstrap: [] 
+  })
 
   ipfs.on('error', (err) => {
     console.error(err)

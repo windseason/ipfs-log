@@ -17,7 +17,9 @@ const queryLoop = () => {
       totalQueries ++
       lastTenSeconds ++
       queriesPerSecond ++
-      process.nextTick(queryLoop)
+      // console.log(".", totalQueries)
+      // process.nextTick(queryLoop)
+      setImmediate(queryLoop)
     })
     .catch((e) => {
       console.log(e)
@@ -28,7 +30,11 @@ const queryLoop = () => {
 let run = (() => {
   console.log("Starting benchmark...")
 
-  const ipfs = new IPFS({ Flags: [] })
+  const ipfs = new IPFS({
+    IpfsDataDir: '/tmp/ipfs-log-benchmark',
+    Flags: [], 
+    Bootstrap: [] 
+  })
 
   ipfs.on('error', (err) => {
     console.error(err)
@@ -50,7 +56,8 @@ let run = (() => {
     }, 1000)
 
     log = new Log(ipfs, 'A')
-    queryLoop()
+    process.nextTick(queryLoop)
+    // queryLoop()
   })
 
 })()
