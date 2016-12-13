@@ -1,5 +1,6 @@
 'use strict'
 
+const EventEmitter = require('events').EventEmitter
 const unionWith = require('lodash.unionwith')
 const differenceWith = require('lodash.differencewith')
 const flatten = require('lodash.flatten')
@@ -22,6 +23,7 @@ class Log {
 
     this._currentBatch = []
     this._heads = []
+    this.events = new EventEmitter()
   }
 
   get items() {
@@ -60,6 +62,9 @@ class Log {
     const nexts = take(flatten(diff.map((f) => f.next)), this.options.maxHistory)
 
     // Fetch history
+    if (nexts.length > 0)
+      this.events.emit('history', this.options.maxHistory)
+
     return Promise.map(nexts, (f) => {
       let all = this.items.map((a) => a.hash)
       return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory - nexts.length, 0)
@@ -88,6 +93,8 @@ class Log {
   _fetchRecursive(ipfs, hash, all, amount, depth) {
     const isReferenced = (list, item) => list.reverse().find((f) => f === item) !== undefined
     let result = []
+
+    this.events.emit('progress', 1)
 
     // If the given hash is in the given log (all) or if we're at maximum depth, return
     if (isReferenced(all, hash) || depth >= amount)
