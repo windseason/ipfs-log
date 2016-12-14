@@ -62,7 +62,7 @@ class Log {
     const nexts = take(flatten(diff.map((f) => f.next)), this.options.maxHistory)
 
     // Fetch history
-    if (nexts.length > 0)
+    if (final.length > 0)
       this.events.emit('history', this.options.maxHistory)
 
     return Promise.map(nexts, (f) => {
