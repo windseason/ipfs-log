@@ -13,7 +13,8 @@ let ipfs, ipfsDaemon
 IpfsApis.forEach(function(ipfsApi) {
 
   describe('Log with ' + ipfsApi.name, function() {
-    this.timeout(40000)
+    this.timeout(60000)
+
     before(async(() => {
       try {
         ipfs = await(ipfsApi.start())
@@ -155,6 +156,14 @@ IpfsApis.forEach(function(ipfsApi) {
           }
         }))
 
+        it('throws an error if data from hash is not valid JSON', async(() => {
+          const res = await(ipfs.object.put(new Buffer('hello')))
+          try {
+            await(Log.fromIpfsHash(ipfs, res.toJSON().multihash))
+          } catch(e) {
+            assert.equal(e.message, 'Unexpected token h in JSON at position 0')
+          }
+        }))
       }))
     }))
 
