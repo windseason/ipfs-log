@@ -1,8 +1,12 @@
 # ipfs-log
 
+[![npm version](https://badge.fury.io/js/ipfs-log.svg)](https://badge.fury.io/js/ipfs-log)
+[![CircleCI Status](https://circleci.com/gh/haadcode/ipfs-log.svg?style=shield)](https://circleci.com/gh/haadcode/ipfs-log)
+[![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
+
 > An append-only log on IPFS.
 
-`ipfs-log` is a *partially ordered linked list* of [IPFS](https://github.com/ipfs/ipfs) objects. 
+`ipfs-log` is a *partially ordered, append-only linked list* of [IPFS](https://github.com/ipfs/ipfs) objects. 
 
 ## Table of Contents
 
