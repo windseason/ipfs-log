@@ -1,152 +1,158 @@
 'use strict'
 
-const EventEmitter = require('events').EventEmitter
-const unionWith = require('lodash.unionwith')
-const differenceWith = require('lodash.differencewith')
-const flatten = require('lodash.flatten')
-const take = require('lodash.take')
-const Promise = require('bluebird')
-const Entry = require('./entry')
+const EntrySet = require('./entry-set')
+const Clock = require('./lamport-clock')
 
-const MaxBatchSize = 10  // How many items to keep per local batch
-const MaxHistory   = 256 // How many items to fetch on join
+const randomId = () => new Date().getTime()
 
+/**
+ * Log
+ *
+ * @description
+ * The data structure that this module returns as
+ * the result of operations on a log with functions
+ * from LogUtils. Not meant to be used directly by the
+ * users of this module, but rather used internally where
+ * needed.
+ */
 class Log {
-  constructor(ipfs, id, opts) {
-    this.id = id
-    this._ipfs = ipfs
-    this._items = opts && opts.items ? opts.items : []
-
-    this.options = { maxHistory: MaxHistory }
-    Object.assign(this.options, opts)
-    delete this.options.items
-
-    this._currentBatch = []
-    this._heads = []
-    this.events = new EventEmitter()
+  constructor (id, entries, heads, clock) {
+    this._id = id || randomId()
+    this._clock = clock || new Clock(this.id)
+    this._entries = entries || new EntrySet()
+    this._heads = heads || this.entries.heads
   }
 
-  get items() {
-    return this._items.concat(this._currentBatch)
+  /**
+   * Returns the ID of the log
+   * @returns {string}
+   */
+  get id () {
+    return this._id
   }
 
-  get snapshot() {
-    return {
-      id: this.id,
-      items: this._heads
-    }
+  /**
+   * Returns the clock of the log
+   * @returns {string}
+   */
+  get clock () {
+    return this._clock
   }
 
-  add(data) {
-    if (this._currentBatch.length >= MaxBatchSize)
-      this._commit()
-
-    return Entry.create(this._ipfs, data, this._heads)
-      .then((entry) => {
-        this._heads = [entry.hash]
-        this._currentBatch.push(entry)
-        return entry
-      })
+  /**
+   * Returns the items in the log
+   * @returns {Array<Entry>}
+   */
+  get items () {
+    return this.entries.values
   }
 
-  join(other) {
-    if (!other.items) throw new Error("The log to join must be an instance of Log")
-    const newItems = other.items.slice(-Math.max(this.options.maxHistory, 1))
-    // const newItems = take(other.items.reverse(), Math.max(this.options.maxHistory, 1))
-    const diff     = differenceWith(newItems, this.items, Entry.compare)
-    // TODO: need deterministic sorting for the union
-    const final    = unionWith(this._currentBatch, diff, Entry.compare)
-    this._items    = this._items.concat(final)
-    this._currentBatch = []
-
-    const nexts = take(flatten(diff.map((f) => f.next)), this.options.maxHistory)
-
-    // Fetch history
-    if (final.length > 0)
-      this.events.emit('history', this.options.maxHistory)
-
-    return Promise.map(nexts, (f) => {
-      let all = this.items.map((a) => a.hash)
-      return this._fetchRecursive(this._ipfs, f, all, this.options.maxHistory - nexts.length, 0)
-        .then((history) => {
-          history.forEach((b) => this._insert(b))
-          return history
-        })
-    }, { concurrency: 1 }).then((res) => {
-      this._heads = Log.findHeads(this)
-      return flatten(res).concat(diff)
-    })
+  /**
+   * Returns the values in the log
+   * @returns {Array<Entry>}
+   */
+  get values () {
+    return this.entries.values
   }
 
-  _insert(entry) {
-    let indices = entry.next.map((next) => this._items.map((f) => f.hash).indexOf(next)) // Find the item's parent's indices
-    const index = indices.length > 0 ? Math.max(Math.max.apply(null, indices) + 1, 0) : 0 // find the largest index (latest parent)
-    this._items.splice(index, 0, entry)
-    return entry
+  /**
+   * Returns the items in the log as an EntrySet
+   * @returns {EntrySet}
+   */
+  get entries () {
+    return this._entries
   }
 
-  _commit() {
-    this._items = this._items.concat(this._currentBatch)
-    this._currentBatch = []
+  /**
+   * Returns an array of heads as multihashes
+   * @returns {Array<string>}
+   */
+  get heads () {
+    return this._heads
   }
 
-  _fetchRecursive(ipfs, hash, all, amount, depth) {
-    const isReferenced = (list, item) => list.reverse().find((f) => f === item) !== undefined
-    let result = []
-
-    this.events.emit('progress', 1)
-
-    // If the given hash is in the given log (all) or if we're at maximum depth, return
-    if (isReferenced(all, hash) || depth >= amount)
-      return Promise.resolve(result)
-
-    // Create the entry and add it to the result
-    return Entry.fromIpfsHash(ipfs, hash)
-      .then((entry) => {
-        result.push(entry)
-        all.push(hash)
-        depth ++
-
-        return Promise.map(entry.next, (f) => this._fetchRecursive(ipfs, f, all, amount, depth), { concurrency: 1 })
-          .then((res) => flatten(res.concat(result)))
-      })
+  /**
+   * Returns an array of Entry objects that reference entries which
+   * are not in the log currently
+   * @returns {Array<Entry>}
+   */
+  get tails () {
+    return this.entries.tails
   }
 
-  static getIpfsHash(ipfs, log) {
-    if (!ipfs) throw new Error("Ipfs instance not defined")
-    const data = new Buffer(JSON.stringify(log.snapshot))
-    return ipfs.object.put(data)
-      .then((res) => res.toJSON().multihash)
+  /**
+   * Returns an array of multihashes that are referenced by entries which
+   * are not in the log currently
+   * @returns {Array<string>} Array of multihashes
+   */
+  get tailHashes () {
+    return this.entries.tailHashes
   }
 
-  static fromIpfsHash(ipfs, hash, options) {
-    if (!ipfs) throw new Error("Ipfs instance not defined")
-    if (!hash) throw new Error("Invalid hash: " + hash)
-    if (!options) options = {}
-    let logData
-    return ipfs.object.get(hash, { enc: 'base58' })
-      .then((res) => logData = JSON.parse(res.toJSON().data))
-      .then((res) => {
-        if (!logData.items) throw new Error("Not a Log instance")
-        return Promise.all(logData.items.map((f) => Entry.fromIpfsHash(ipfs, f)))
-      })
-      .then((items) => Object.assign(options, { items: items }))
-      .then((items) => new Log(ipfs, logData.id, options))
+  /**
+   * Returns the lenght of the log
+   * @return {Number} Length
+   */
+  get length () {
+    return this.entries.length
   }
 
-  static findHeads(log) {
-    return log.items
+  /**
+   * Find an entry
+   * @param {string} [hash] The Multihash of the entry as Base58 encoded string
+   * @returns {Entry|undefined}
+   */
+  get (hash) {
+    return this.entries.get(hash)
+  }
+
+  /**
+   * Append an entry to the log
+   * @param  {Entry} entry Entry to add
+   * @return {Log} New Log containing the appended value
+   */
+  append (entry) {
+    const entrySet = this.entries.append(entry)
+    return new Log(this.id, entrySet, [entry], this.clock)
+  }
+
+  /**
+   * Get the log in JSON format
+   * @returns {Object<{heads}>}
+   */
+  toJSON () {
+    return { id: this.id, heads: this.heads.map(e => e.hash) }
+  }
+
+  /**
+   * Get the log as a Buffer
+   * @returns {Buffer}
+   */
+  toBuffer () {
+    return new Buffer(JSON.stringify(this.toJSON()))
+  }
+
+  /**
+   * Returns the log entries as a formatted string
+   * @example
+   * two
+   * └─one
+   *   └─three
+   * @returns {string}
+   */
+  toString () {
+    return this.items
+      .slice()
       .reverse()
-      .filter((f) => !Log.isReferencedInChain(log, f))
-      .map((f) => f.hash)
-  }
-
-  static isReferencedInChain(log, item) {
-    return log.items.reverse().find((e) => Entry.hasChild(e, item)) !== undefined
-  }
-
-  static get batchSize() {
-    return MaxBatchSize
+      .map((e, idx) => {
+        const parents = EntrySet.findChildren(this.entries.values, e)
+        const len = parents.length
+        let padding = new Array(Math.max(len - 1, 0))
+        padding = len > 1 ? padding.fill('  ') : padding
+        padding = len > 0 ? padding.concat(['└─']) : padding
+        return padding.join('') + e.payload
+      })
+      .join('\n')
   }
 }
 
