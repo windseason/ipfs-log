@@ -4,11 +4,14 @@ const _        = require('lodash')
 const assert   = require('assert')
 const async    = require('asyncawait/async')
 const await    = require('asyncawait/await')
+const rmrf     = require('rimraf')
 const IpfsApis = require('ipfs-test-apis')
 const Log      = require('../src/log')
 const Entry    = require('../src/entry')
 
 let ipfs, ipfsDaemon
+
+const dataPath = '/tmp/ipfs-log-test'
 
 IpfsApis.forEach(function(ipfsApi) {
 
@@ -16,8 +19,9 @@ IpfsApis.forEach(function(ipfsApi) {
     this.timeout(60000)
 
     before(async(() => {
+      rmrf.sync(dataPath)
       try {
-        ipfs = await(ipfsApi.start())
+        ipfs = await(ipfsApi.start({ IpfsDataDir: dataPath }))
       } catch(e) {
         console.log(e)
         assert.equal(e, null)
@@ -26,6 +30,7 @@ IpfsApis.forEach(function(ipfsApi) {
 
     after(async(() => {
       await(ipfsApi.stop())
+      rmrf.sync(dataPath)
     }))
 
     describe('create', async(() => {
@@ -83,8 +88,6 @@ IpfsApis.forEach(function(ipfsApi) {
       const expectedData = {
         id: "A",
         items: [
-          'QmUrqiypsLPAWN24Y3gHarmDTgvW97bTUiXnqN53ySXM9V',
-          'QmTRF2oGMG7L5yP6LU1bpy2DEdLTzkRByS9nshRkMAFhBy',
           'QmQG1rPMjt1RQPQTu6cJfSMSS8GddcSw9GxLkVtRB32pMD'
         ]
       }
@@ -97,8 +100,17 @@ IpfsApis.forEach(function(ipfsApi) {
       }))
 
       describe('snapshot', async(() => {
-        it('returns the current batch of items', async(() => {
+        it('returns the current head', async(() => {
           assert.equal(JSON.stringify(log.snapshot), JSON.stringify(expectedData))
+        }))
+
+        it('returns the current heads', async(() => {
+          const log2 = new Log(ipfs, 'B')
+          await(log2.add("seven?"))
+          await(log.join(log2))
+          assert.equal(log.snapshot.items.length, 2)
+          assert.equal(log.snapshot.items[0], 'QmRvxvVdm9QV4nCk6wg5a6f23Jx6Jeury64inrZ9jR7SZo')
+          assert.equal(log.snapshot.items[1], 'QmQG1rPMjt1RQPQTu6cJfSMSS8GddcSw9GxLkVtRB32pMD')
         }))
       }))
 
@@ -142,10 +154,8 @@ IpfsApis.forEach(function(ipfsApi) {
         it('creates a log from ipfs hash', async(() => {
           const hash = await(Log.getIpfsHash(ipfs, log))
           const res = await(Log.fromIpfsHash(ipfs, hash))
-          assert.equal(res.items.length, 3)
+          assert.equal(res.items.length, 1)
           assert.equal(res.items[0].hash, expectedData.items[0])
-          assert.equal(res.items[1].hash, expectedData.items[1])
-          assert.equal(res.items[2].hash, expectedData.items[2])
         }))
 
         it('throws an error when data from hash is not instance of Log', async(() => {

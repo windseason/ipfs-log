@@ -1,21 +1,24 @@
 'use strict'
 
-const _        = require('lodash')
 const assert   = require('assert')
 const async    = require('asyncawait/async')
 const await    = require('asyncawait/await')
+const rmrf     = require('rimraf')
 const IpfsApis = require('ipfs-test-apis')
 const Entry    = require('../src/entry')
 
 let ipfs, ipfsDaemon
+
+const dataPath = '/tmp/ipfs-log-test'
 
 IpfsApis.forEach(function(ipfsApi) {
 
   describe('Entry with ' + ipfsApi.name, function() {
     this.timeout(40000)
     before(async(() => {
+      rmrf.sync(dataPath)
       try {
-        ipfs = await(ipfsApi.start())
+        ipfs = await(ipfsApi.start({ IpfsDataDir: dataPath }))
       } catch(e) {
         console.log(e)
         assert.equal(e, null)
@@ -24,6 +27,7 @@ IpfsApis.forEach(function(ipfsApi) {
 
     after(async(() => {
       await(ipfsApi.stop())
+      rmrf.sync(dataPath)
     }))
 
     describe('create', () => {

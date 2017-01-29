@@ -33,7 +33,7 @@ class Log {
   get snapshot() {
     return {
       id: this.id,
-      items: this._currentBatch.map((f) => f.hash)
+      items: this._heads
     }
   }
 
