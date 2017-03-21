@@ -1,24 +1,40 @@
 'use strict'
 
-const IPFS = require('ipfs-daemon')
-const Log  = require('../src/log')
+const IPFS = require('ipfs-daemon/src/ipfs-node-daemon')
+const Log = require('../src/log')
 
 const ipfs = new IPFS()
-const log = new Log(ipfs, 'A')
 
 ipfs.on('error', (err) => console.error(err))
-
 ipfs.on('ready', () => {
-  // When IPFS is ready, add some log entries
-  log.add('one')
-    .then((entry1) => {
-      console.log('Entry1:', entry1.hash, entry1.payload)
-      return log.add({ two: 'hello' })
+  let log1 = Log.create('A')
+  let log2 = Log.create('A')
+
+  Log.append(ipfs, log1, 'one')
+    .then((log) => {
+      log1 = log
+      console.log(log1.items)
+      // [ { hash: 'QmUrqiypsLPAWN24Y3gHarmDTgvW97bTUiXnqN53ySXM9V',
+      //     payload: 'one',
+      //     next: [] } ]
     })
-    .then((entry2) => {
-      console.log('Entry2:', entry2.hash, entry2.payload)
-      console.log('Entry2.next:', entry2.next[0]) // == entry1.hash
-      console.log('Done')
+    .then(() => Log.append(ipfs, log1, 'two'))
+    .then((log) => {
+      log1 = log
+      return Log.append(ipfs, log2, 'three')
+    })
+    .then((log) => {
+      log2 = log
+      // Join the logs
+      const log3 = Log.join(log1, log2)
+      console.log(log3.toString())
+      // two
+      // └─one
+      // three
       process.exit(0)
+    })
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
     })
 })
