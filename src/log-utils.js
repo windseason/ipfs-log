@@ -106,13 +106,14 @@ class LogUtils {
     if (!LogUtils.isLog(log)) throw NotALogError()
 
     // Update the clock
-    log.clock.tick()
+    const clock = log.clock.tick()
 
-    // Add the entry to the log
+    // Add the entry to the log,
+    // as a named function to make it optimizable for VMs
     const appendToLog = (entry) => log.append(entry)
 
     // Create the entry and add it to the log
-    return Entry.create(ipfs, log.id, null, data, log.heads, log.clock)
+    return Entry.create(ipfs, log.id, null, data, log.heads, clock)
       .then(appendToLog)
   }
 
@@ -132,13 +133,10 @@ class LogUtils {
    *
    * @returns {Log}
    */
-  static join (a, b, size, id) {
+  static join (a, b, size = -1, id) {
     if (!isDefined(a) || !isDefined(b)) throw LogNotDefinedError()
     if (!LogUtils.isLog(a)) throw NotALogError()
     if (!LogUtils.isLog(b)) throw NotALogError()
-
-    // If size is not specified, join all entries by default
-    size = size && size > -1 ? size : (a.length + b.length)
 
     // If id is not specified, use greater id of the two logs
     id = id ? id : [a, b].sort((a, b) => a.id > b.id)[0].id

@@ -905,6 +905,67 @@ apis.forEach((IpfsDaemon) => {
         assert.equal(log4.length, 10)
         assert.deepEqual(log4.values.map((e) => e.payload), expectedData)
       }))
+
+      describe('takes length as an argument', async(() => {
+        beforeEach(async(() => {
+          log1 = await(Log.append(ipfs, log1, "helloA1"))
+          log1 = await(Log.append(ipfs, log1, "helloA2"))
+          log2 = await(Log.append(ipfs, log2, "helloB1"))
+          log2 = await(Log.append(ipfs, log2, "helloB2"))
+        }))
+
+        it('joins only specified amount of entries - one entry', async(() => {
+          log1 = Log.join(log1, log2, 1)
+
+          const expectedData = [ 
+            'helloB2',
+          ]
+          const lastEntry = last(log1.values)
+
+          assert.equal(log1.length, 1)
+          assert.deepEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.equal(lastEntry.next.length, 1)
+        }))
+
+        it('joins only specified amount of entries - two entries', async(() => {
+          log1 = Log.join(log1, log2, 2)
+
+          const expectedData = [ 
+            'helloA2', 'helloB2',
+          ]
+          const lastEntry = last(log1.values)
+
+          assert.equal(log1.length, 2)
+          assert.deepEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.equal(lastEntry.next.length, 1)
+        }))
+
+        it('joins only specified amount of entries - three entries', async(() => {
+          log1 = Log.join(log1, log2, 3)
+
+          const expectedData = [ 
+            'helloB1', 'helloA2', 'helloB2',
+          ]
+          const lastEntry = last(log1.values)
+
+          assert.equal(log1.length, 3)
+          assert.deepEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.equal(lastEntry.next.length, 1)
+        }))
+
+        it('joins only specified amount of entries - (all) four entries', async(() => {
+          log1 = Log.join(log1, log2, 4)
+
+          const expectedData = [ 
+            'helloA1', 'helloB1', 'helloA2', 'helloB2',
+          ]
+          const lastEntry = last(log1.values)
+
+          assert.equal(log1.length, 4)
+          assert.deepEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.equal(lastEntry.next.length, 1)
+        }))
+      }))
     })
 
     describe('joinAll', () => {

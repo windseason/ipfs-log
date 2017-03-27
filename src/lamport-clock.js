@@ -7,13 +7,12 @@ class LamportClock {
   }
 
   tick () {
-    this.time++
-    return this.time
+    return new LamportClock(this.id, ++this.time)
   }
 
   merge (clock) {
     this.time = Math.max(this.time, clock.time)
-    return this
+    return new LamportClock(this.id, this.time)
   }
 
   clone () {
