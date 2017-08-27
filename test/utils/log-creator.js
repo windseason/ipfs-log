@@ -3,27 +3,29 @@
 const async = require('asyncawait/async')
 const await = require('asyncawait/await')
 const Entry = require('../../src/entry')
-const Log = require('../../src/log-utils.js')
+const Log = require('../../src/log.js')
 
 class LogCreator {
   static createLog1 (ipfs) {
     const create = async(() => {
-      let logA = Log.create('A')
-      let logB = Log.create('B')
-      let log = Log.create('log')
+      let logA = new Log(ipfs, 'A')
+      let logB = new Log(ipfs, 'B')
+      let log3 = new Log(ipfs, '3')
+      let log  = new Log(ipfs, 'log')
       for(let i = 1; i <= 5; i ++) {
-        logA = await(Log.append(ipfs, logA, 'entryA' + i))
+        await(logA.append('entryA' + i))
       }
       for(let i = 1; i <= 5; i ++) {
-        logB = await(Log.append(ipfs, logB, 'entryB' + i))
+        await(logB.append('entryB' + i))
       }
-      let log3 = Log.join(logA, logB)
+      log3.join(logA)
+      log3.join(logB)
       for(let i = 6; i <= 10; i ++) {
-        logA = await(Log.append(ipfs, logA, 'entryA' + i))
+        await(logA.append('entryA' + i))
       }
-      log = Log.join(log, log3, -1, log.id)
-      log = await(Log.append(ipfs, log, 'entryC0'))
-      log = Log.join(logA, log, -1, log.id)
+      log.join(log3, -1, log.id)
+      await(log.append('entryC0'))
+      log.join(logA, -1, log.id)
       return log
     })
 
@@ -111,14 +113,14 @@ class LogCreator {
     let expectedData = []
 
     const create = async(() => {
-      let logA = Log.create('A')
-      let logB = Log.create('B')
-      let log = Log.create('log')
+      let logA = new Log(ipfs, 'A')
+      let logB = new Log(ipfs, 'B')
+      let log  = new Log(ipfs, 'log')
       for(let i = 1; i <= amount; i ++) {
-        logA = await(Log.append(ipfs, logA, 'entryA' + i))
-        logB = Log.join(logA, logB)
-        logB = await(Log.append(ipfs, logB, 'entryB' + i))
-        logA = Log.join(logA, logB)
+        await(logA.append('entryA' + i))
+        logB.join(logA)
+        await(logB.append('entryB' + i))
+        logA.join(logB)
         expectedData.push('entryA' + i)
         expectedData.push('entryB' + i)
       }

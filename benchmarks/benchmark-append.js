@@ -1,13 +1,13 @@
 'use strict'
 
-const Log = require('../src/log-utils')
-// const IPFS = require('ipfs-daemon')
-const IPFS = require('ipfs-daemon/src/ipfs-node-daemon')
+const Log = require('../src/log')
+const IPFS = require('ipfs')
+const IPFSRepo = require('ipfs-repo')
+const DatastoreLevel = require('datastore-level')
 
 // State
 let ipfs
-let log1 = Log.create('A')
-let log2 = Log.create('B')
+let log
 
 // Metrics
 let totalQueries = 0
@@ -16,38 +16,42 @@ let queriesPerSecond = 0
 let lastTenSeconds = 0
 
 const queryLoop = () => {
-  const add1 = Log.append(ipfs, log1, 'a' + totalQueries)
-  const add2 = Log.append(ipfs, log2, 'b' + totalQueries)
-
-  Promise.all([add1, add2])
+  log.append(totalQueries.toString())
     .then((res) => {
-      log1 = Log.join(res[0], res[1], 60)
-      log2 = Log.join(res[1], res[0], 60)
       totalQueries++
       lastTenSeconds++
       queriesPerSecond++
       setImmediate(queryLoop)
     })
-    .catch((e) => {
-      console.error(e)
-      process.exit(0)
-    })
+    .catch((e) => console.error(e))
 }
 
 let run = (() => {
   console.log('Starting benchmark...')
 
+  const repoConf = {
+    storageBackends: {
+      blocks: DatastoreLevel,
+    },
+  }
+
   ipfs = new IPFS({
-    Flags: [],
-    Bootstrap: []
+    repo: new IPFSRepo('./ipfs-log-benchmarks/ipfs', repoConf),
+    start: false,
+    EXPERIMENTAL: {
+      pubsub: false,
+      sharding: false,
+      dht: false,
+    },
   })
 
   ipfs.on('error', (err) => {
     console.error(err)
-    process.exit(1)
   })
 
   ipfs.on('ready', () => {
+    log = new Log(ipfs, 'A')
+
     // Output metrics at 1 second interval
     setInterval(() => {
       seconds++
@@ -56,11 +60,11 @@ let run = (() => {
         if (lastTenSeconds === 0) throw new Error('Problems!')
         lastTenSeconds = 0
       }
-      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. log1: ${log1.items.length}, log2: ${log2.items.length}`)
+      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (Entry count: ${log.values.length})`)
       queriesPerSecond = 0
     }, 1000)
 
-    queryLoop()
+    setImmediate(queryLoop)
   })
 })()
 

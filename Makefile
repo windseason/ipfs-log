@@ -13,7 +13,8 @@ build: test
 
 clean:
 	rm -rf ipfs/
+	rm -rf ipfs-log-benchmarks/
 	rm -rf node_modules/
-	rm -rf /tmp/ipfs-log-benchmark/
+	rm -rf coverage/
 
 .PHONY: test

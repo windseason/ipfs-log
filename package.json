@@ -1,8 +1,8 @@
 {
   "name": "ipfs-log",
   "version": "2.0.0",
-  "description": "Append-only log for IPFS",
-  "main": "src/log-utils.js",
+  "description": "Append-only log CRDT on IPFS",
+  "main": "src/log.js",
   "author": "Haad",
   "license": "MIT",
   "repository": {
@@ -10,29 +10,30 @@
     "url": "https://github.com/haadcode/ipfs-log"
   },
   "engines": {
-    "node": "^6.x.x"
+    "node": ">= 6.x.x"
   },
   "dependencies": {
-    "p-map": "~1.0.0",
-    "p-whilst": "~1.0.0"
+    "p-map": "^1.1.1",
+    "p-whilst": "^1.0.0"
   },
   "devDependencies": {
     "asyncawait": "^1.0.6",
-    "babel-core": "^6.22.1",
-    "babel-loader": "^6.2.10",
-    "benchmark": "^2.1.3",
-    "ipfs-daemon": "~0.3.0-beta.24",
-    "mocha": "^3.2.0",
-    "rimraf": "^2.5.4",
-    "uglify-js": "github:mishoo/UglifyJS2#harmony",
-    "webpack": "^2.2.1"
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "datastore-level": "~0.6.0",
+    "ipfs": "~0.25.4",
+    "ipfs-repo": "~0.17.0",
+    "mocha": "^3.5.0",
+    "rimraf": "^2.6.1",
+    "uglifyjs-webpack-plugin": "~1.0.0-beta.2",
+    "webpack": "^3.5.5"
   },
   "scripts": {
     "test": "mocha",
+    "test:coverage": "istanbul cover -x src/g-set.js _mocha",
     "build": "npm run build:examples && npm run build:dist",
-    "build:examples": "webpack --config webpack.example.config.js --sort-modules-by size",
-    "build:dist": "webpack -p --config webpack.config.js --display-modules --sort-modules-by size",
-    "benchmark": "node benchmarks/index.js",
+    "build:examples": "webpack --config webpack.example.config.js --sort-modules-by size --define process.env.NODE_ENV=production",
+    "build:dist": "webpack --config webpack.config.js --display-modules --sort-modules-by size --define process.env.NODE_ENV=production",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
   }
 }

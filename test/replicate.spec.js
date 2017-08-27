@@ -4,9 +4,10 @@ const async = require('asyncawait/async')
 const await = require('asyncawait/await')
 const assert = require('assert')
 const rmrf = require('rimraf')
-const apis = require('./config/test-apis')
 const config = require('./config/ipfs-daemon.config')
-const Log = require('../src/log-utils.js')
+const Log = require('../src/log.js')
+
+const apis = [require('ipfs')]
 
 const channel = 'XXX'
 
@@ -28,30 +29,42 @@ const waitForPeers = (ipfs, channel) => {
   })
 }
 
-// HACK: run replication tests only with node.js api
-// until js-ipfs-api supports pubsub
-apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
+apis.forEach((IPFS) => {
 
   describe('ipfs-log - Replication', function() {
     this.timeout(80000)
 
-    let ipfs1, ipfs2, client1, client2, db1, db2
+    let ipfs1, ipfs2, client1, client2, db1, db2, id1, id2
 
     before(function (done) {
-      ipfs1 = new IpfsDaemon(config.daemon1)
+      rmrf.sync(config.daemon1.repo)
+      rmrf.sync(config.daemon2.repo)
+      ipfs1 = new IPFS(config.daemon1)
       ipfs1.on('error', done)
       ipfs1.on('ready', () => {
-        ipfs2 = new IpfsDaemon(config.daemon2)
-        ipfs2.on('error', done)
-        ipfs2.on('ready', () => {
-          done()
-        })
+        ipfs1.id()
+          .then((id) => id1 = id.id)
+          .then(() => {
+            ipfs2 = new IPFS(config.daemon2)
+            ipfs2.on('error', done)
+            ipfs2.on('ready', () => {
+              ipfs2.id()
+                .then((id) => id2 = id.id)
+                .then(() => done())
+            })
+          })
       })
     })
 
     after(() => {
-      if (ipfs1) ipfs1.stop()
-      if (ipfs2) ipfs2.stop()
+      if (ipfs1) 
+        ipfs1.stop()
+      
+      if (ipfs2) 
+        ipfs2.stop()
+      
+      rmrf.sync(config.daemon1.repo)
+      rmrf.sync(config.daemon2.repo)
     })
 
     describe('replicates logs deterministically', function() {
@@ -62,21 +75,8 @@ apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
       let buffer2 = []
       let processing = 0
 
-      const processMessage = async((message, ipfs, buffer, log) => {
-        if (ipfs.PeerId === message.from)
-          return
-        buffer.push(message.data.toString())
-        processing ++
-        const exclude = log.values.map((e) => e.hash)
-        process.stdout.write('\r')
-        process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const tmp = await(Log.fromMultihash(ipfs, message.data.toString(), -1, exclude))
-        log = Log.join(log, tmp, -1, log.id)
-        processing --
-      })
-
       const handleMessage = async((message) => {
-        if (ipfs1.PeerId === message.from)
+        if (id1 === message.from)
           return
         buffer1.push(message.data.toString())
         processing ++
@@ -84,12 +84,12 @@ apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
         process.stdout.write('\r')
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const log = await(Log.fromMultihash(ipfs1, message.data.toString()))
-        log1 = Log.join(log1, log, -1, log1.id)
+        log1.join(log, -1, log1.id)
         processing --
       })
 
       const handleMessage2 = async((message) => {
-        if (ipfs2.PeerId === message.from)
+        if (id2 === message.from)
           return
         buffer2.push(message.data.toString())
         processing ++
@@ -97,15 +97,15 @@ apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const exclude = log2.values.map((e) => e.hash)
         const log = await(Log.fromMultihash(ipfs2, message.data.toString()))
-        log2 = Log.join(log2, log, -1, log2.id)
+        log2.join(log, -1, log2.id)
         processing --
       })
 
       beforeEach(async(() => {
-        log1 = Log.create('A')
-        log2 = Log.create('B')
-        input1 = Log.create('input1')
-        input2 = Log.create('input2')
+        log1 = new Log(ipfs1, 'A')
+        log2 = new Log(ipfs2, 'B')
+        input1 = new Log(ipfs1, 'input1')
+        input2 = new Log(ipfs2, 'input2')
         await(ipfs1.pubsub.subscribe(channel, handleMessage))
         await(ipfs2.pubsub.subscribe(channel, handleMessage2))
       }))
@@ -114,19 +114,19 @@ apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
         waitForPeers(ipfs1, channel)
           .then(async(() => {
             for(let i = 1; i <= amount; i ++) {
-              input1 = await(Log.append(ipfs1, input1, "A" + i))
-              input2 = await(Log.append(ipfs2, input2, "B" + i))
-              const mh1 = await(Log.toMultihash(ipfs1, input1))
-              const mh2 = await(Log.toMultihash(ipfs2, input2))
-              await(ipfs1.pubsub.publish(channel, new Buffer(mh1)))
-              await(ipfs2.pubsub.publish(channel, new Buffer(mh2)))
+              input1 = await(input1.append("A" + i))
+              input2 = await(input2.append("B" + i))
+              const mh1 = await(input1.toMultihash())
+              const mh2 = await(input2.toMultihash())
+              await(ipfs1.pubsub.publish(channel, Buffer.from(mh1)))
+              await(ipfs2.pubsub.publish(channel, Buffer.from(mh2)))
             }
 
             console.log("\nAll messages sent")
 
             const whileProcessingMessages = (timeoutMs) => {
               return new Promise((resolve, reject) => {
-                setTimeout(() => reject('timeout'), timeoutMs)
+                setTimeout(() => reject(new Error('timeout')), timeoutMs)
                 const timer = setInterval(() => {
                   if (buffer1.length + buffer2.length === amount * 2
                       && processing === 0) {
@@ -143,7 +143,9 @@ apis.filter((e, idx) => idx === 0).forEach((IpfsDaemon) => {
               const timeout = 30000
               await(whileProcessingMessages(timeout))
 
-              const result = Log.join(log1, log2)
+              let result = new Log(ipfs1, 'result')
+              result.join(log1)
+              result.join(log2)
 
               assert.equal(buffer1.length, amount)
               assert.equal(buffer2.length, amount)
