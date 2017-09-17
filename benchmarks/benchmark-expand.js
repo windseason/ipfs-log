@@ -1,13 +1,14 @@
 'use strict'
 
-const Log = require('../src/log-utils')
-// const IPFS = require('ipfs-daemon')
-const IPFS = require('ipfs-daemon/src/ipfs-node-daemon')
+const Log = require('../src/log')
+const IPFS = require('ipfs')
+const IPFSRepo = require('ipfs-repo')
+const DatastoreLevel = require('datastore-level')
 const pWhilst = require('p-whilst')
 
 // State
 let ipfs
-let log1 = Log.create('A')
+let log
 
 // Metrics
 let totalQueries = 0
@@ -18,22 +19,39 @@ let lastTenSeconds = 0
 const logSize = 2000
 
 const queryLoop = () => {
-  Log.expand(ipfs, log1, 1)
-    .then(log => {
-      log1 = log
+  const oldSize = log.length
+  Log.expand(ipfs, log, 1)
+    .then((res) => {
+      log = res
       totalQueries++
       lastTenSeconds++
       queriesPerSecond++
-      setImmediate(queryLoop)
+      if (log.length > oldSize) {
+        setImmediate(queryLoop)
+      } else {
+        console.log('Benchmark finished')
+        process.exit(0)
+      }
     })
 }
 
 let run = (() => {
   console.log('Starting benchmark...')
 
+  const repoConf = {
+    storageBackends: {
+      blocks: DatastoreLevel,
+    },
+  }
+
   ipfs = new IPFS({
-    Flags: [],
-    Bootstrap: []
+    repo: new IPFSRepo('./ipfs-log-benchmarks/ipfs', repoConf),
+    start: false,
+    EXPERIMENTAL: {
+      pubsub: false,
+      sharding: false,
+      dht: false,
+    },
   })
 
   ipfs.on('error', (err) => {
@@ -51,7 +69,7 @@ let run = (() => {
           if (lastTenSeconds === 0) throw new Error('Problems!')
           lastTenSeconds = 0
         }
-        console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. log1.items.length: ${log1.items.length}`)
+        console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. Log length: ${log.values.length}`)
         queriesPerSecond = 0
       }, 1000)
     }
@@ -63,22 +81,21 @@ let run = (() => {
 
     let i = 0
     console.log('Generating a log')
+    log = new Log(ipfs, 'A')
     pWhilst(
       () => i < logSize,
       () => {
-        return Log.append(ipfs, log1, 'a' + i)
-          .then((log) => {
-            log1 = log
+        return log.append('a' + i)
+          .then(() => {
             i++
-            return log1
           })
       }
     )
     .then(() => {
-      const last = [log1.items[log1.items.length - 1]]
+      const last = [log.values[log.values.length - 1]]
       Log.fromEntry(ipfs, last, 1)
-        .then((log) => {
-          log1 = log
+        .then((res) => {
+          log = res
           console.log('Log generated, starting benchmark')
           reportMetrics()
           queryLoop()

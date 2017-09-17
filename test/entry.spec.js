@@ -4,28 +4,33 @@ const assert = require('assert')
 const async = require('asyncawait/async')
 const await = require('asyncawait/await')
 const rmrf = require('rimraf')
-const apis = require('./config/test-apis')
 const Entry = require('../src/entry')
 
-const dataDir = './ipfs'
+const apis = [require('ipfs')]
+
+const dataDir = './ipfs/tests/entry'
 
 let ipfs, ipfsDaemon
 
-apis.forEach((IpfsDaemon) => {
+apis.forEach((IPFS) => {
 
   describe('Entry', function() {
     this.timeout(60000)
 
     before((done) => {
       rmrf.sync(dataDir)
-      ipfs = new IpfsDaemon({ IpfsDataDir: dataDir })
+      ipfs = new IPFS({ 
+        repo: dataDir,
+        EXPERIMENTAL: {
+          pubsub: true
+        },
+      })
       ipfs.on('error', done)
       ipfs.on('ready', () => done())
     })
 
     after(() => {
-      ipfs.stop()
-      rmrf.sync(dataDir)
+      if (ipfs) ipfs.stop()
     })
 
     describe('create', () => {

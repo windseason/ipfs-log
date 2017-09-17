@@ -1,9 +1,15 @@
 'use strict'
 
-const IPFS = require('ipfs-daemon/src/ipfs-browser-daemon')
-const Log = require('../../src/log-utils')
+const IPFS = require('ipfs')
+const Log = require('../../src/log')
 
-const ipfs = new IPFS({ IpfsDataDir: '/ipfs-log/examples/index'})
+const ipfs = new IPFS({
+  repo: './ipfs-log/examples/browser/index.js',
+  start: false,
+  EXPERIMENTAL: {
+    pubsub: true
+  },
+})
 
 ipfs.on('error', (e) => console.error(e))
 
@@ -11,19 +17,19 @@ ipfs.on('ready', () => {
   const outputElm = document.getElementById('output')
 
   // When IPFS is ready, add some log entries
-  let log = Log.create('example')
-  Log.append(ipfs, log, 'one')
+  let log = new Log(ipfs, 'example')
+  log.append('one')
     .then((res) => {
       log = res
-      const items = JSON.stringify(log.items, null, 2)
-      console.log('\n', items)
-      outputElm.innerHTML += items + '<br><br>'
-      return Log.append(ipfs, log, { two: 'hello' })
+      const values = JSON.stringify(log.values, null, 2)
+      console.log('\n', values)
+      outputElm.innerHTML += values + '<br><br>'
+      return log.append({ two: 'hello' })
     })
     .then((res) => {
       log = res
-      const items = JSON.stringify(log.items, null, 2)
-      console.log('\n', items)
-      outputElm.innerHTML += items + '<br><br>'
+      const values = JSON.stringify(log.values, null, 2)
+      console.log('\n', values)
+      outputElm.innerHTML += values + '<br><br>'
     })
 })

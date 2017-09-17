@@ -4,10 +4,13 @@ const pWhilst = require('p-whilst')
 const pMap = require('p-map')
 const Entry = require('./entry')
 
-class LogLoader {
+let _tasksRequested = 0
+let _tasksProcessed = 0
+
+class EntryIO {
   // Fetch log graphs in parallel
-  static fetchParallel (ipfs, hashes, length, exclude = [], concurrency) {
-    const fetchOne = (hash) => LogLoader.fetchAll(ipfs, hash, length, exclude)
+  static fetchParallel (ipfs, hashes, length, exclude = [], concurrency, onProgressCallback) {
+    const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash, length, exclude, null, onProgressCallback)
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])
     return pMap(hashes, fetchOne, { concurrency: Math.max(concurrency || hashes.length, 1) })
@@ -26,7 +29,7 @@ class LogLoader {
    * @param {function(hash, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
-  static fetchAll (ipfs, hashes, amount, exclude = [], timeout = 2000) {
+  static fetchAll (ipfs, hashes, amount, exclude = [], timeout = null, onProgressCallback) {
     let result = []
     let cache = {}
     let loadingQueue = Array.isArray(hashes)
@@ -41,32 +44,31 @@ class LogLoader {
     exclude.forEach(addToExcludeCache)
 
     const shouldFetchMore = () => {
-      return loadingQueue.length > 0 &&
-        (result.length < amount || amount < 0)
+      return loadingQueue.length > 0
+          && (result.length < amount || amount < 0)
     }
 
     const fetchEntry = () => {
       const hash = loadingQueue.shift()
 
       if (cache[hash]) {
-        const entry = cache[hash]
-        entry.next.forEach(addToLoadingQueue)
         return Promise.resolve()
       }
 
       return new Promise((resolve, reject) => {
-        // Resolve the promise after a timeout in order to
-        // not get stuck loading a block that is unreachable
-        const timer = setTimeout(resolve, timeout)
-
         const addToResults = (entry) => {
-          clearTimeout(timer)
           if (Entry.isEntry(entry)) {
             entry.next.forEach(addToLoadingQueue)
             result.push(entry)
             cache[hash] = entry
+            _tasksProcessed ++
+            if (onProgressCallback) {
+              onProgressCallback(hash, entry, result.length)
+            }
           }
         }
+
+        _tasksRequested ++
 
         // Load the entry
         Entry.fromMultihash(ipfs, hash)
@@ -78,6 +80,6 @@ class LogLoader {
     return pWhilst(shouldFetchMore, fetchEntry)
       .then(() => result)
   }
-  }
+}
 
-module.exports = LogLoader
+module.exports = EntryIO

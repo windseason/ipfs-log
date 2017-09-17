@@ -3,34 +3,48 @@
     <meta charset="utf-8">
   </head>
   <body>
-    <h1>ipfs-log - benchmark append()</h1>
+    <h1>ipfs-log - benchmark join()</h1>
 
     <h2>Description</h2>
-    <div>Add an entry to a log. Measure throughput in operations per second.</div>
+    <div>Add an entry to two logs and join them after each update. Limit the number of entries to 60. Measure throughput in operations per second.</div>
     <pre><i>
-    let log = Log.create()
-    log = Log.append(ipfs, log, loopCount)
+    let log1 = new Log(ipfs, 'A')
+    let log2 = new Log(ipfs, 'B')
+
+    const add1 = log1.append("a" + loopCount)
+    const add2 = log2.append("b" + loopCount)
+
+    Promise.all([add1, add2])
+      .then((res) => {
+        log1.join(res[1], 60)
+        log2.join(res[0], 60)
+      })
     </i></pre>
 
     <h2>Results</h2>
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="../../node_modules/ipfs-daemon/dist/ipfs-browser-daemon.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
-      let log, ipfs
+      let ipfs
 
       // Metrics
       let totalQueries = 0
       let seconds = 0
       let queriesPerSecond = 0
       let lastTenSeconds = 0
+      let log1, log2
 
       const queryLoop = () => {
-        Log.append(ipfs, log, totalQueries.toString())
+        const add1 = log1.append("a" + totalQueries)
+        const add2 = log2.append("b" + totalQueries)
+
+        Promise.all([add1, add2])
           .then((res) => {
-            log = res
+            log1.join(res[1], 60)
+            log2.join(res[0], 60)
             totalQueries ++
             lastTenSeconds ++
             queriesPerSecond ++
@@ -40,10 +54,14 @@
       }
 
       let run = (() => {
-        ipfs = new IpfsDaemon({
-          IpfsDataDir: '/ipfs-log/exampels/benchmark-append',
-          Flags: [], 
-          Bootstrap: []
+        ipfs = new Ipfs({ 
+          repo: './ipfs-log/examples/browser/benchmark-join',
+          start: false,
+          EXPERIMENTAL: {
+            pubsub: false,
+            sharding: false,
+            dht: false,
+          },
         })
 
         ipfs.on('error', (err) => console.error(err))
@@ -60,12 +78,13 @@
                 throw new Error("Problems!")
               lastTenSeconds = 0
             }
-            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds - Log entries: ${log.items.length}<br>` + outputElm.innerHTML
+            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (log1: ${log1.values.length}, log2: ${log2.values.length})<br>` + outputElm.innerHTML
             console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`)
             queriesPerSecond = 0
           }, 1000)
 
-          log = Log.create('benchmark-append')
+          log1 = new Log(ipfs, 'A')
+          log2 = new Log(ipfs, 'B')
           queryLoop()
         })
 

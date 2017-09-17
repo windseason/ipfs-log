@@ -1,7 +1,13 @@
 'use strict'
 
-const webpack = require('webpack')
+const Uglify = require('uglifyjs-webpack-plugin')
 const path = require('path')
+
+const uglifyOptions = {
+  uglifyOptions: {
+    mangle: false,
+  },
+}
 
 module.exports = {
   entry: './examples/browser/index.js',
@@ -15,10 +21,7 @@ module.exports = {
     Buffer: true
   },
   plugins: [
-    new webpack.optimize.UglifyJsPlugin({
-      mangle: false,
-      compress: { warnings: false }
-    })
+    new Uglify(uglifyOptions),
   ],
   resolve: {
     modules: [
