@@ -9,8 +9,8 @@ let _tasksProcessed = 0
 
 class EntryIO {
   // Fetch log graphs in parallel
-  static fetchParallel (ipfs, hashes, length, exclude = [], concurrency, onProgressCallback) {
-    const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash, length, exclude, null, onProgressCallback)
+  static fetchParallel (ipfs, hashes, length, exclude = [], concurrency, timeout, onProgressCallback) {
+    const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash, length, exclude, timeout, onProgressCallback)
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])
     return pMap(hashes, fetchOne, { concurrency: Math.max(concurrency || hashes.length, 1) })
@@ -56,7 +56,17 @@ class EntryIO {
       }
 
       return new Promise((resolve, reject) => {
+        // Resolve the promise after a timeout (if given) in order to
+        // not get stuck loading a block that is unreachable
+        const timer = timeout 
+        ? setTimeout(() => {
+            console.warn(`Warning: Couldn't fetch entry '${hash}', request timed out (${timeout}ms)`)
+            resolve()
+          } , timeout) 
+        : null
+
         const addToResults = (entry) => {
+          clearTimeout(timer)
           if (Entry.isEntry(entry)) {
             entry.next.forEach(addToLoadingQueue)
             result.push(entry)
@@ -74,6 +84,9 @@ class EntryIO {
         Entry.fromMultihash(ipfs, hash)
           .then(addToResults)
           .then(resolve)
+          .catch(err => {
+            resolve()
+          })
       })
     }
 

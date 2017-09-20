@@ -71,34 +71,36 @@ class LogIO {
     // Make sure we pass hashes instead of objects to the fetcher function
     const excludeHashes = exclude// ? exclude.map(e => e.hash ? e.hash : e) : exclude
 
-    return EntryIO.fetchParallel(ipfs, [entryHash], length, excludeHashes, null, onProgressCallback)
+    return EntryIO.fetchParallel(ipfs, [entryHash], length, excludeHashes, null, null, onProgressCallback)
       .then((entries) => {
-        // Cap the result at the right size by taking the last n entries
-        const sliced = last(entries, length)
+        // Cap the result at the right size by taking the last n entries,
+        // or if given length is -1, then take all
+        const sliced = length > -1 ? last(entries, length) : entries
         return {
           values: sliced,
         }
       })
   }
 
-  static fromJSON (ipfs, json, length = -1, onProgressCallback) {
+  static fromJSON (ipfs, json, length = -1, key, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
 
     const mapper = (e, idx) => {
-      return Entry.create(ipfs, e.id, e.seq, e.payload, e.next, e.clock, e.hash)
+      return Entry.create(ipfs, keystore, e.id, e.payload, e.next, e.clock, e.key)
         .then((entry) => {
-          onProgressCallback(entry.hash, entry, idx + 1, json.values.length)
+          if (onProgressCallback) onProgressCallback(entry.hash, entry, idx + 1, json.values.length)
           return entry
         })
     }
 
-    return pMap(length && length > -1 ? json.values.slice(0, length) : json.values, mapper, { concurrency: 4 })
+    return EntryIO.fetchParallel(ipfs, json.heads.map(e => e.hash), length, [], 16, timeout, onProgressCallback)
       .then((entries) => {
-        const heads = entries.filter(e => json.heads.map(a => a.hash).includes(e.hash))
+        const finalEntries = entries.slice().sort(Entry.compare)
+        const heads = entries.filter(e => json.heads.includes(e.hash))
         return {
           id: json.id,
-          values: entries,
-          heads: heads,
+          values: finalEntries,
+          heads: json.heads,
         }
       })
   }
@@ -112,7 +114,7 @@ class LogIO {
    * @param {function(hash, entry, parent, depth)} [onProgressCallback]
    * @returns {Promise<Log>}
    */
-  static fromEntry (immutabledb, sourceEntries, length = -1, exclude, onProgressCallback) {
+  static fromEntry (immutabledb, sourceEntries, length = -1, exclude, key, keys, onProgressCallback) {
     if (!isDefined(immutabledb)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
@@ -132,7 +134,7 @@ class LogIO {
     const excludeHashes = exclude ? exclude.map(e => e.hash ? e.hash : e) : exclude
     const hashes = sourceEntries.map(e => e.hash)
 
-    return EntryIO.fetchParallel(immutabledb, hashes, length, excludeHashes, null, onProgressCallback)
+    return EntryIO.fetchParallel(immutabledb, hashes, length, excludeHashes, null, null, onProgressCallback)
       .then((entries) => {
         var combined = sourceEntries.concat(entries)
         var uniques = _uniques(combined, 'hash').sort(Entry.compare)
@@ -152,7 +154,6 @@ class LogIO {
         // Add the input entries at the beginning of the array and remove
         // as many elements from the array before inserting the original entries
         const result = replaceInFront(sliced, missingSourceEntries)
-
         return {
           id: result[result.length - 1].id,
           values: result,
@@ -214,7 +215,7 @@ class LogIO {
         const size = amount > -1 ? (log.values.length + amount) : -1
 
         // Join the fetched entries with the log to order them first
-        const combined = log.merge(entries)
+        const combined = log.values.concat(entries).sort(Entry.compare)
         const sliced = (size > -1 ? combined.slice(-size) : combined.slice())
 
         // Because the clocks can vary drastically, we need to make sure that

@@ -1,6 +1,7 @@
 'use strict'
 
 const Log = require('../src/log')
+const Keystore = require('orbit-db-keystore')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
@@ -56,8 +57,11 @@ let run = (() => {
   })
 
   ipfs.on('ready', () => {
-    log1 = new Log(ipfs, 'A')
-    log2 = new Log(ipfs, 'B')
+    const keystore = new Keystore('./test-keys')
+    const key = keystore.createKey('benchmark-append-signed')
+    ipfs.keystore = keystore
+    log1 = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
+    log2 = new Log(ipfs, 'B', null, null, null, key, key.getPublic('hex'))
 
     // Output metrics at 1 second interval
     setInterval(() => {

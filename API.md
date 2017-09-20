@@ -99,14 +99,14 @@ log.append({ some: 'data' })
 
 #### join(log, [length], [id])
 
-Join the log with another log. Returns a new `Log` instance. The size of the joined log can be specified by giving `length` argument. 
+Join the log with another log. Returns a Promise that resolves to a `Log` instance. The size of the joined log can be specified by giving `length` argument. 
 
 ```javascript
 // log1.values ==> ['A', 'B', 'C']
 // log2.values ==> ['C', 'D', 'E']
 
 log1.join(log2)
-console.log(log1.values)
+  .then(() => console.log(log1.values))
 // ['A', 'B', 'C', 'D', 'E']
 ```
 

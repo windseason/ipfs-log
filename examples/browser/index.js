@@ -4,7 +4,7 @@ const IPFS = require('ipfs')
 const Log = require('../../src/log')
 
 const ipfs = new IPFS({
-  repo: './ipfs-log/examples/browser/index.js',
+  repo: './ipfs-log/examples/browser/new/index.js',
   start: false,
   EXPERIMENTAL: {
     pubsub: true
@@ -20,14 +20,12 @@ ipfs.on('ready', () => {
   let log = new Log(ipfs, 'example')
   log.append('one')
     .then((res) => {
-      log = res
       const values = JSON.stringify(log.values, null, 2)
       console.log('\n', values)
       outputElm.innerHTML += values + '<br><br>'
       return log.append({ two: 'hello' })
     })
     .then((res) => {
-      log = res
       const values = JSON.stringify(log.values, null, 2)
       console.log('\n', values)
       outputElm.innerHTML += values + '<br><br>'

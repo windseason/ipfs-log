@@ -9,7 +9,7 @@
     <div>Add an entry to a log. Measure throughput in operations per second.</div>
     <pre><i>
     let log = new Log(ipfs, 'id')
-    log.append(loopCount)
+    await log.append(loopCount)
     </i></pre>
 
     <h2>Results</h2>
@@ -28,9 +28,8 @@
       let lastTenSeconds = 0
 
       const queryLoop = () => {
-        log.append(totalQueries.toString())
+        return log.append(totalQueries.toString())
           .then((res) => {
-            log = res
             totalQueries ++
             lastTenSeconds ++
             queriesPerSecond ++
@@ -41,7 +40,7 @@
 
       let run = (() => {
         ipfs = new Ipfs({ 
-          repo: './ipfs-log/examples/browser/benchmark-append',
+          repo: './ipfs-log/examples/browser/benchmark-append/new',
           start: false,
           EXPERIMENTAL: {
             pubsub: false,
@@ -64,8 +63,7 @@
                 throw new Error("Problems!")
               lastTenSeconds = 0
             }
-            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds - Log entries: ${log.values.length}<br>` + outputElm.innerHTML
-            console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`)
+            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds - Log entries: ${log.length}<br>` + outputElm.innerHTML
             queriesPerSecond = 0
           }, 1000)
 

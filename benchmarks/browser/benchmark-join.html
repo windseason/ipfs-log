@@ -6,18 +6,18 @@
     <h1>ipfs-log - benchmark join()</h1>
 
     <h2>Description</h2>
-    <div>Add an entry to two logs and join them after each update. Limit the number of entries to 60. Measure throughput in operations per second.</div>
+    <div>Add an entry to two logs and join them after each update. Measure throughput in operations per second.</div>
     <pre><i>
     let log1 = new Log(ipfs, 'A')
     let log2 = new Log(ipfs, 'B')
 
-    const add1 = log1.append("a" + loopCount)
-    const add2 = log2.append("b" + loopCount)
+    const add1 = await log1.append("a" + loopCount)
+    const add2 = await log2.append("b" + loopCount)
 
     Promise.all([add1, add2])
       .then((res) => {
-        log1.join(res[1], 60)
-        log2.join(res[0], 60)
+        log1.join(log2)
+        log2.join(log1)
       })
     </i></pre>
 
@@ -43,8 +43,8 @@
 
         Promise.all([add1, add2])
           .then((res) => {
-            log1.join(res[1], 60)
-            log2.join(res[0], 60)
+            log1.join(log2)
+            log2.join(log1)
             totalQueries ++
             lastTenSeconds ++
             queriesPerSecond ++
@@ -55,7 +55,7 @@
 
       let run = (() => {
         ipfs = new Ipfs({ 
-          repo: './ipfs-log/examples/browser/benchmark-join',
+          repo: './ipfs-log/examples/browser/benchmark-join/new',
           start: false,
           EXPERIMENTAL: {
             pubsub: false,
@@ -78,8 +78,7 @@
                 throw new Error("Problems!")
               lastTenSeconds = 0
             }
-            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (log1: ${log1.values.length}, log2: ${log2.values.length})<br>` + outputElm.innerHTML
-            console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`)
+            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (log1: ${log1.length}, log2: ${log2.length})<br>` + outputElm.innerHTML
             queriesPerSecond = 0
           }, 1000)
 

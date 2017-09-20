@@ -1,7 +1,5 @@
 'use strict'
 
-const async = require('asyncawait/async')
-const await = require('asyncawait/await')
 const assert = require('assert')
 const rmrf = require('rimraf')
 const config = require('./config/ipfs-daemon.config')
@@ -62,9 +60,6 @@ apis.forEach((IPFS) => {
       
       if (ipfs2) 
         ipfs2.stop()
-      
-      rmrf.sync(config.daemon1.repo)
-      rmrf.sync(config.daemon2.repo)
     })
 
     describe('replicates logs deterministically', function() {
@@ -75,7 +70,7 @@ apis.forEach((IPFS) => {
       let buffer2 = []
       let processing = 0
 
-      const handleMessage = async((message) => {
+      const handleMessage = async (message) => {
         if (id1 === message.from)
           return
         buffer1.push(message.data.toString())
@@ -83,12 +78,12 @@ apis.forEach((IPFS) => {
         const exclude = log1.values.map((e) => e.hash)
         process.stdout.write('\r')
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await(Log.fromMultihash(ipfs1, message.data.toString()))
+        const log = await Log.fromMultihash(ipfs1, message.data.toString())
         log1.join(log, -1, log1.id)
         processing --
-      })
+      }
 
-      const handleMessage2 = async((message) => {
+      const handleMessage2 = async (message) => {
         if (id2 === message.from)
           return
         buffer2.push(message.data.toString())
@@ -96,30 +91,30 @@ apis.forEach((IPFS) => {
         process.stdout.write('\r')
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const exclude = log2.values.map((e) => e.hash)
-        const log = await(Log.fromMultihash(ipfs2, message.data.toString()))
+        const log = await Log.fromMultihash(ipfs2, message.data.toString())
         log2.join(log, -1, log2.id)
         processing --
-      })
+      }
 
-      beforeEach(async(() => {
+      beforeEach(async () => {
         log1 = new Log(ipfs1, 'A')
         log2 = new Log(ipfs2, 'B')
         input1 = new Log(ipfs1, 'input1')
         input2 = new Log(ipfs2, 'input2')
-        await(ipfs1.pubsub.subscribe(channel, handleMessage))
-        await(ipfs2.pubsub.subscribe(channel, handleMessage2))
-      }))
+        await ipfs1.pubsub.subscribe(channel, handleMessage)
+        await ipfs2.pubsub.subscribe(channel, handleMessage2)
+      })
 
       it('replicates logs', (done) => {
         waitForPeers(ipfs1, channel)
-          .then(async(() => {
+          .then(async () => {
             for(let i = 1; i <= amount; i ++) {
-              input1 = await(input1.append("A" + i))
-              input2 = await(input2.append("B" + i))
-              const mh1 = await(input1.toMultihash())
-              const mh2 = await(input2.toMultihash())
-              await(ipfs1.pubsub.publish(channel, Buffer.from(mh1)))
-              await(ipfs2.pubsub.publish(channel, Buffer.from(mh2)))
+              await input1.append("A" + i)
+              await input2.append("B" + i)
+              const mh1 = await input1.toMultihash()
+              const mh2 = await input2.toMultihash()
+              await ipfs1.pubsub.publish(channel, Buffer.from(mh1))
+              await ipfs2.pubsub.publish(channel, Buffer.from(mh2))
             }
 
             console.log("\nAll messages sent")
@@ -141,7 +136,7 @@ apis.forEach((IPFS) => {
             console.log("Waiting for all to process")
             try {
               const timeout = 30000
-              await(whileProcessingMessages(timeout))
+              await whileProcessingMessages(timeout)
 
               let result = new Log(ipfs1, 'result')
               result.join(log1)
@@ -165,7 +160,7 @@ apis.forEach((IPFS) => {
               done(e)
             }
 
-          }))
+          })
           .catch(done)
       })
     })

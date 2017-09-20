@@ -1,5 +1,6 @@
 'use strict'
 
+const pMap = require('p-map')
 const GSet = require('./g-set')
 const Entry = require('./entry')
 const LogIO = require('./log-io')
@@ -30,7 +31,7 @@ class Log extends GSet {
    * @param  {[Clock]}        clock   Set the clock of the log
    * @return {Log}            Log
    */
-  constructor (ipfs, id, entries, heads, clock) {
+  constructor (ipfs, id, entries, heads, clock, key, keys = []) {
     if (!isDefined(ipfs)) {
       throw LogError.ImmutableDBNotDefinedError()
     }
@@ -47,10 +48,31 @@ class Log extends GSet {
 
     this._storage = ipfs
     this._id = id || randomId()
-    this._entries = entries || []
-    this._heads = heads || Log.findHeads(this._entries)
 
-    const maxTime = Math.max(clock ? clock.time : 0, this._heads.reduce((res, acc) => Math.max(res, acc.clock.time), 0))
+    // Signing related setup
+    this._keystore = this._storage.keystore
+    this._key = key
+    this._keys = Array.isArray(keys) ? keys : [keys]
+
+    // Add entries to the internal cache
+    entries = entries || []
+    this._entryIndex = entries.reduce((res, val) => {
+      res[val.hash] =  val
+      return res
+    }, {})
+
+    // Set heads if not passed as an argument
+    heads = heads || Log.findHeads(entries)
+    this._headsIndex = heads.reduce((res, val) => {
+      res[val.hash] =  val
+      return res
+    }, {})
+
+    // Set the length, we calculate the length manually internally
+    this._length = entries ? entries.length : 0
+
+    // Set the clock
+    const maxTime = Math.max(clock ? clock.time : 0, this.heads.reduce((res, acc) => Math.max(res, acc.clock.time), 0))
     this._clock = new Clock(this.id, maxTime)
   }
 
@@ -75,7 +97,7 @@ class Log extends GSet {
    * @return {Number} Length
    */
   get length () {
-    return this.values.length
+    return this._length
   }
 
   /**
@@ -83,7 +105,7 @@ class Log extends GSet {
    * @returns {Array<Entry>}
    */
   get values () {
-    return this._entries
+    return Object.values(this._entryIndex).sort(Entry.compare) || []
   }
 
   /**
@@ -91,7 +113,7 @@ class Log extends GSet {
    * @returns {Array<string>}
    */
   get heads () {
-    return this._heads
+    return Object.values(this._headsIndex) || []
   }
 
   /**
@@ -118,7 +140,7 @@ class Log extends GSet {
    * @returns {Entry|undefined}
    */
   get (hash) {
-    return this.values.find(e => e.hash === hash)
+    return this._entryIndex[hash]
   }
 
   has (entry) {
@@ -131,29 +153,25 @@ class Log extends GSet {
    * @param  {Entry} entry Entry to add
    * @return {Log}   New Log containing the appended value
    */
-  append (data) {
+  async append (data) {
+    // Verify that we're allowed to append
+    if (this._key 
+        && !this._keys.includes(this._key.getPublic('hex')) 
+        && !this._keys.includes('*')) {
+      throw new Error("Not allowed to write")
+    }
+
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce((res, acc) => Math.max(res, acc.clock.time), 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
-
-    // Add the entry to the log,
-    // as a named function to make it optimizable for VMs
-    const appendToLog = (entry) => {
-      this._entries.push(entry)
-      this._heads = [entry]
-    }
-
-    // Create the entry and add it to the log
-    return Entry.create(this._storage, this.id, null, data, this.heads, this.clock)
-      .then(appendToLog)
-      .then(() => this)
-  }
-
-  merge (values) {
-    var combined = []
-    combined = this.values.concat(values)
-    var uniques = _uniques(combined, 'hash')
-    return uniques.sort(Entry.compare)
+    // Create the entry and add it to the internal cache
+    const entry = await Entry.create(this._storage, this.id, data, Object.values(this._headsIndex), this.clock, this._key)
+    this._entryIndex[entry.hash] = entry
+    this._headsIndex = {}
+    this._headsIndex[entry.hash] = entry
+    // Update the length
+    this._length ++
+    return entry
   }
 
   /**
@@ -169,29 +187,110 @@ class Log extends GSet {
    * @example
    * log1.join(log2)
    *
-   * @returns {Log}
+   * @returns {Promise<Log>}
    */
-  join (log, size = -1, id) {
+  async join (log, size = -1, id) {
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!Log.isLog(log)) throw LogError.NotALogError()
+
+    // Verify the entries
+    // TODO: move to Entry
+    const verifyEntries = async (entries) => {
+      const checkAllKeys = (keys, entry) => keys.find(e => e === entry.key)
+      const pubkeys = this._keys.map(e => e.getPublic ? e.getPublic('hex') : e)
+
+      const checked = await pMap(entries, async (entry) => {
+        if (!entry.key) throw new Error("Entry doesn't have a public key")
+        if (!entry.sig) throw new Error("Entry doesn't have a signature")
+
+        if (this._keys.length === 1 && this._keys[0] === this._key ) {
+          if (entry.id !== this.id) 
+            throw new Error("Entry doesn't belong in this log (wrong ID)")
+        }
+
+        if (this._keys.length > 0 
+            && !this._keys.includes('*') 
+            && !checkAllKeys(this._keys.concat([this._key]), entry)) {
+          console.warn("Warning: Input log contains entries that are not allowed in this log. Logs weren't joined.")
+          return false
+        }
+
+        try {
+          await Entry.verifyEntry(entry, this._keystore)
+        } catch (e) {
+          console.log(e)
+          console.log("Couldn't verify entry:\n", entry)
+          return false
+        }
+
+        return true
+      })
+
+      return checked.every(e => e === true)
+    }
+
+    const arrayOfEntriesToObject = (res, val) => {
+      res[val.hash] = val
+      return res
+    }
+
+    const difference = (log, exclude) => {
+      let stack = Object.keys(log._headsIndex)
+      let traversed = {}
+      let res = {}
+      while (stack.length > 0) {
+        const hash = stack.shift()
+        const entry = log.get(hash)
+          if (entry && !exclude.get(hash)) {
+          res[entry.hash] = entry
+          traversed[entry.hash] = true
+          entry.next.forEach(hash => {
+            if (!traversed[hash] && !exclude.get(hash)) {
+              stack.push(hash)
+              traversed[hash] = true
+            }
+          })
+        }
+      }
+      return res
+    }
 
     // If id is not specified, use greater id of the two logs
     id = id ? id : [log, this].sort((a, b) => a.id > b.id)[0].id
 
-    // Combine the first log entries with the second log entries,
-    let merged = this.merge(log.values)
+    // Merge the entries
+    const newItems = difference(log, this)
 
-    if (size > -1) {
-      merged = merged.slice(-size)
+    // if a key was given, verify the entries from the incoming log
+    if (this._key) {
+      const canJoin = await verifyEntries(Object.values(newItems))
+      // Return early if any of the given entries didn't verify
+      if (!canJoin)
+        return this
     }
 
-    // Find the latest clock
-    const maxClockTime = Math.max(this.clock.time, merged[merged.length - 1] ? merged[merged.length - 1].clock.time : 0)
-    let clock = new Clock(this.id, maxClockTime)
+    // Update the internal index
+    this._entryIndex = Object.assign(this._entryIndex, newItems)
 
-    // this._heads = Log.findHeads(merged)
-    this._heads = Log.findHeads(this.heads.concat(log.heads))
-    this._entries = merged
+    // Update the length
+    this._length += Object.values(newItems).length
+
+    // Slice to the requested size
+    if (size > -1) {
+      let tmp = this.values
+      tmp = tmp.slice(-size)
+      this._entryIndex = tmp.reduce(arrayOfEntriesToObject, {})
+      this._length = Object.values(this._entryIndex).length
+    }
+
+    // Merge the heads
+    const mergedHeads = Log.findHeads(Object.values(Object.assign({}, this._headsIndex, log._headsIndex)))
+    this._headsIndex = mergedHeads.reduce(arrayOfEntriesToObject, {})
+
+    // Find the latest clock from the heads
+    const maxClock = Object.values(this._headsIndex).reduce((res, val) => res = Math.max(res, val.clock.time), 0)
+    const clock = new Clock(this.id, Math.max(this.clock.time, maxClock))
+
     this._id = id
     this._clock = clock
     return this
@@ -254,7 +353,7 @@ class Log extends GSet {
   static isLog (log) {
     return log.id !== undefined
       && log.heads !== undefined
-      && log.values !== undefined
+      && log._entryIndex !== undefined
   }
 
   /**
@@ -273,12 +372,13 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} onProgressCallback
    * @return {Promise<Log>}      New Log
    */
-  static fromMultihash (ipfs, hash, length = -1, exclude, onProgressCallback) {
+  static fromMultihash (ipfs, hash, length = -1, exclude, key, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
+    // TODO: need to verify the entries with 'key'
     return LogIO.fromMultihash(ipfs, hash, length, exclude, onProgressCallback)
-      .then((data) => new Log(ipfs, data.id, data.values, data.heads, data.clock))
+      .then((data) => new Log(ipfs, data.id, data.values, data.heads, data.clock, key))
   }
 
   /**
@@ -289,12 +389,13 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} onProgressCallback
    * @return {Promise<Log>}      New Log
    */
-  static fromEntryHash (ipfs, hash, id, length = -1, exclude, onProgressCallback) {
+  static fromEntryHash (ipfs, hash, id, length = -1, exclude, key, keys, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(hash)) throw new Error("'hash' must be defined")
 
+    // TODO: need to verify the entries with 'key'
     return LogIO.fromEntryHash(ipfs, hash, id, length, exclude, onProgressCallback)
-      .then((data) => new Log(ipfs, id, data.values))
+      .then((data) => new Log(ipfs, id, data.values, null, null, key, keys))
   }
 
   /**
@@ -305,11 +406,12 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} [onProgressCallback]
    * @return {Promise<Log>}      New Log
    */
-  static fromJSON (ipfs, json, length = -1, onProgressCallback) {
+  static fromJSON (ipfs, json, length = -1, key, keys, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
 
-    return LogIO.fromJSON(ipfs, json, length, onProgressCallback)
-      .then((data) => new Log(ipfs, data.id, data.values, data.heads))
+    // TODO: need to verify the entries with 'key'
+    return LogIO.fromJSON(ipfs, json, length, key, timeout, onProgressCallback)
+      .then((data) => new Log(ipfs, data.id, data.values, null, null, key, keys))
   }
 
   /**
@@ -325,6 +427,7 @@ class Log extends GSet {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
+    // TODO: need to verify the entries with 'key'
     return LogIO.fromEntry(ipfs, sourceEntries, length, exclude, onProgressCallback)
       .then((data) => new Log(ipfs, data.id, data.values))
   }

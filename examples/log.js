@@ -2,9 +2,12 @@
 
 const IPFS = require('ipfs')
 const Log = require('../src/log')
+const Keystore = require('orbit-db-keystore')
+
+const dataPath = './ipfs/examples/log'
 
 const ipfs = new IPFS({
-  repo: './ipfs/examples/log.js',
+  repo: dataPath + '/ipfs',
   start: false,
   EXPERIMENTAL: {
     pubsub: true
@@ -12,35 +15,40 @@ const ipfs = new IPFS({
 })
 
 ipfs.on('error', (err) => console.error(err))
-ipfs.on('ready', () => {
-  let log1 = new Log(ipfs, 'A')
-  let log2 = new Log(ipfs, 'A')
-  let log3 = new Log(ipfs, 'C')
+ipfs.on('ready', async () => {
+  const keystore = new Keystore(dataPath + '/keystore')
+  ipfs.keystore = keystore
 
-  log1.append('one')
-    .then((log) => {
-      console.log(log1.values)
-      // [ { hash: 'QmTctXe3aLBowJkNFZjH1U5JzHJtP6bHjagno6AxcHuua4',
-      //     id: 'A',
-      //     payload: 'one',
-      //     next: [],
-      //     v: 0,
-      //     clock: LamportClock { id: 'A', time: 1 } } ]
-    })
-    .then(() => log1.append('two'))
-    .then((log) => log2.append('three'))
-    .then((log) => {
-      // Join the logs
-      log3.join(log1)
-      log3.join(log2)
-      console.log(log3.toString())
-      // two
-      // └─one
-      // three
-      process.exit(0)
-    })
-    .catch((e) => {
-      console.error(e)
-      process.exit(1)
-    })
+  let key1, key2, key3
+  try {
+    key1 = keystore.getKey('A') || keystore.createKey('A')
+    key2 = keystore.getKey('C') || keystore.createKey('C')
+  } catch (e) {
+    console.error(e)
+  }
+
+  let log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
+  let log2 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
+  let log3 = new Log(ipfs, 'C', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+
+  try {
+    await log1.append('one')
+    await log1.append('two')
+    await log2.append('three')
+    // Join the logs
+    await log3.join(log1, -1, log3.id)
+    await log3.join(log2, -1, log3.id)
+    // Add one more
+    await log3.append('four')
+    console.log(log3.values)
+  } catch (e) {
+    console.error(e)
+    process.exit(1)
+  }
+  console.log(log3.toString())
+  // four
+  // └─two
+  //   └─one
+  // └─three
+  process.exit(0)
 })

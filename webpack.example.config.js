@@ -23,6 +23,9 @@ module.exports = {
   plugins: [
     new Uglify(uglifyOptions),
   ],
+  externals: {
+    fs: '{}',
+  },
   resolve: {
     modules: [
       'node_modules',
@@ -37,7 +40,7 @@ module.exports = {
       zlib: 'browserify-zlib',
       // Can be dropped once https://github.com/webpack/node-libs-browser/pull/41
       // is shipped
-      http: 'stream-http'
+      http: 'stream-http',
     }
   },
   resolveLoader: {
