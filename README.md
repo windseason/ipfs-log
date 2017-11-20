@@ -105,11 +105,15 @@ ipfs.on('ready' , () => {
 
 See [examples](https://github.com/orbitdb/ipfs-log/tree/master/examples) for details.
 
+*If your platforms requires ES5-compatible JavaScript, there's a build in `lib/es5/`.*
+
 ### Browser
 
 See [examples/browser](https://github.com/orbitdb/ipfs-log/tree/master/examples/browser) for details.
 
 *The distribution package for browsers is located in [dist/ipfslog.min.js](https://github.com/orbitdb/ipfs-log/tree/master/dist)*
+
+*If your platforms requires ES5-compatible JavaScript, there's a build in `lib/es5/`.*
 
 ## API
 
