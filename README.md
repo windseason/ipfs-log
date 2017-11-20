@@ -1,6 +1,6 @@
 # ipfs-log
 
-[![npm version](https://badge.fury.io/js/ipfs-log.svg)](https://badge.fury.io/js/ipfs-log)
+[![npm](https://img.shields.io/npm/v/ipfs-log.svg)](https://www.npmjs.com/package/ipfs-log)
 [![CircleCI Status](https://circleci.com/gh/orbitdb/ipfs-log.svg?style=shield)](https://circleci.com/gh/orbitdb/ipfs-log)
 
 > An append-only log on IPFS.
