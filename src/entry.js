@@ -17,10 +17,9 @@ class Entry {
    * // { hash: "Qm...Foo", payload: "hello", next: [] }
    * @returns {Promise<Entry>}
    */
-  static create (ipfs, id, seq, data, next = [], clock) {
+  static async create (ipfs, id, data, next = [], clock, signKey) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(id)) throw new Error('Entry requires an id')
-    // if (!isDefined(seq)) throw new Error('Entry requires a sequence number')
     if (!isDefined(data)) throw new Error('Entry requires data')
     if (!isDefined(next) || !Array.isArray(next)) throw new Error("'next' argument is not an array")
 
@@ -38,13 +37,34 @@ class Entry {
       clock: new Clock(id, clock ? clock.time : null),
     }
 
-    const appendWithHash = (hash) => {
-      entry.hash = hash
-      return entry
+    // If signing key was passedd, sign the enrty
+    if (ipfs.keystore && signKey) {
+      entry = await Entry.signEntry(ipfs.keystore, entry, signKey) 
     }
 
-    return Entry.toMultihash(ipfs, entry)
-      .then(appendWithHash)
+    entry.hash = await Entry.toMultihash(ipfs, entry)
+    return entry
+  }
+
+  static async signEntry (keystore, entry, key) {
+    const signature = await keystore.sign(key, new Buffer(JSON.stringify(entry)))
+    entry.sig = signature
+    entry.key = key.getPublic('hex')
+    return entry
+  }
+
+  static async verifyEntry (entry, keystore) {
+    const e = Object.assign({}, {
+      hash: null,
+      id: entry.id,
+      payload: entry.payload,
+      next: entry.next,
+      v: entry.v,
+      clock: entry.clock,
+    })
+
+    const pubKey = await keystore.importPublicKey(entry.key)
+    await keystore.verify(entry.sig, pubKey, new Buffer(JSON.stringify(e)))
   }
 
   /**
@@ -80,7 +100,7 @@ class Entry {
     return ipfs.object.get(hash, { enc: 'base58' })
       .then((obj) => JSON.parse(obj.toJSON().data))
       .then((data) => {
-        const entry = {
+        let entry = {
           hash: hash,
           id: data.id,
           payload: data.payload,
@@ -88,6 +108,8 @@ class Entry {
           v: data.v,
           clock: data.clock,
         }
+        if (data.sig) Object.assign(entry, { sig: data.sig })
+        if (data.key) Object.assign(entry, { key: data.key })
         return entry
       })
   }
@@ -151,7 +173,7 @@ class Entry {
       prev = parent
       parent = values.find((e) => Entry.isParent(prev, e))
     }
-    stack = stack.sort((a, b) => a.seq > b.seq)
+    stack = stack.sort((a, b) => a.clock.time > a.clock.time)
     return stack
   }
 }

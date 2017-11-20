@@ -16,5 +16,7 @@ clean:
 	rm -rf ipfs-log-benchmarks/
 	rm -rf node_modules/
 	rm -rf coverage/
+	rm -rf test/keystore/
+	rm package-lock.json
 
 .PHONY: test

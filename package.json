@@ -7,25 +7,25 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/haadcode/ipfs-log"
+    "url": "https://github.com/orbitdb/ipfs-log"
   },
   "engines": {
-    "node": ">= 6.x.x"
+    "node": ">=8.0.0"
   },
   "dependencies": {
     "p-map": "^1.1.1",
     "p-whilst": "^1.0.0"
   },
   "devDependencies": {
-    "asyncawait": "^1.0.6",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
-    "datastore-level": "~0.6.0",
-    "ipfs": "~0.25.4",
-    "ipfs-repo": "~0.17.0",
-    "mocha": "^3.5.0",
+    "datastore-level": "~0.7.0",
+    "ipfs": "~0.26.0",
+    "ipfs-repo": "~0.18.3",
+    "mocha": "^4.0.1",
+    "orbit-db-keystore": "github:haadcode/orbit-db-keystore.git",
     "rimraf": "^2.6.1",
-    "uglifyjs-webpack-plugin": "~1.0.0-beta.2",
+    "uglifyjs-webpack-plugin": "~1.1.0",
     "webpack": "^3.5.5"
   },
   "scripts": {

@@ -1,13 +1,14 @@
 'use strict'
 
 const Log = require('../src/log')
+const Keystore = require('orbit-db-keystore')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 
 // State
 let ipfs
-let log1, log2
+let log
 
 // Metrics
 let totalQueries = 0
@@ -15,22 +16,15 @@ let seconds = 0
 let queriesPerSecond = 0
 let lastTenSeconds = 0
 
-const queryLoop = async () => {
-  try {
-    const add1 = await log1.append('a' + totalQueries)
-    const add2 = await log2.append('b' + totalQueries)
-
-    await Promise.all([add1, add2])
-    log1.join(log2)
-    log2.join(log1)
-    totalQueries++
-    lastTenSeconds++
-    queriesPerSecond++
-    setImmediate(queryLoop)
-  } catch (e) {
-    console.error(e)
-    process.exit(0)
-  }
+const queryLoop = () => {
+  log.append(totalQueries.toString())
+    .then((res) => {
+      totalQueries++
+      lastTenSeconds++
+      queriesPerSecond++
+      setImmediate(queryLoop)
+    })
+    .catch((e) => console.error(e))
 }
 
 let run = (() => {
@@ -46,18 +40,21 @@ let run = (() => {
     repo: new IPFSRepo('./ipfs-log-benchmarks/ipfs', repoConf),
     start: false,
     EXPERIMENTAL: {
-      pubsub: true
+      pubsub: false,
+      sharding: false,
+      dht: false,
     },
   })
 
   ipfs.on('error', (err) => {
     console.error(err)
-    process.exit(1)
   })
 
   ipfs.on('ready', () => {
-    log1 = new Log(ipfs, 'A')
-    log2 = new Log(ipfs, 'B')
+    const keystore = new Keystore('./test-keys')
+    const key = keystore.createKey('benchmark-append-signed')
+    ipfs.keystore = keystore
+    log = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
 
     // Output metrics at 1 second interval
     setInterval(() => {
@@ -67,11 +64,11 @@ let run = (() => {
         if (lastTenSeconds === 0) throw new Error('Problems!')
         lastTenSeconds = 0
       }
-      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. log1: ${log1.length}, log2: ${log2.length}`)
+      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (Entry count: ${log.values.length})`)
       queriesPerSecond = 0
     }, 1000)
 
-    queryLoop()
+    setImmediate(queryLoop)
   })
 })()
 
