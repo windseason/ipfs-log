@@ -1,7 +1,7 @@
 # ipfs-log
 
 [![npm version](https://badge.fury.io/js/ipfs-log.svg)](https://badge.fury.io/js/ipfs-log)
-[![CircleCI Status](https://circleci.com/gh/haadcode/ipfs-log.svg?style=shield)](https://circleci.com/gh/haadcode/ipfs-log)
+[![CircleCI Status](https://circleci.com/gh/orbitdb/ipfs-log.svg?style=shield)](https://circleci.com/gh/orbitdb/ipfs-log)
 
 > An append-only log on IPFS.
 
@@ -59,7 +59,7 @@ IPFS Log has a few use cases:
 - Track a version of a file
 - Messaging
 
-It was originally created for, and currently used in, [orbit-db](https://github.com/haadcode/orbit-db) - a distributed peer-to-peer database on [IPFS](https://github.com/ipfs/ipfs).
+It was originally created for, and currently used in, [orbit-db](https://github.com/orbitdb/orbit-db) - a distributed peer-to-peer database on [IPFS](https://github.com/ipfs/ipfs).
 
 ## Requirements
 
@@ -73,7 +73,7 @@ npm install ipfs-log
 
 ## Usage
 
-See the [API documentation](#api) and [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for more details.
+See the [API documentation](#api) and [examples](https://github.com/orbitdb/ipfs-log/tree/master/examples) for more details.
 
 ### Quick Start
 
@@ -103,35 +103,35 @@ ipfs.on('ready' , () => {
 
 ### Node.js
 
-See [examples](https://github.com/haadcode/ipfs-log/tree/master/examples) for details.
+See [examples](https://github.com/orbitdb/ipfs-log/tree/master/examples) for details.
 
 ### Browser
 
-See [examples/browser](https://github.com/haadcode/ipfs-log/tree/master/examples/browser) for details.
+See [examples/browser](https://github.com/orbitdb/ipfs-log/tree/master/examples/browser) for details.
 
-*The distribution package for browsers is located in [dist/ipfslog.min.js](https://github.com/haadcode/ipfs-log/tree/master/dist)*
+*The distribution package for browsers is located in [dist/ipfslog.min.js](https://github.com/orbitdb/ipfs-log/tree/master/dist)*
 
 ## API
 
-See [API Documentation](https://github.com/haadcode/ipfs-log/tree/master/API.md) for full details.
+See [API Documentation](https://github.com/orbitdb/ipfs-log/tree/master/API.md) for full details.
 
-- [Log](https://github.com/haadcode/ipfs-log/tree/master/API.md#log)
-  - [Constructor](https://github.com/haadcode/ipfs-log/tree/master/API.md##constructor)
-    - [new Log(ipfs, [id])](https://github.com/haadcode/ipfs-log/tree/master/API.md##new-log-ipfs-id)
-  - [Properties](https://github.com/haadcode/ipfs-log/tree/master/API.md##properties)
-    - [id](https://github.com/haadcode/ipfs-log/tree/master/API.md##id)
-    - [values](https://github.com/haadcode/ipfs-log/tree/master/API.md##values)
-    - [length](https://github.com/haadcode/ipfs-log/tree/master/API.md##length)
-    - [clock](https://github.com/haadcode/ipfs-log/tree/master/API.md##length)
-    - [heads](https://github.com/haadcode/ipfs-log/tree/master/API.md##heads)
-    - [tails](https://github.com/haadcode/ipfs-log/tree/master/API.md##tails)
-  - [Methods](https://github.com/haadcode/ipfs-log/tree/master/API.md##methods)
-    - [append(data)](https://github.com/haadcode/ipfs-log/tree/master/API.md##appenddata)
-    - [join(log)](https://github.com/haadcode/ipfs-log/tree/master/API.md##joinlog)
-    - [toMultihash()](https://github.com/haadcode/ipfs-log/tree/master/API.md##tomultihash)
-    - [toBuffer()](https://github.com/haadcode/ipfs-log/tree/master/API.md##tobuffer)
-    - [toString()](https://github.com/haadcode/ipfs-log/tree/master/API.md##toString)
-  - [Static Methods](https://github.com/haadcode/ipfs-log/tree/master/API.md##static-methods)
+- [Log](https://github.com/orbitdb/ipfs-log/tree/master/API.md#log)
+  - [Constructor](https://github.com/orbitdb/ipfs-log/tree/master/API.md##constructor)
+    - [new Log(ipfs, [id])](https://github.com/orbitdb/ipfs-log/tree/master/API.md##new-log-ipfs-id)
+  - [Properties](https://github.com/orbitdb/ipfs-log/tree/master/API.md##properties)
+    - [id](https://github.com/orbitdb/ipfs-log/tree/master/API.md##id)
+    - [values](https://github.com/orbitdb/ipfs-log/tree/master/API.md##values)
+    - [length](https://github.com/orbitdb/ipfs-log/tree/master/API.md##length)
+    - [clock](https://github.com/orbitdb/ipfs-log/tree/master/API.md##length)
+    - [heads](https://github.com/orbitdb/ipfs-log/tree/master/API.md##heads)
+    - [tails](https://github.com/orbitdb/ipfs-log/tree/master/API.md##tails)
+  - [Methods](https://github.com/orbitdb/ipfs-log/tree/master/API.md##methods)
+    - [append(data)](https://github.com/orbitdb/ipfs-log/tree/master/API.md##appenddata)
+    - [join(log)](https://github.com/orbitdb/ipfs-log/tree/master/API.md##joinlog)
+    - [toMultihash()](https://github.com/orbitdb/ipfs-log/tree/master/API.md##tomultihash)
+    - [toBuffer()](https://github.com/orbitdb/ipfs-log/tree/master/API.md##tobuffer)
+    - [toString()](https://github.com/orbitdb/ipfs-log/tree/master/API.md##toString)
+  - [Static Methods](https://github.com/orbitdb/ipfs-log/tree/master/API.md##static-methods)
     - [Log.expand()]()
     - [Log.expandFrom()]()
     - [Log.fromEntry()]()
@@ -155,7 +155,7 @@ npm run build
 
 ## Benchmarks
 
-There's a benchmark suite in [benchmarks/](https://github.com/haadcode/ipfs-log/blob/master/benchmarks) that can be run with:
+There's a benchmark suite in [benchmarks/](https://github.com/orbitdb/ipfs-log/blob/master/benchmarks) that can be run with:
 
 ```
 node benchmarks/benchmark-append.js
@@ -163,11 +163,11 @@ node benchmarks/benchmark-join.js
 node benchmarks/benchmark-expand.js
 ```
 
-There's `append` and `join` benchmarks for browsers in [benchmarks/browsers/](https://github.com/haadcode/ipfs-log/blob/master/benchmarks/browsers) which you can run by opening the `.html` files in your browser.
+There's `append` and `join` benchmarks for browsers in [benchmarks/browsers/](https://github.com/orbitdb/ipfs-log/blob/master/benchmarks/browsers) which you can run by opening the `.html` files in your browser.
 
 ## Contribute
 
-PRs and [issues](https://github.com/haadcode/ipfs-log/issues) are gladly accepted! Take a look at the open issues, too, to see if there is anything that you could do or someone else has already done. Here are some things I know I need:
+PRs and [issues](https://github.com/orbitdb/ipfs-log/issues) are gladly accepted! Take a look at the open issues, too, to see if there is anything that you could do or someone else has already done. Here are some things I know I need:
 
 ### TODO
 
