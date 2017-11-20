@@ -63,7 +63,7 @@ It was originally created for, and currently used in, [orbit-db](https://github.
 
 ## Requirements
 
-- Node.js v6.0.0 or newer
+- Node.js v8.0.0 or newer
 
 ## Install
 
@@ -163,15 +163,14 @@ node benchmarks/benchmark-join.js
 node benchmarks/benchmark-expand.js
 ```
 
-There's `append` and `join` benchmarks for browsers in [benchmarks/browsers/](https://github.com/orbitdb/ipfs-log/blob/master/benchmarks/browsers) which you can run by opening the `.html` files in your browser.
+There's `append` and `join` benchmarks for browsers in [benchmarks/browser/](https://github.com/orbitdb/ipfs-log/blob/master/benchmarks/browser) which you can run by opening the `.html` files in your browser.
 
 ## Contribute
 
-PRs and [issues](https://github.com/orbitdb/ipfs-log/issues) are gladly accepted! Take a look at the open issues, too, to see if there is anything that you could do or someone else has already done. Here are some things I know I need:
+If you find a bug or something is broken, let us know! PRs and [issues](https://github.com/orbitdb/ipfs-log/issues) are gladly accepted too. Take a look at the open issues, too, to see if there is anything that you could do or someone else has already done. Here are some things I know I need:
 
 ### TODO
 
-- Support for signed logs
 - Support for payload encryption
 
 ## License
