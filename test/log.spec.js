@@ -208,6 +208,10 @@ apis.forEach((IPFS) => {
         assert.equal(log.has(expectedData), true)
       })
 
+      it('returns true if it has an Entry, hash lookup', () => {
+        assert.equal(log.has(expectedData.hash), true)
+      })
+
       it('returns false if it doesn\'t have the Entry', () => {
         assert.equal(log.has('QmFoo'), false)
       })

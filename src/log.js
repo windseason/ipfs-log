@@ -144,8 +144,7 @@ class Log extends GSet {
   }
 
   has (entry) {
-    var isEqual = e => Entry.isEqual(e, entry)
-    return this.values.find(isEqual) !== undefined
+    return this._entryIndex[entry.hash || entry] !== undefined
   }
 
   /**
