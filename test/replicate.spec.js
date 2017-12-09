@@ -96,13 +96,21 @@ apis.forEach((IPFS) => {
         processing --
       }
 
-      beforeEach(async () => {
+      beforeEach((done) => {
         log1 = new Log(ipfs1, 'A')
         log2 = new Log(ipfs2, 'B')
         input1 = new Log(ipfs1, 'input1')
         input2 = new Log(ipfs2, 'input2')
-        await ipfs1.pubsub.subscribe(channel, handleMessage)
-        await ipfs2.pubsub.subscribe(channel, handleMessage2)
+        ipfs1.pubsub.subscribe(channel, handleMessage, (err) => {
+          if (err) 
+            return done(err)
+          ipfs2.pubsub.subscribe(channel, handleMessage2, (err) => {
+            if (err) 
+              done(err)
+            else 
+              done()
+          })
+        })
       })
 
       it('replicates logs', (done) => {
