@@ -14,7 +14,7 @@ The module works in **Node.js** and **Browsers**.
 ```
            Log A                Log B
              |                    |
-     logA.append("one")   logA.append("two")
+     logA.append("one")   logA.append("hello")
              |                    |
              v                    v
           +-----+             +-------+
