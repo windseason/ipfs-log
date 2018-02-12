@@ -14,14 +14,14 @@ The module works in **Node.js** and **Browsers**.
 ```
            Log A                Log B
              |                    |
-     logA.append("one")   logA.append("hello")
+     logA.append("one")   logB.append("hello")
              |                    |
              v                    v
           +-----+             +-------+
           |"one"|             |"hello"|
           +-----+             +-------+
              |                    |
-     logA.append("two")   logA.append("world")
+     logA.append("two")   logB.append("world")
              |                    |
              v                    v
        +-----------+       +---------------+
