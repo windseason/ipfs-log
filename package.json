@@ -36,7 +36,7 @@
     "build": "npm run build:es5 && npm run build:examples && npm run build:dist",
     "build:examples": "webpack --config webpack.example.config.js --sort-modules-by size --define process.env.NODE_ENV=production",
     "build:dist": "webpack --config webpack.config.js --display-modules --sort-modules-by size --define process.env.NODE_ENV=production",
-    "build:es5": "babel src --out-dir ./lib/es5/ --presets babel-preset-es2015 --plugins babel-plugin-transform-runtime",
+    "build:es5": "babel src --out-dir ./lib/es5/ --presets babel-preset-env --plugins babel-plugin-transform-runtime",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
   }
 }
