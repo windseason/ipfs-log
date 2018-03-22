@@ -4,9 +4,6 @@ const pWhilst = require('p-whilst')
 const pMap = require('p-map')
 const Entry = require('./entry')
 
-let _tasksRequested = 0
-let _tasksProcessed = 0
-
 class EntryIO {
   // Fetch log graphs in parallel
   static fetchParallel (ipfs, hashes, length, exclude = [], concurrency, timeout, onProgressCallback) {
@@ -71,14 +68,11 @@ class EntryIO {
             entry.next.forEach(addToLoadingQueue)
             result.push(entry)
             cache[hash] = entry
-            _tasksProcessed ++
             if (onProgressCallback) {
               onProgressCallback(hash, entry, result.length)
             }
           }
         }
-
-        _tasksRequested ++
 
         // Load the entry
         Entry.fromMultihash(ipfs, hash)
