@@ -59,7 +59,7 @@ class Log extends GSet {
 
     // Signing related setup
     this._keystore = this._storage.keystore
-    this._key = key
+    this._key = key 
     this._keys = Array.isArray(keys) ? keys : [keys]
 
     // Add entries to the internal cache
@@ -79,7 +79,11 @@ class Log extends GSet {
 
     // Set the clock
     const maxTime = Math.max(clock ? clock.time : 0, this.heads.reduce(maxClockTimeReducer, 0))
-    this._clock = new Clock(this.id, maxTime)
+    // Take the given key as the clock id is it's a Key instance,
+    // otherwise if key was given, take whatever it is,
+    // and if it was null, take the given id as the clock id
+    const clockId = (key && key.getPublic) ? key.getPublic('hex') : (key ? key : this._id)
+    this._clock = new Clock(clockId, maxTime)
   }
 
   /**
@@ -195,7 +199,7 @@ class Log extends GSet {
    */
   async append (data, pointerCount = 1) {
     // Verify that we're allowed to append
-    if (this._key 
+    if ((this._key && this._key.getPublic)
         && !this._keys.includes(this._key.getPublic('hex')) 
         && !this._keys.includes('*')) {
       throw new Error("Not allowed to write")
@@ -232,7 +236,7 @@ class Log extends GSet {
    *
    * @returns {Promise<Log>}
    */
-  async join (log, size = -1, id) {
+  async join (log, size = -1) {
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!Log.isLog(log)) throw LogError.NotALogError()
 
@@ -293,7 +297,7 @@ class Log extends GSet {
       while (stack.length > 0) {
         const hash = stack.shift()
         const entry = log.get(hash)
-          if (entry && !exclude.get(hash)) {
+          if (entry && !exclude.get(hash) && entry.id === this.id) {
           res[entry.hash] = entry
           traversed[entry.hash] = true
           entry.next.forEach(pushToStack)
@@ -302,14 +306,11 @@ class Log extends GSet {
       return res
     }
 
-    // If id is not specified, use greater id of the two logs
-    id = id ? id : [log, this].sort((a, b) => a.id > b.id)[0].id
-
     // Merge the entries
     const newItems = difference(log, this)
 
     // if a key was given, verify the entries from the incoming log
-    if (this._key) {
+    if (this._key && this._key.getPublic) {
       const canJoin = await verifyEntries(Object.values(newItems))
       // Return early if any of the given entries didn't verify
       if (!canJoin)
@@ -347,10 +348,7 @@ class Log extends GSet {
 
     // Find the latest clock from the heads
     const maxClock = Object.values(this._headsIndex).reduce(maxClockTimeReducer, 0)
-    const clock = new Clock(this.id, Math.max(this.clock.time, maxClock))
-
-    this._id = id
-    this._clock = clock
+    this._clock = new Clock(this.clock.id, Math.max(this.clock.time, maxClock))
     return this
   }
 
@@ -545,7 +543,7 @@ class Log extends GSet {
     var items = entries.reduce(indexReducer, {})
 
     var exists = e => items[e.hash] === undefined
-    var compareIds = (a, b) => a.id > b.id
+    var compareIds = (a, b) => a.clock.id > b.clock.id
 
     return entries.filter(exists).sort(compareIds)
   }
