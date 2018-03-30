@@ -95,7 +95,7 @@ apis.forEach((IPFS) => {
         process.stdout.write('\r')
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const log = await Log.fromMultihash(ipfs1, message.data.toString())
-        log1.join(log, -1, log1.id)
+        log1.join(log)
         processing --
       }
 
@@ -108,15 +108,15 @@ apis.forEach((IPFS) => {
         process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const exclude = log2.values.map((e) => e.hash)
         const log = await Log.fromMultihash(ipfs2, message.data.toString())
-        log2.join(log, -1, log2.id)
+        log2.join(log)
         processing --
       }
 
       beforeEach((done) => {
-        log1 = new Log(ipfs1, 'A')
-        log2 = new Log(ipfs2, 'B')
-        input1 = new Log(ipfs1, 'input1')
-        input2 = new Log(ipfs2, 'input2')
+        log1 = new Log(ipfs1, 'A', null, null, null, 'peerA')
+        log2 = new Log(ipfs2, 'A', null, null, null, 'peerB')
+        input1 = new Log(ipfs1, 'A', null, null, null, 'peerA')
+        input2 = new Log(ipfs2, 'A', null, null, null, 'peerB')
         ipfs1.pubsub.subscribe(channel, handleMessage, (err) => {
           if (err) 
             return done(err)
@@ -162,7 +162,7 @@ apis.forEach((IPFS) => {
               const timeout = 30000
               await whileProcessingMessages(timeout)
 
-              let result = new Log(ipfs1, 'result')
+              let result = new Log(ipfs1, 'A', null, null, null, 'peerA')
               result.join(log1)
               result.join(log2)
 

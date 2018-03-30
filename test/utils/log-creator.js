@@ -6,10 +6,11 @@ const Log = require('../../src/log.js')
 class LogCreator {
   static async createLog1 (ipfs) {
     const create = async () => {
-      let logA = new Log(ipfs, 'A')
-      let logB = new Log(ipfs, 'B')
-      let log3 = new Log(ipfs, '3')
-      let log  = new Log(ipfs, 'log')
+      let logA = new Log(ipfs, 'X', null, null, null, 'A')
+      let logB = new Log(ipfs, 'X', null, null, null, 'B')
+      let log3 = new Log(ipfs, 'X', null, null, null, '3')
+      let log  = new Log(ipfs, 'X', null, null, null, 'log')
+
       for(let i = 1; i <= 5; i ++) {
         await logA.append('entryA' + i)
       }
@@ -21,9 +22,9 @@ class LogCreator {
       for(let i = 6; i <= 10; i ++) {
         await logA.append('entryA' + i)
       }
-      log.join(log3, -1, log.id)
+      log.join(log3)
       await log.append('entryC0')
-      log.join(logA, -1, log.id)
+      log.join(logA)
       return log
     }
 
@@ -45,9 +46,9 @@ class LogCreator {
     let expectedData = []
 
     const create = async () => {
-      let logA = new Log(ipfs, 'A')
-      let logB = new Log(ipfs, 'B')
-      let log  = new Log(ipfs, 'log')
+      let logA = new Log(ipfs, 'X', null, null, null, 'A')
+      let logB = new Log(ipfs, 'X', null, null, null, 'B')
+      let log  = new Log(ipfs, 'X', null, null, null, 'log')
       for(let i = 1; i <= amount; i ++) {
         await logA.append('entryA' + i)
         logB.join(logA)

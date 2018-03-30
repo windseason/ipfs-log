@@ -28,13 +28,19 @@ class Entry {
     let nexts = next.filter(isDefined)
       .map(toEntry)
 
+    // Take the id of the given clock by default,
+    // if clock not given, take the signing key if it's a Key instance,
+    // or if none given, take the id as the clock id
+    const clockId = clock ? clock.id : (signKey ? signKey.getPublic('hex') : id)
+    const clockTime = clock ? clock.time : null
+
     let entry = {
       hash: null, // "Qm...Foo", we'll set the hash after persisting the entry
       id: id, // For determining a unique chain
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of Multihashes
       v: 0, // For future data structure updates, should currently always be 0
-      clock: new Clock(id, clock ? clock.time : null),
+      clock: new Clock(clockId, clockTime),
     }
 
     // If signing key was passedd, sign the enrty
@@ -47,7 +53,7 @@ class Entry {
   }
 
   static async signEntry (keystore, entry, key) {
-    const signature = await keystore.sign(key, new Buffer(JSON.stringify(entry)))
+    const signature = await keystore.sign(key, Buffer.from(JSON.stringify(entry)))
     entry.sig = signature
     entry.key = key.getPublic('hex')
     return entry
@@ -64,7 +70,7 @@ class Entry {
     })
 
     const pubKey = await keystore.importPublicKey(entry.key)
-    await keystore.verify(entry.sig, pubKey, new Buffer(JSON.stringify(e)))
+    await keystore.verify(entry.sig, pubKey, Buffer.from(JSON.stringify(e)))
   }
 
   /**

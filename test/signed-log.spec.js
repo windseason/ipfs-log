@@ -36,13 +36,13 @@ apis.forEach((IPFS) => {
   describe('Signed Log', function() {
     this.timeout(10000)
 
-    const keystore = new Keystore('./test/keystore')
+    const keystore = new Keystore('./test/fixtures/keystore')
 
     before((done) => {
       rmrf.sync(dataDir)
-      key1 = keystore.createKey('A')
-      key2 = keystore.createKey('B')
-      key3 = keystore.createKey('C')
+      key1 = keystore.getKey('A')
+      key2 = keystore.getKey('B')
+      key3 = keystore.getKey('C')
       ipfs = new IPFS(ipfsConf)
       ipfs.keystore = keystore 
       ipfs.on('error', done)
@@ -97,7 +97,7 @@ apis.forEach((IPFS) => {
       try {
         await log1.append('one')
         await log2.append('two')
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
       }
@@ -106,13 +106,13 @@ apis.forEach((IPFS) => {
 
     it('allows only the specified keys to write when write-access keys are defined', async () => {
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
 
       let err
       try {
         await log1.append('one')
         await log2.append('two')
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
         throw e
@@ -126,13 +126,13 @@ apis.forEach((IPFS) => {
 
     it('allows others than the owner to write', async () => {
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, [key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key2.getPublic('hex')])
 
       let err
       try {
         await log2.append('one')
         await log2.append('two')
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
         throw e
@@ -146,13 +146,13 @@ apis.forEach((IPFS) => {
 
     it('allows anyone to write', async () => {
       const log1 = new Log(ipfs, 'A', null, null, null, key1, ['*'])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, ['*'])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, ['*'])
 
       let err
       try {
         await log2.append('one')
         await log2.append('two')
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
         throw e
@@ -162,6 +162,26 @@ apis.forEach((IPFS) => {
       assert.equal(log1.values.length, 2)
       assert.equal(log1.values[0].payload, 'one')
       assert.equal(log1.values[1].payload, 'two')
+    })
+
+    it('doesn\'t join logs with different IDs ', async () => {
+      const log1 = new Log(ipfs, 'A', null, null, null, key1, ['*'])
+      const log2 = new Log(ipfs, 'B', null, null, null, key1, ['*'])
+
+      let err
+      try {
+        await log1.append('one')
+        await log2.append('two')
+        await log2.append('three')
+        await log1.join(log2)
+      } catch (e) {
+        err = e.toString()
+        throw e
+      }
+      assert.equal(err, null)
+      assert.equal(log1.id, 'A')
+      assert.equal(log1.values.length, 1)
+      assert.equal(log1.values[0].payload, 'one')
     })
 
     it('doesn\'t allows the owner to write if write-keys defines non-owner key', async () => {
@@ -190,14 +210,14 @@ apis.forEach((IPFS) => {
 
     it('throws an error if log is signed but trying to merge with an entry that doesn\'t have public signing key', async () => {
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
 
       let err
       try {
         await log1.append('one')
         await log2.append('two')
         delete log2.values[0].key
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
       }
@@ -206,14 +226,14 @@ apis.forEach((IPFS) => {
 
     it('throws an error if log is signed but trying to merge an entry that doesn\'t have a signature', async () => {
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
 
       let err
       try {
         await log1.append('one')
         await log2.append('two')
         delete log2.values[0].sig
-        await log1.join(log2, log1.id)
+        await log1.join(log2)
       } catch (e) {
         err = e.toString()
       }
@@ -227,12 +247,12 @@ apis.forEach((IPFS) => {
       }
 
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'B', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
 
       await log1.append('one')
       await log2.append('two')
       log2.values[0].sig = replaceAt(log2.values[0].sig, 0, 'X')
-      await log1.join(log2, log1.id)
+      await log1.join(log2)
 
       assert.equal(log1.values.length, 1)
       assert.equal(log1.values[0].payload, 'one')

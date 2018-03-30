@@ -46,7 +46,7 @@ apis.forEach((IPFS) => {
     })
 
     it('log with one entry', async () => {
-      let log = new Log(ipfs, 'A')
+      let log = new Log(ipfs, 'X')
       await log.append('one')
       const hash = log.values[0].hash
       const res = await EntryIO.fetchAll(ipfs, hash, 1)
@@ -54,7 +54,7 @@ apis.forEach((IPFS) => {
     })
 
     it('log with 2 entries', async () => {
-      let log = new Log(ipfs, 'A')
+      let log = new Log(ipfs, 'X')
       await log.append('one')
       await log.append('two')
       const hash = last(log.values).hash
@@ -63,7 +63,7 @@ apis.forEach((IPFS) => {
     })
 
     it('loads max 1 entriy from a log of 2 entry', async () => {
-      let log = new Log(ipfs, 'A')
+      let log = new Log(ipfs, 'X')
       await log.append('one')
       await log.append('two')
       const hash = last(log.values).hash
@@ -73,7 +73,7 @@ apis.forEach((IPFS) => {
 
     it('log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, 'A')
+      let log = new Log(ipfs, 'X')
       for (let i = 0; i < count; i ++)
         await log.append('hello' + i)
 
@@ -84,8 +84,8 @@ apis.forEach((IPFS) => {
 
     it('load only 42 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, 'a')
-      let log2 = new Log(ipfs, 'b')
+      let log = new Log(ipfs, 'X')
+      let log2 = new Log(ipfs, 'X')
       for (let i = 1; i <= count; i ++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
@@ -96,14 +96,14 @@ apis.forEach((IPFS) => {
 
       const hash = await log.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash, 42)
-      assert.equal(result.length, 42)        
+      assert.equal(result.length, 42)
     })
 
     it('load only 99 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, 'A')
-      let log2 = new Log(ipfs, 'B')
-      let log3 = new Log(ipfs, 'C')
+      let log = new Log(ipfs, 'X')
+      let log2 = new Log(ipfs, 'X')
+      let log3 = new Log(ipfs, 'X')
       for (let i = 1; i <= count; i ++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
@@ -120,9 +120,9 @@ apis.forEach((IPFS) => {
 
     it('load only 10 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, 'A')
-      let log2 = new Log(ipfs, 'B')
-      let log3 = new Log(ipfs, 'C')
+      let log = new Log(ipfs, 'X')
+      let log2 = new Log(ipfs, 'X')
+      let log3 = new Log(ipfs, 'X')
       for (let i = 1; i <= count; i ++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
@@ -144,14 +144,14 @@ apis.forEach((IPFS) => {
 
     it('load only 10 entries and then expand to max from a log with 100 entries', async () => {
       const count = 30
-      let log =  new Log(ipfs, 'A')
-      let log2 = new Log(ipfs, 'B')
-      let log3 = new Log(ipfs, 'C')
+      let log =  new Log(ipfs, 'X', null, null, null, 'A')
+      let log2 = new Log(ipfs, 'X', null, null, null, 'B')
+      let log3 = new Log(ipfs, 'X', null, null, null, 'C')
       for (let i = 1; i <= count; i ++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           await log2.append('hi' + i)
-          log2.join(log, -1, log2.id)
+          log2.join(log)
         }
         if (i % 25 === 0) {
           log3 = new Log(ipfs, log3.id, log3.values, log3.heads.concat(log2.heads))
@@ -161,7 +161,7 @@ apis.forEach((IPFS) => {
 
       log3.join(log2)
 
-      const log4 = new Log(ipfs, 'D')
+      const log4 = new Log(ipfs, 'X', null, null, null, 'D')
       log4.join(log2)
       log4.join(log3)
 
