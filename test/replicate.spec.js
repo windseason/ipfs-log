@@ -6,6 +6,7 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const config = require('./config/ipfs-daemon.config')
 const Log = require('../src/log.js')
+const MemStore = require('./utils/mem-store')
 
 const apis = [require('ipfs')]
 
@@ -31,7 +32,7 @@ const waitForPeers = (ipfs, channel) => {
           }
         })
         .catch(reject)
-    }, 1000)
+    }, 200)
   })
 }
 
@@ -60,6 +61,14 @@ apis.forEach((IPFS) => {
               ipfs2.id()
                 .then((id) => id2 = id.id)
                 .then(async () => {
+
+                  // Use memory store for quicker tests
+                  const memstore = new MemStore()
+                  ipfs1.object.put = memstore.put.bind(memstore)
+                  ipfs1.object.get = memstore.get.bind(memstore)
+                  ipfs2.object.put = memstore.put.bind(memstore)
+                  ipfs2.object.get = memstore.get.bind(memstore)
+
                   // Connect the peers manually to speed up test times
                   await ipfs2.swarm.connect(ipfs1._peerInfo.multiaddrs._multiaddrs[0].toString())
                   await ipfs1.swarm.connect(ipfs2._peerInfo.multiaddrs._multiaddrs[0].toString())
@@ -79,7 +88,7 @@ apis.forEach((IPFS) => {
     })
 
     describe('replicates logs deterministically', function() {
-      const amount = 100
+      const amount = 128 + 1
 
       let log1, log2, input1, input2
       let buffer1 = []
@@ -93,7 +102,7 @@ apis.forEach((IPFS) => {
         processing ++
         const exclude = log1.values.map((e) => e.hash)
         process.stdout.write('\r')
-        process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
+        process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const log = await Log.fromMultihash(ipfs1, message.data.toString())
         log1.join(log)
         processing --
@@ -105,7 +114,7 @@ apis.forEach((IPFS) => {
         buffer2.push(message.data.toString())
         processing ++
         process.stdout.write('\r')
-        process.stdout.write(`Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
+        process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const exclude = log2.values.map((e) => e.hash)
         const log = await Log.fromMultihash(ipfs2, message.data.toString())
         log2.join(log)
@@ -153,7 +162,7 @@ apis.forEach((IPFS) => {
                     clearInterval(timer)
                     resolve()
                   }
-                }, 1000)
+                }, 200)
               })
             }
 
