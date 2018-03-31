@@ -251,11 +251,5 @@ apis.forEach((IPFS) => {
         assert.equal(Entry.isEntry(fakeEntry), false)
       })
     })
-
-    describe.skip('findParents', () => {
-    })
-
-    describe.skip('findSiblings', () => {
-    })
   })
 })
