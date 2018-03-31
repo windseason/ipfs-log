@@ -45,7 +45,7 @@ apis.forEach((IPFS) => {
     describe('create', () => {
       it('creates a an empty entry', async () => {
         const expectedHash = 'Qmcga9V6D7EPVQTPWjyjFUP6NoGivhymLGi4f9VMGQA24x'
-        const entry = await Entry.create(ipfs, 'A', 'hello')
+        const entry = await Entry.create(ipfs, null, 'A', 'hello')
         assert.equal(entry.hash, expectedHash)
         assert.equal(entry.id, 'A')
         assert.equal(entry.clock.id, 'A')
@@ -58,7 +58,7 @@ apis.forEach((IPFS) => {
       it('creates a entry with payload', async () => {
         const expectedHash = 'QmW4jcyavsU3cEqGXvpXB2tpnCLyp5yYS1WqwfuxRBxjk3'
         const payload = 'hello world'
-        const entry = await Entry.create(ipfs, 'A', payload)
+        const entry = await Entry.create(ipfs, null, 'A', payload)
         assert.equal(entry.payload, payload)
         assert.equal(entry.id, 'A')
         assert.equal(entry.clock.id, 'A')
@@ -72,9 +72,9 @@ apis.forEach((IPFS) => {
         const expectedHash = 'QmcSKfhnDoTXstEUS8L5btps7r4QqrDDLaDJ62cu1i9W6X'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
         entry1.clock.tick()
-        const entry2 = await Entry.create(ipfs, 'A', payload2, [entry1], entry1.clock)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload2, [entry1], entry1.clock)
         assert.equal(entry2.payload, payload2)
         assert.equal(entry2.next.length, 1)
         assert.equal(entry2.hash, expectedHash)
@@ -83,20 +83,20 @@ apis.forEach((IPFS) => {
       })
 
       it('`next` parameter can be an array of strings', async () => {
-        const entry1 = await Entry.create(ipfs, 'A', 'hello1')
-        const entry2 = await Entry.create(ipfs, 'A', 'hello2', [entry1.hash])
+        const entry1 = await Entry.create(ipfs, null, 'A', 'hello1')
+        const entry2 = await Entry.create(ipfs, null, 'A', 'hello2', [entry1.hash])
         assert.equal(typeof entry2.next[0] === 'string', true)
       })
 
       it('`next` parameter can be an array of Entry instances', async () => {
-        const entry1 = await Entry.create(ipfs, 'A', 'hello1')
-        const entry2 = await Entry.create(ipfs, 'A', 'hello2', [entry1])
+        const entry1 = await Entry.create(ipfs, null, 'A', 'hello1')
+        const entry2 = await Entry.create(ipfs, null, 'A', 'hello2', [entry1])
         assert.equal(typeof entry2.next[0] === 'string', true)
       })
 
       it('`next` parameter can contain nulls and undefined objects', async () => {
-        const entry1 = await Entry.create(ipfs, 'A', 'hello1')
-        const entry2 = await Entry.create(ipfs, 'A', 'hello2', [entry1, null, undefined])
+        const entry1 = await Entry.create(ipfs, null, 'A', 'hello1')
+        const entry2 = await Entry.create(ipfs, null, 'A', 'hello2', [entry1, null, undefined])
         assert.equal(typeof entry2.next[0] === 'string', true)
       })
 
@@ -118,7 +118,7 @@ apis.forEach((IPFS) => {
 
       it('throws an error if data is not defined', async () => {
         try {
-          const entry = await Entry.create(ipfs, 'A')
+          const entry = await Entry.create(ipfs, null, 'A')
         } catch(e) {
           assert.equal(e.message, 'Entry requires data')
         }
@@ -126,7 +126,7 @@ apis.forEach((IPFS) => {
 
       it('throws an error if next is not an array', async () => {
         try {
-          const entry = await Entry.create(ipfs, 'A', 'hello', null)
+          const entry = await Entry.create(ipfs, null, 'A', 'hello', null)
         } catch(e) {
           assert.equal(e.message, '\'next\' argument is not an array')
         }
@@ -136,7 +136,7 @@ apis.forEach((IPFS) => {
     describe('toMultihash', () => {
       it('returns an ipfs hash', async () => {
         const expectedHash = 'QmZHattK3ayuXJudvUcQqxM6Mh2nUzxjBKNgLW22cFYMKg'
-        const entry = await Entry.create(ipfs, 'A', 'hello')
+        const entry = await Entry.create(ipfs, null, 'A', 'hello')
         const hash = await Entry.toMultihash(ipfs, entry)
         assert.equal(hash, expectedHash)
       })
@@ -155,8 +155,8 @@ apis.forEach((IPFS) => {
         const expectedHash = 'QmeuTdrRt2AMY5MrX8Fk48njbH8aaQW1uiJnqFVVqUW5Xp'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
-        const entry2 = await Entry.create(ipfs, 'A', payload2, [entry1])
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload2, [entry1])
         const final = await Entry.fromMultihash(ipfs, entry2.hash)
         assert.equal(final.id, 'A')
         assert.equal(final.payload, payload2)
@@ -186,17 +186,17 @@ apis.forEach((IPFS) => {
       it('returns true if entry has a child', async () => {
         const payload1 = 'hello world'
         const payload2 = 'hello again'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
-        const entry2 = await Entry.create(ipfs, 'A', payload2, [entry1])
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload2, [entry1])
         assert.equal(Entry.isParent(entry1, entry2), true)
       })
 
       it('returns false if entry does not have a child', async () => {
         const payload1 = 'hello world'
         const payload2 = 'hello again'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
-        const entry2 = await Entry.create(ipfs, 'A', payload2)
-        const entry3 = await Entry.create(ipfs, 'A', payload2, [entry2])
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload2)
+        const entry3 = await Entry.create(ipfs, null, 'A', payload2, [entry2])
         assert.equal(Entry.isParent(entry1, entry2), false)
         assert.equal(Entry.isParent(entry1, entry3), false)
         assert.equal(Entry.isParent(entry2, entry3), true)
@@ -206,23 +206,23 @@ apis.forEach((IPFS) => {
     describe('compare', () => {
       it('returns true if entries are the same', async () => {
         const payload1 = 'hello world'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
-        const entry2 = await Entry.create(ipfs, 'A', payload1)
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload1)
         assert.equal(Entry.isEqual(entry1, entry2), true)
       })
 
       it('returns true if entries are not the same', async () => {
         const payload1 = 'hello world1'
         const payload2 = 'hello world2'
-        const entry1 = await Entry.create(ipfs, 'A', payload1)
-        const entry2 = await Entry.create(ipfs, 'A', payload2)
+        const entry1 = await Entry.create(ipfs, null, 'A', payload1)
+        const entry2 = await Entry.create(ipfs, null, 'A', payload2)
         assert.equal(Entry.isEqual(entry1, entry2), false)
       })
     })
 
     describe('isEntry', () => {
       it('is an Entry', async () => {
-        const entry = await Entry.create(ipfs, 'A', 'hello')
+        const entry = await Entry.create(ipfs, null, 'A', 'hello')
         assert.equal(Entry.isEntry(entry), true)
       })
 
