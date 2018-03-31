@@ -36,7 +36,7 @@ apis.forEach((IPFS) => {
   describe('Signed Log', function() {
     this.timeout(10000)
 
-    const keystore = new Keystore('./test/fixtures/keystore')
+    const keystore = Keystore.create('./test/fixtures/keystore')
 
     before((done) => {
       rmrf.sync(dataDir)
