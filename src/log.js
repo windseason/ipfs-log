@@ -270,9 +270,7 @@ class Log extends GSet {
         try {
           await Entry.verifyEntry(entry, this._keystore)
         } catch (e) {
-          console.log(e)
-          console.log("Couldn't verify entry:\n", entry)
-          return false
+          throw new Error(`Invalid signature in entry '${entry.hash}'`)
         }
 
         return true
