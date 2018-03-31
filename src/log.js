@@ -487,41 +487,6 @@ class Log extends GSet {
   }
 
   /**
-   * Expands the log with a specified number of new values
-   *
-   * @param  {IPFS}               ipfs    An IPFS instance
-   * @param  {Log}                log     Log to expand
-   * @param  {Entry|Array<Entry>} entries An Entry or an Array of entries to expand from
-   * @param  {Number}             amount  How many new entries to include
-   * @return {Promise<Log>}       New Log
-   */
-  static expandFrom (ipfs, log, entries, amount = -1) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
-    if (!isDefined(log)) throw LogError.LogNotDefinedError()
-    if (!isDefined(entries)) throw new Error(`'entries' must be given as argument`)
-    if (!Log.isLog(log)) throw LogError.NotALogError()
-
-    return LogIO.expandFrom(ipfs, log, entries, amount)
-      .then((data) => new Log(ipfs, log.id, data.values, null, log.clock))
-  }
-
-  /**
-   * Expands the log with a specified amount of Entries
-   * @param  {IPFS}   ipfs   An IPFS instance
-   * @param  {Log}    log    Log to expand
-   * @param  {Number} amount How many new entries to include
-   * @return {Promise<Log>}  New Log
-   */
-  static expand (ipfs, log, amount) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
-    if (!isDefined(log)) throw LogError.LogNotDefinedError()
-    if (!Log.isLog(log)) throw LogError.NotALogError()
-
-    return LogIO.expand(ipfs, log, amount)
-      .then((data) => new Log(ipfs, log.id, data.values, log.heads, log.clock))
-  }
-
-  /**
    * Find heads from a collection of entries
    *
    * @description
