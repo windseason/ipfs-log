@@ -54,7 +54,7 @@ let run = (() => {
     // ipfs.object.put = memstore.put.bind(memstore)
     // ipfs.object.get = memstore.get.bind(memstore)
 
-    const keystore = new Keystore('./test-keys')
+    const keystore = Keystore.create('./test-keys')
     const key = keystore.createKey('benchmark-append-signed')
     ipfs.keystore = keystore
     log = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
