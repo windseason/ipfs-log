@@ -29,15 +29,15 @@ ipfs.on('ready', async () => {
 
   let log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
   let log2 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-  let log3 = new Log(ipfs, 'C', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+  let log3 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
 
   try {
     await log1.append('one')
     await log1.append('two')
     await log2.append('three')
     // Join the logs
-    await log3.join(log1, -1, log3.id)
-    await log3.join(log2, -1, log3.id)
+    await log3.join(log1)
+    await log3.join(log2)
     // Add one more
     await log3.append('four')
     console.log(log3.values)
