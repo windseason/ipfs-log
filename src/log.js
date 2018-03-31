@@ -211,7 +211,7 @@ class Log extends GSet {
     // Get the required amount of hashes to next entries (as per current state of the log)
     const nexts = Object.keys(this.traverse(this.heads, pointerCount))
     // Create the entry and add it to the internal cache
-    const entry = await Entry.create(this._storage, this.id, data, nexts, this.clock, this._key)
+    const entry = await Entry.create(this._storage, this._keystore, this.id, data, nexts, this.clock, this._key)
     this._entryIndex[entry.hash] = entry
     nexts.forEach(e => this._nextsIndex[e] = entry.hash)
     this._headsIndex = {}

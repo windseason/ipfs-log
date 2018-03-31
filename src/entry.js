@@ -17,7 +17,7 @@ class Entry {
    * // { hash: "Qm...Foo", payload: "hello", next: [] }
    * @returns {Promise<Entry>}
    */
-  static async create (ipfs, id, data, next = [], clock, signKey) {
+  static async create (ipfs, keystore, id, data, next = [], clock, signKey) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(id)) throw new Error('Entry requires an id')
     if (!isDefined(data)) throw new Error('Entry requires data')
@@ -44,8 +44,8 @@ class Entry {
     }
 
     // If signing key was passedd, sign the enrty
-    if (ipfs.keystore && signKey) {
-      entry = await Entry.signEntry(ipfs.keystore, entry, signKey) 
+    if (keystore && signKey) {
+      entry = await Entry.signEntry(keystore, entry, signKey) 
     }
 
     entry.hash = await Entry.toMultihash(ipfs, entry)

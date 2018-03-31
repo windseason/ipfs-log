@@ -84,15 +84,6 @@ class LogIO {
 
   static fromJSON (ipfs, json, length = -1, key, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
-
-    const mapper = (e, idx) => {
-      return Entry.create(ipfs, keystore, e.id, e.payload, e.next, e.clock, e.key)
-        .then((entry) => {
-          if (onProgressCallback) onProgressCallback(entry.hash, entry, idx + 1, json.values.length)
-          return entry
-        })
-    }
-
     return EntryIO.fetchParallel(ipfs, json.heads.map(e => e.hash), length, [], 16, timeout, onProgressCallback)
       .then((entries) => {
         const finalEntries = entries.slice().sort(Entry.compare)
