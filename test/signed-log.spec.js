@@ -248,12 +248,17 @@ apis.forEach((IPFS) => {
 
       const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
       const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      let err
 
-      await log1.append('one')
-      await log2.append('two')
-      log2.values[0].sig = replaceAt(log2.values[0].sig, 0, 'X')
-      await log1.join(log2)
-
+      try {
+        await log1.append('one')
+        await log2.append('two')
+        log2.values[0].sig = replaceAt(log2.values[0].sig, 0, 'X')
+        await log1.join(log2)
+      } catch (e) {
+        err = e.toString()
+      }
+      assert.equal(err, `Error: Invalid signature in entry '${log2.values[0].hash}'`)
       assert.equal(log1.values.length, 1)
       assert.equal(log1.values[0].payload, 'one')
     })
