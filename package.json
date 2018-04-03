@@ -13,8 +13,8 @@
     "node": ">=8.0.0"
   },
   "dependencies": {
-    "p-map": "^1.1.1",
-    "p-whilst": "^1.0.0"
+    "p-do-whilst": "^0.1.0",
+    "p-map": "^1.1.1"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

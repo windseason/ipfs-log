@@ -5,11 +5,7 @@ const mh = require('multihashes')
 
 const defaultHashAlg = 'sha2-256'
 
-// 'use strict'
-
-// const ImmutableDB = require('./immutabledb-interface')
-
-const defaultFormat = { format: 'dag-cbor', hashAlg: 'sha2-256' }
+const defaultFormat = { format: 'dag-cbor', hashAlg: defaultHashAlg }
 
 /* ImmutableDB using IPLD (through IPFS) */
 class IPLDStore {
@@ -52,7 +48,7 @@ class MemStore {
 
   async put (value) {
     const data = value//new Buffer(JSON.stringify(value))
-    const hash = await createMultihash(data)
+    const hash = "" + Math.random()%1000 + "--"//await createMultihash(data)
     // console.log(this._store)
     // this._store.set(hash, data)
     if (!this._store) this._store = {}

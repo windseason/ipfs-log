@@ -44,7 +44,7 @@ apis.forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedHash = 'Qmcga9V6D7EPVQTPWjyjFUP6NoGivhymLGi4f9VMGQA24x'
+        const expectedHash = 'QmReSDagnYwVwD6uHBFtW6DRNiSw7EQSsVT7LwdqjFvW8T'
         const entry = await Entry.create(ipfs, null, 'A', 'hello')
         assert.equal(entry.hash, expectedHash)
         assert.equal(entry.id, 'A')
@@ -53,10 +53,11 @@ apis.forEach((IPFS) => {
         assert.equal(entry.v, 0)
         assert.equal(entry.payload, 'hello')
         assert.equal(entry.next.length, 0)
+        assert.equal(entry.refs.length, 0)
       })
 
       it('creates a entry with payload', async () => {
-        const expectedHash = 'QmW4jcyavsU3cEqGXvpXB2tpnCLyp5yYS1WqwfuxRBxjk3'
+        const expectedHash = 'QmTzDNUezcBsronFxR47FFD6PyjMS1HuoeR2C4P66DC7rN'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, null, 'A', payload)
         assert.equal(entry.payload, payload)
@@ -65,11 +66,12 @@ apis.forEach((IPFS) => {
         assert.equal(entry.clock.time, 0)
         assert.equal(entry.v, 0)
         assert.equal(entry.next.length, 0)
+        assert.equal(entry.refs.length, 0)
         assert.equal(entry.hash, expectedHash)
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedHash = 'QmcSKfhnDoTXstEUS8L5btps7r4QqrDDLaDJ62cu1i9W6X'
+        const expectedHash = 'Qmct9J2udUqPf7xiXwAfP7bcubQGjfyoTVtbsfZXjziZdQ'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, null, 'A', payload1)
@@ -77,6 +79,7 @@ apis.forEach((IPFS) => {
         const entry2 = await Entry.create(ipfs, null, 'A', payload2, [entry1], entry1.clock)
         assert.equal(entry2.payload, payload2)
         assert.equal(entry2.next.length, 1)
+        assert.equal(entry2.refs.length, 0)
         assert.equal(entry2.hash, expectedHash)
         assert.equal(entry2.clock.id, 'A')
         assert.equal(entry2.clock.time, 1)
@@ -135,7 +138,7 @@ apis.forEach((IPFS) => {
 
     describe('toMultihash', () => {
       it('returns an ipfs hash', async () => {
-        const expectedHash = 'QmZHattK3ayuXJudvUcQqxM6Mh2nUzxjBKNgLW22cFYMKg'
+        const expectedHash = 'QmcnoBuewB9DEqkwrsXWvpB1btvWuRwkRpJL5B67AvvTsx'
         const entry = await Entry.create(ipfs, null, 'A', 'hello')
         const hash = await Entry.toMultihash(ipfs, entry)
         assert.equal(hash, expectedHash)
@@ -152,7 +155,7 @@ apis.forEach((IPFS) => {
 
     describe('fromMultihash', () => {
       it('creates a entry from ipfs hash', async () => {
-        const expectedHash = 'QmeuTdrRt2AMY5MrX8Fk48njbH8aaQW1uiJnqFVVqUW5Xp'
+        const expectedHash = 'QmVMCywjnL1y44mi6KkqcUBd8Thqd6gRLtXfSWekX9Su8i'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, null, 'A', payload1)
@@ -162,6 +165,7 @@ apis.forEach((IPFS) => {
         assert.equal(final.payload, payload2)
         assert.equal(final.next.length, 1)
         assert.equal(final.next[0], entry1.hash)
+        assert.equal(final.refs.length, 0)
         assert.equal(final.hash, expectedHash)
       })
 

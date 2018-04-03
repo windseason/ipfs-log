@@ -2,9 +2,9 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const pMap = require('p-map')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
-// const MemStore = require('./utils/mem-store')
 const LogCreator = require('./utils/log-creator')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Log = require('../src/log.js')
@@ -181,10 +181,11 @@ apis.forEach((IPFS) => {
       let log
 
       const expectedData = { 
-        hash: 'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
+        hash: 'QmamJHiANgjAhnUMjA8aUFdzzPbc7Zt375pH6jaByG3LSZ',
         id: 'AAA',
         payload: 'one',
         next: [],
+        refs: [],
         v: 0,
         clock: { 
           id: 'AAA',
@@ -212,10 +213,11 @@ apis.forEach((IPFS) => {
       let log
 
       const expectedData = { 
-        hash: 'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
+        hash: 'QmamJHiANgjAhnUMjA8aUFdzzPbc7Zt375pH6jaByG3LSZ',
         id: 'AAA',
         payload: 'one',
         next: [],
+        refs: [],
         v: 0,
         clock: { 
           id: 'AAA',
@@ -226,6 +228,10 @@ apis.forEach((IPFS) => {
       beforeEach(async () => {
         log = new Log(ipfs, 'AAA')
         await log.append('one')
+      })
+
+      it('entry exists', () => {
+        assert.notEqual(log.get(expectedData.hash), expectedData)
       })
 
       it('returns true if it has an Entry', () => {
@@ -245,7 +251,7 @@ apis.forEach((IPFS) => {
       let log
       const expectedData = {
         id: 'AAA',
-        heads: ['QmZJmkhxvzKDJF1foDXq3ic1sNgXn8MUusuDNtaCQzcmrA']
+        heads: ['QmPq5aPidmVQJkMnmExQTEouN9p56hGVqGvTmmqZLYUJQ1']
       }
 
       beforeEach(async () => {
@@ -264,14 +270,14 @@ apis.forEach((IPFS) => {
       describe('toSnapshot', () => {
         const expectedData = {
           id: 'AAA',
-          heads: ['QmZJmkhxvzKDJF1foDXq3ic1sNgXn8MUusuDNtaCQzcmrA'],
+          heads: ['QmPq5aPidmVQJkMnmExQTEouN9p56hGVqGvTmmqZLYUJQ1'],
           values: [
-            'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
-            'QmWq9pXL3FUKefRUP84UZ9yNqCMzNkTCVor6GH2UCX7HVe',
-            'QmZJmkhxvzKDJF1foDXq3ic1sNgXn8MUusuDNtaCQzcmrA',
+            'QmamJHiANgjAhnUMjA8aUFdzzPbc7Zt375pH6jaByG3LSZ',
+            'QmY7y4WNreeBpMEeqWUUkDeFvHuUXhvGhdTRJRXQHvsxy4',
+            'QmPq5aPidmVQJkMnmExQTEouN9p56hGVqGvTmmqZLYUJQ1',
           ]
         }
-        
+
         it('returns the log snapshot', () => {
           const snapshot = log.toSnapshot()
           assert.equal(snapshot.id, expectedData.id)
@@ -292,7 +298,7 @@ apis.forEach((IPFS) => {
 
       describe('toMultihash', async () => {
         it('returns the log as ipfs hash', async () => {
-          const expectedHash = 'QmRBDr8hL2witZjfGUfEQB7RjGJatNqGhFpWzKZDd3bJJp'
+          const expectedHash = 'QmWQ2stJDQ2WZGF6gM3jSbfhKu6YfoEtLHasxyq69wXdLJ'
           let log = new Log(ipfs, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
@@ -302,9 +308,9 @@ apis.forEach((IPFS) => {
         it('log serialized to ipfs contains the correct data', async () => {
           const expectedData = { 
             id: 'A',
-            heads: ['QmTctXe3aLBowJkNFZjH1U5JzHJtP6bHjagno6AxcHuua4']
+            heads: ['QmQQxsHn9LQ5mzs4TMBkhLGtu9wZamT3jGAD9yEZxXwUiw']
           }
-          const expectedHash = 'QmRBDr8hL2witZjfGUfEQB7RjGJatNqGhFpWzKZDd3bJJp'
+          const expectedHash = 'QmWQ2stJDQ2WZGF6gM3jSbfhKu6YfoEtLHasxyq69wXdLJ'
           let log = new Log(ipfs, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
@@ -332,7 +338,7 @@ apis.forEach((IPFS) => {
         it('creates a log from ipfs hash - one entry', async () => {
           const expectedData = {
             id: 'X',
-            heads: ['QmZqF7oMvGyucRJYx9cFxg22Mj6LUDFyDBCZY4kuKwmTH1']
+            heads: ['Qma8M6V3fBiq4gh7vdoGU8L788mdrkCEU9Sq2iiZer8iNF']
           }
           let log = new Log(ipfs, 'X')
           await log.append('one')
@@ -539,7 +545,8 @@ apis.forEach((IPFS) => {
 
       describe('append 100 items to a log', async () => {
         const amount = 100
-        const nextPointerAmount = 64
+        const nextPointerAmount = 8
+        const refCount = 4
 
         let log
 
@@ -572,8 +579,9 @@ apis.forEach((IPFS) => {
         })
 
         it('added the correct amount of next pointers', async () => {
-          log.values.forEach((entry, index) => {
-            assert.equal(entry.next.length, Math.min(index, nextPointerAmount))
+          log.values.slice(5, log.values.length).reverse().forEach((entry, index) => {
+            assert.equal(entry.next.length, 1)
+            assert.equal(entry.refs.length, refCount)
           })
         })
       })
@@ -768,8 +776,15 @@ apis.forEach((IPFS) => {
         await log1.append('helloA1')
         await log2.append('helloB1')
         log2.join(log1)
+
+        assert.equal(log2.length, 2)
+        assert.equal(log1.length, 1)
+
         await log1.append('helloA2')
         await log2.append('helloB2')
+
+        assert.equal(log1.length, 2)
+        assert.equal(log2.length, 3)
 
         assert.equal(log1.clock.id, 'A')
         assert.equal(log2.clock.id, 'B')
@@ -777,29 +792,44 @@ apis.forEach((IPFS) => {
         assert.equal(log2.clock.time, 2)
 
         log3.join(log1)
+
         assert.equal(log3.id, 'X')
         assert.equal(log3.clock.id, 'C')
         assert.equal(log3.clock.time, 2)
+        assert.equal(log3.length, 2)
 
         await log3.append('helloC1')
         await log3.append('helloC2')
+        assert.equal(log3.length, 4)
         log1.join(log3)
+        assert.equal(log1.length, 4)
         log1.join(log2)
+        assert.equal(log1.length, 6)
         await log4.append('helloD1')
         await log4.append('helloD2')
+        assert.equal(log4.length, 2)
         log4.join(log2)
+        assert.equal(log4.length, 5)
         log4.join(log1)
+        assert.equal(log4.length, 8)
         log4.join(log3)
+        assert.equal(log4.length, 8)
         await log4.append('helloD3')
         await log4.append('helloD4')
-
+        assert.equal(log4.length, 10)
         log1.join(log4)
+        assert.equal(log1.length, 10)
         log4.join(log1)
+        assert.equal(log4.length, 10)
         await log4.append('helloD5')
+        assert.equal(log4.length, 11)
         await log1.append('helloA5')
+        assert.equal(log1.length, 11)
         log4.join(log1)
+        assert.equal(log4.length, 12)
         assert.deepEqual(log4.clock.id, 'D')
         assert.deepEqual(log4.clock.time, 7)
+        assert.equal(log4.length, 12)
 
         await log4.append('helloD6')
         assert.deepEqual(log4.clock.time, 8)
@@ -1436,7 +1466,7 @@ apis.forEach((IPFS) => {
       })
 
       it('retrieves partially joined log deterministically - single next pointer', async () => {
-        const nextPointerAmount = 1
+        const nextPointerAmount = 0
 
         let logA = new Log(ipfs, 'X', null, null, null, 'A')
         let logB = new Log(ipfs, 'X', null, null, null, 'B')
@@ -1469,21 +1499,18 @@ apis.forEach((IPFS) => {
         let res = await Log.fromMultihash(ipfs, mh, 5)
 
         const first5 = [ 
-          'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10',
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
         ]
 
-        // console.log(log.values.map(e => e.payload))
-        // console.log(res.values.map(e => e.payload))
         assert.deepEqual(res.values.map(e => e.payload), first5)
 
         // First 11
         res = await Log.fromMultihash(ipfs, mh, 11)
 
         const first11 = [ 
-          'entryA3', 'entryB3', 'entryA4', 'entryB4', 
-          'entryA5', 'entryB5', 
-          'entryC0',
-          'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryB3', 'entryA4', 'entryB4', 'entryA5', 'entryB5',
+          'entryA6', 
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), first11)
@@ -1492,7 +1519,7 @@ apis.forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, mh, 16 - 1)
 
         const all = [ 
-          'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
+          'entryB1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
           'entryA6', 
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
@@ -1529,23 +1556,24 @@ apis.forEach((IPFS) => {
 
         log.join(logA)
 
-        const mh = await log.toMultihash()
-
-        // First 5
-        let res = await Log.fromMultihash(ipfs, mh, 5)
-
         const first5 = [ 
-          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryA6', 'entryC0', 'entryA8', 'entryA9', 'entryA10',
         ]
 
+        // assert.deepEqual(log.values.map(e => e.payload).slice(-5), first5)
+
+        const mh = await log.toMultihash()
+
+        // First 6
+        let res = await Log.fromMultihash(ipfs, mh, 5)
         assert.deepEqual(res.values.map(e => e.payload), first5)
 
         // First 11
         res = await Log.fromMultihash(ipfs, mh, 11)
 
         const first11 = [ 
-             'entryA1', 'entryA2', 'entryA3', 'entryA4',
-             'entryA5', 'entryA6',
+             'entryB3', 'entryA4', 'entryB4', 'entryA5', 'entryB5',
+             'entryA6',
              'entryC0',
              'entryA7', 'entryA8', 'entryA9', 'entryA10',
         ]
@@ -1555,8 +1583,9 @@ apis.forEach((IPFS) => {
         // All but one
         res = await Log.fromMultihash(ipfs, mh, 16 - 1)
 
+        assert.equal(res.values.length, 15)
         const all = [ 
-          'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
+          /* excl */ 'entryB1', 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
           'entryA6', 
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
@@ -1791,6 +1820,112 @@ apis.forEach((IPFS) => {
         assert.equal(log4.tails[0].clock.id, 'A')
         assert.equal(log4.tails[1].clock.id, 'B')
         assert.equal(log4.tails[2].clock.id, 'X')
+      })
+    })
+
+
+    describe('References', () => {
+      it('creates entries with references', async () => {
+        const amount = 64
+        const maxReferenceDistance = 2
+        let log1 = new Log(ipfs, 'A')
+        let log2 = new Log(ipfs, 'B')
+        let log3 = new Log(ipfs, 'C')
+        let log4 = new Log(ipfs, 'D')
+
+        for (let i = 0; i < amount; i ++) {
+          await log1.append(i.toString(), maxReferenceDistance)
+        }
+
+        for (let i = 0; i < amount * 2; i ++) {
+          await log2.append(i.toString(), Math.pow(maxReferenceDistance, 2))
+        }
+
+        for (let i = 0; i < amount * 3; i ++) {
+          await log3.append(i.toString(), Math.pow(maxReferenceDistance, 3))
+        }
+
+        for (let i = 0; i < amount * 4; i ++) {
+          await log4.append(i.toString(), Math.pow(maxReferenceDistance, 4))
+        }
+
+        assert.equal(log1.values[log1.length - 1].next.length, 1)
+        assert.equal(log2.values[log2.length - 1].next.length, 1)
+        assert.equal(log3.values[log3.length - 1].next.length, 1)
+        assert.equal(log4.values[log4.length - 1].next.length, 1)
+        assert.equal(log1.values[log1.length - 1].refs.length, 2)
+        assert.equal(log2.values[log2.length - 1].refs.length, 3)
+        assert.equal(log3.values[log3.length - 1].refs.length, 4)
+        assert.equal(log4.values[log4.length - 1].refs.length, 5)
+      })
+
+      const inputs = [
+        { amount: 1, referenceCount: 1, refLength: 0 },
+        { amount: 1, referenceCount: 2, refLength: 0 },
+        { amount: 2, referenceCount: 1, refLength: 1 },
+        { amount: 2, referenceCount: 2, refLength: 1 },
+        { amount: 3, referenceCount: 2, refLength: 2 },
+        { amount: 3, referenceCount: 4, refLength: 2 },
+        { amount: 4, referenceCount: 2, refLength: 2 },
+        { amount: 4, referenceCount: 4, refLength: 3 },
+        { amount: 32, referenceCount: 4, refLength: 3 },
+        { amount: 32, referenceCount: 8, refLength: 4 },
+        { amount: 32, referenceCount: 16, refLength: 5 },
+        { amount: 18, referenceCount: 32, refLength: 6 },
+        { amount: 128, referenceCount: 32, refLength: 6 },
+        { amount: 64, referenceCount: 64, refLength: 7 },
+        { amount: 65, referenceCount: 64, refLength: 7 },
+        { amount: 128, referenceCount: 64, refLength: 7 },
+        { amount: 128, referenceCount: 1, refLength: 1 },
+        { amount: 128, referenceCount: 2, refLength: 2 },
+        { amount: 256, referenceCount: 1, refLength: 1 },
+        { amount: 256, referenceCount: 256, refLength: 8 },
+        { amount: 256, referenceCount: 1024, refLength: 8 },
+      ]
+
+      inputs.forEach(input => {
+        it(`has ${input.refLength} references, max distance ${input.referenceCount}, total of ${input.amount} entries`, async () => {
+          const test = async (amount, referenceCount, refLength) => {
+            let log1 = new Log(ipfs, 'A')
+            for (let i = 0; i < amount; i ++) {
+              await log1.append((i + 1).toString(), referenceCount)
+            }
+
+            assert.equal(log1.values.length, input.amount)
+            assert.equal(log1.values[log1.length - 1].clock.time, input.amount)
+
+            for (let k = 0; k < input.amount; k ++) {
+              const idx = log1.length - k - 1
+              assert.equal(log1.values[idx].clock.time, idx + 1)
+
+              // Check the first ref (distance 1)
+              if (log1.values[idx].refs.length > 0)
+                assert.equal(log1.values[idx].refs[0], log1.values[idx - 1].hash)
+
+              // Check the second ref (distance 2)
+              if (log1.values[idx].refs.length > 1)
+                assert.equal(log1.values[idx].refs[1], log1.values[idx - 2].hash)
+
+              // Check the third ref (distance 4)
+              if (log1.values[idx].refs.length > 2 && idx > referenceCount)
+                assert.equal(log1.values[idx].refs[2], log1.values[idx - 4].hash)
+
+              // Check the fourth ref (distance 8)
+              if (log1.values[idx].refs.length > 3 && idx > referenceCount)
+                assert.equal(log1.values[idx].refs[3], log1.values[idx - 8].hash)
+
+              // Check the fifth ref (distance 16)
+              if (log1.values[idx].refs.length > 4 && idx > referenceCount)
+                assert.equal(log1.values[idx].refs[4], log1.values[idx - 16].hash)
+
+              // Check the reference of each entry
+              if (idx > referenceCount)
+                assert.equal(log1.values[idx].refs.length, refLength)
+            }
+          }
+
+          await test(input.amount, input.referenceCount, input.refLength)
+        })
       })
     })
 

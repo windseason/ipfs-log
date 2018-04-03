@@ -17,7 +17,7 @@ class Entry {
    * // { hash: "Qm...Foo", payload: "hello", next: [] }
    * @returns {Promise<Entry>}
    */
-  static async create (ipfs, keystore, id, data, next = [], clock, signKey) {
+  static async create (ipfs, keystore, id, data, next = [], clock, signKey, refs = []) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(id)) throw new Error('Entry requires an id')
     if (!isDefined(data)) throw new Error('Entry requires data')
@@ -39,6 +39,7 @@ class Entry {
       id: id, // For determining a unique chain
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of Multihashes
+      refs: refs,
       v: 0, // For future data structure updates, should currently always be 0
       clock: new Clock(clockId, clockTime),
     }
@@ -65,6 +66,7 @@ class Entry {
       id: entry.id,
       payload: entry.payload,
       next: entry.next,
+      refs: entry.refs,
       v: entry.v,
       clock: entry.clock,
     })
@@ -111,6 +113,7 @@ class Entry {
           id: data.id,
           payload: data.payload,
           next: data.next,
+          refs: data.refs,
           v: data.v,
           clock: data.clock,
         }
@@ -128,6 +131,7 @@ class Entry {
   static isEntry (obj) {
     return obj.id !== undefined
       && obj.next !== undefined
+      && obj.refs !== undefined
       && obj.hash !== undefined
       && obj.payload !== undefined
       && obj.v !== undefined

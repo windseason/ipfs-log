@@ -4,10 +4,10 @@ const IPFS = require('ipfs')
 const Log = require('../../src/log')
 
 const ipfs = new IPFS({
-  repo: './ipfs-log/examples/browser/new/index.js',
+  repo: './ipfs-log/examples/browser/0.5.0',
   start: false,
   EXPERIMENTAL: {
-    pubsub: true
+    pubsub: false
   },
 })
 

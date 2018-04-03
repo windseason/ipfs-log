@@ -3,9 +3,11 @@
 const pMap = require('p-map')
 const GSet = require('./g-set')
 const Entry = require('./entry')
+const EntryIO = require('./entry-io')
 const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
+const MemStore = require('./utils/mem-store')
 const isDefined = require('./utils/is-defined')
 const _uniques = require('./utils/uniques')
 
@@ -13,6 +15,7 @@ const randomId = () => new Date().getTime().toString()
 const getHash = e => e.hash
 const flatMap = (res, acc) => res.concat(acc)
 const getNextPointers = entry => entry.next
+const getFirstNextPointer = entry => entry.next[0]
 const maxClockTimeReducer = (res, acc) => Math.max(res, acc.clock.time)
 const uniqueEntriesReducer = (res, acc) => {
   res[acc.hash] = acc
@@ -157,9 +160,9 @@ class Log extends GSet {
     return this._entryIndex[entry.hash || entry] !== undefined
   }
 
-  traverse (rootEntries, amount) {
-    // console.log("traverse>", rootEntry)
-    let stack = rootEntries.map(getNextPointers).reduce(flatMap, [])
+  traverse (rootEntries, amount, getNexts) {
+    // console.log("traverse>", rootEntries)
+    let stack = rootEntries.map(getNexts).reduce(flatMap, [])
     let traversed = {}
     let result = {}
     let count = 0
@@ -172,7 +175,7 @@ class Log extends GSet {
     }
 
     const addRootHash = rootEntry => {
-      result[rootEntry.hash] = rootEntry.hash
+      result[rootEntry.hash] = rootEntry
       traversed[rootEntry.hash] = true
       count ++
     }
@@ -184,11 +187,16 @@ class Log extends GSet {
       const entry = this.get(hash)
       if (entry) {
         count ++
-        result[entry.hash] = entry.hash
+        result[entry.hash] = entry
         traversed[entry.hash] = true
         entry.next.forEach(addToStack)
       }
     }
+    // Free memory
+    // This seems to get rid of a lot of small GC happening
+    // during an append. Why?
+    stack = []
+    traversed = {}
     return result
   }
 
@@ -208,15 +216,49 @@ class Log extends GSet {
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
+
+    // Get the heads
+    const nexts = Object.values(this.traverse(this.heads, this.heads.length, getNextPointers))
+      .sort((a, b) => a.clock.time > b.clock.time)
+      .map(e => e.hash)
+
     // Get the required amount of hashes to next entries (as per current state of the log)
-    const nexts = Object.keys(this.traverse(this.heads, pointerCount))
+    const all = Object.values(this.traverse(this.heads, pointerCount, getFirstNextPointer))
+
+    // Get entries of pow2 at maxDistance (2nd, 4th, 8th, 16th, ...)
+    const getEveryPow2 = (maxDistance) => {
+      const entries = new Set()
+      for (let i = 1; i <= maxDistance; i *= 2) {
+        const index = Math.min(i - 1, all.length - 1)
+        const ref = all[index]
+        entries.add(ref)
+      }
+      return entries
+    }
+
+    // If pointer count is 4, returns 2
+    // If pointer count is 8, returns 3 references
+    // If pointer count is 512, returns 9 references
+    // If pointer count is 2048, returns 11 references
+    const references = getEveryPow2(Math.min(pointerCount, all.length))
+    let refSet = new Set(references)
+
+    // Always include the last known reference
+    if (all.length < pointerCount && all[all.length - 1])
+      refSet.add(all[all.length - 1])
+
+    // Delete the heads from the refs
+    const delRef = e => refSet.delete(e)
+    nexts.forEach(delRef)
+    const refs = Array.from(refSet).map(getHash)
+
     // Create the entry and add it to the internal cache
-    const entry = await Entry.create(this._storage, this._keystore, this.id, data, nexts, this.clock, this._key)
+    const entry = await Entry.create(this._storage, this._keystore, this.id, data, nexts, this.clock, this._key, refs)
     this._entryIndex[entry.hash] = entry
     nexts.forEach(e => this._nextsIndex[e] = entry.hash)
     this._headsIndex = {}
     this._headsIndex[entry.hash] = entry
-    // Update the length
+    // Update the internal length counter
     this._length ++
     return entry
   }
@@ -577,6 +619,15 @@ class Log extends GSet {
 
     entries.forEach(addToIndex)
     return entries.reduce(reduceTailHashes, [])
+  }
+
+  /* Expose utlities, usable via Log.MemStore */
+  static get MemStore () {
+    return MemStore
+  }
+
+  static get EntryIO () {
+    return EntryIO
   }
 }
 
