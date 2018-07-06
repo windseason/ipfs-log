@@ -129,7 +129,7 @@ apis.forEach((IPFS) => {
         if (i % 10 === 0) {
           log2 = new Log(ipfs, log2.id, log2.values, log2.heads)
           await log2.append('hi' + i)
-          log2.join(log)
+          await log2.join(log)
         }
         if (i % 25 === 0) {
           log3 = new Log(ipfs, log3.id, log3.values, log3.heads.concat(log2.heads))
@@ -137,7 +137,7 @@ apis.forEach((IPFS) => {
         }
       }
 
-      log3.join(log2)
+      await log3.join(log2)
       const hash = await log3.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash, 10)
       assert.strictEqual(result.length, 10)
@@ -152,7 +152,7 @@ apis.forEach((IPFS) => {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           await log2.append('hi' + i)
-          log2.join(log)
+          await log2.join(log)
         }
         if (i % 25 === 0) {
           log3 = new Log(ipfs, log3.id, log3.values, log3.heads.concat(log2.heads))
@@ -160,11 +160,11 @@ apis.forEach((IPFS) => {
         }
       }
 
-      log3.join(log2)
+      await log3.join(log2)
 
       const log4 = new Log(ipfs, 'X', null, null, null, 'D')
-      log4.join(log2)
-      log4.join(log3)
+      await log4.join(log2)
+      await log4.join(log3)
 
       const values3 = log3.values.map((e) => e.payload)
       const values4 = log4.values.map((e) => e.payload)
