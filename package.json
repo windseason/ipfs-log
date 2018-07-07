@@ -22,6 +22,13 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.1",
     "datastore-level": "~0.8.0",
+    "eslint": "^5.4.0",
+    "eslint-config-orbitdb": "github:thiagodelgado111/eslint-config-orbitdb",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
     "ipfs": "~0.31.4",
     "ipfs-repo": "~0.23.1",
     "mocha": "^5.2.0",
@@ -37,6 +44,7 @@
     "build:examples": "webpack --config webpack.example.config.js --sort-modules-by size --define process.env.NODE_ENV=production",
     "build:dist": "webpack --config webpack.config.js --display-modules --sort-modules-by size --define process.env.NODE_ENV=production",
     "build:es5": "babel src --out-dir ./lib/es5/ --presets babel-preset-env --plugins babel-plugin-transform-runtime",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha",
+    "lint": "eslint \"benchmarks/**/*.js\" \"examples/**/*.js\" \"src/**/*.js\" \"test/**/*.js\""
   }
 }
