@@ -5,7 +5,7 @@ deps:
 
 test: deps
 	npm run test
-	
+
 build: test
 	npm run build
 	@echo "Build success!"
@@ -17,6 +17,5 @@ clean:
 	rm -rf node_modules/
 	rm -rf coverage/
 	rm -rf test/keystore/
-	rm package-lock.json
 
 .PHONY: test
