@@ -24,7 +24,7 @@
     "datastore-level": "~0.8.0",
     "ipfs": "~0.30.0",
     "ipfs-repo": "~0.22.1",
-    "mocha": "^4.0.1",
+    "mocha": "^5.2.0",
     "orbit-db-keystore": "~0.1.0",
     "rimraf": "^2.6.1",
     "uglifyjs-webpack-plugin": "~1.2.2",
