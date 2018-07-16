@@ -135,9 +135,10 @@ apis.forEach((IPFS) => {
 
     describe('toMultihash', () => {
       it('returns an ipfs hash', async () => {
-        const expectedHash = 'QmZHattK3ayuXJudvUcQqxM6Mh2nUzxjBKNgLW22cFYMKg'
+        const expectedHash = 'Qmcga9V6D7EPVQTPWjyjFUP6NoGivhymLGi4f9VMGQA24x'
         const entry = await Entry.create(ipfs, null, 'A', 'hello')
         const hash = await Entry.toMultihash(ipfs, entry)
+        assert.equal(entry.hash, expectedHash)
         assert.equal(hash, expectedHash)
       })
 
