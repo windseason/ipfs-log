@@ -268,12 +268,12 @@ class Log extends GSet {
         }
 
         try {
-          await Entry.verifyEntry(entry, this._keystore)
+          return await Entry.verifyEntry(entry, this._keystore)
         } catch (e) {
           throw new Error(`Invalid signature in entry '${entry.hash}'`)
         }
 
-        return true
+        return false
       }
 
       const checked = await pMap(entries, verify)
