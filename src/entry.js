@@ -85,8 +85,9 @@ class Entry {
    */
   static toMultihash (ipfs, entry) {
     if (!ipfs) throw IpfsNotDefinedError()
-    if (!(entry.id && entry.clock && entry.next && entry.payload && (entry.v === 0 || entry.v > 0))) {
-      throw new Error('Invalid entry format')
+    const isValidEntryObject = entry => entry.id && entry.clock && entry.next && entry.payload && entry.v >= 0
+    if (!isValidEntryObject(entry)) {
+      throw new Error('Invalid object format, cannot generate entry multihash')
     }
 
     // Ensure `entry` follows the correct format
