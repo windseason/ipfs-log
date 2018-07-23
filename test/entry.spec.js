@@ -149,6 +149,22 @@ apis.forEach((IPFS) => {
           assert.equal(e.message, 'Ipfs instance not defined')
         }
       })
+
+      it('throws an error if the object being passed is invalid', async () => {
+        try {
+          await Entry.toMultihash(ipfs, { hash: 'deadbeef' })
+        } catch(e) {
+          assert.equal(e.message, 'Invalid object format, cannot generate entry multihash')
+        }
+
+        try {
+          const entry = await Entry.create(ipfs, null, 'A', 'hello')
+          delete entry.clock
+          await Entry.toMultihash(ipfs, entry)
+        } catch(e) {
+          assert.equal(e.message, 'Invalid object format, cannot generate entry multihash')
+        }
+      })
     })
 
     describe('fromMultihash', () => {
