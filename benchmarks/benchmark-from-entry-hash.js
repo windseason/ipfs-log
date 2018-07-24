@@ -94,6 +94,8 @@ let run = (() => {
       console.warn('Start benchmark with --expose-gc flag');
     }
 
+    const m1 = process.memoryUsage()
+
     const result = await Log.fromEntryHash(
       ipfs,
       log.heads.map(e => e.hash),
@@ -108,9 +110,19 @@ let run = (() => {
     outputMetrics()
     const et = new Date().getTime()
     console.log("Loading took:", (et - dt2), "ms")
-    const memory = process.memoryUsage()
-    console.log(`Memory Heap Used: ${memory.heapUsed / 1024 / 1024} MB`)
-    console.log(`Memory Heap Total: ${memory.heapTotal / 1024 / 1024} MB`)
+
+    const m2 = process.memoryUsage()
+    const usedDelta = m1.heapUsed && Math.abs(m1.heapUsed - m2.heapUsed) / m1.heapUsed * 100
+    const totalDelta = m1.heapTotal && Math.abs(m1.heapTotal - m2.heapTotal) / m1.heapTotal * 100
+
+    let usedOutput = `Memory Heap Used: ${(m2.heapUsed / 1024 / 1024).toFixed(2)} MB`
+    usedOutput += ` (${m2.heapUsed > m1.heapUsed ? '+' : '-'}${usedDelta.toFixed(2)}%)`
+    let totalOutput = `Memory Heap Total: ${(m2.heapTotal / 1024 / 1024).toFixed(2)} MB`
+    totalOutput += ` (${m2.heapTotal > m1.heapTotal ? '+' : '-'}${totalDelta.toFixed(2)}%)`
+
+    console.log(usedOutput)
+    console.log(totalOutput)
+
     process.exit(0)
   })
 })()
