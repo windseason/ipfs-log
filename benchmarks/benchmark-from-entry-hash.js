@@ -22,8 +22,8 @@ let run = (() => {
 
   const repoConf = {
     storageBackends: {
-      blocks: DatastoreLevel,
-    },
+      blocks: DatastoreLevel
+    }
   }
 
   ipfs = new IPFS({
@@ -32,8 +32,8 @@ let run = (() => {
     EXPERIMENTAL: {
       pubsub: false,
       sharding: false,
-      dht: false,
-    },
+      dht: false
+    }
   })
 
   ipfs.on('error', (err) => {
@@ -54,16 +54,15 @@ let run = (() => {
     const st = new Date().getTime()
 
     try {
-    for (let i = 1; i < count + 1; i ++) {
-      await log.append('hello' + i, refCount)
-      process.stdout.write("\rWriting " + i + " / " + count)
-    }
-    const dt1 = new Date().getTime()
+      for (let i = 1; i < count + 1; i ++) {
+        await log.append('hello' + i, refCount)
+        process.stdout.write("\rWriting " + i + " / " + count)
+      }
+      const dt1 = new Date().getTime()
       process.stdout.write(" (" + (dt1 - st) + " ms)\n")
     } catch (e) {
       console.log(e)
     }
-
 
     const onDataUpdated = (hash, entry, resultLength, result, queue) => {
       // totalQueries = resultLength
