@@ -65,7 +65,6 @@ let run = (() => {
     }
 
     const onDataUpdated = (hash, entry, resultLength, result, queue) => {
-      // totalQueries = resultLength
       queriesPerSecond++
       lastTenSeconds++
       total = resultLength
@@ -73,7 +72,6 @@ let run = (() => {
     }
 
     const outputMetrics = () => {
-      // queriesPerSecond = total - queriesPerSecond
       totalQueries = total - totalQueries
       seconds++
       if (seconds % 10 === 0) {
@@ -107,9 +105,6 @@ let run = (() => {
       onDataUpdated
     )
 
-    // total = result.length
-    // queriesPerSecond = result.length
-    // queriesPerSecond = totalQueries - queriesPerSecond
     outputMetrics()
     const et = new Date().getTime()
     console.log("Loading took:", (et - dt2), "ms")
