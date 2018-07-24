@@ -85,7 +85,25 @@ class Entry {
    */
   static toMultihash (ipfs, entry) {
     if (!ipfs) throw IpfsNotDefinedError()
-    const data = Buffer.from(JSON.stringify(entry))
+    const isValidEntryObject = entry => entry.id && entry.clock && entry.next && entry.payload && entry.v >= 0
+    if (!isValidEntryObject(entry)) {
+      throw new Error('Invalid object format, cannot generate entry multihash')
+    }
+
+    // Ensure `entry` follows the correct format
+    const e = {
+      hash: null,
+      id: entry.id,
+      payload: entry.payload,
+      next: entry.next,
+      v: entry.v,
+      clock: entry.clock,
+    }
+
+    if (entry.sig) Object.assign(e, { sig: entry.sig })
+    if (entry.key) Object.assign(e, { key: entry.key })
+
+    const data = Buffer.from(JSON.stringify(e))
     return ipfs.object.put(data)
       .then((res) => res.toJSON().multihash)
   }
