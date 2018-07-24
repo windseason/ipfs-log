@@ -11,9 +11,9 @@ let ipfs
 let log
 
 // Metrics
-let totalQueries = 0
+let totalLoaded = 0
 let seconds = 0
-let queriesPerSecond = 0
+let entriesLoadedPerSecond = 0
 let lastTenSeconds = 0
 let total = 0
 
@@ -65,22 +65,22 @@ let run = (() => {
     }
 
     const onDataUpdated = (hash, entry, resultLength, result, queue) => {
-      queriesPerSecond++
+      entriesLoadedPerSecond++
       lastTenSeconds++
       total = resultLength
       process.stdout.write("\rLoading " + total + " / " + count)
     }
 
     const outputMetrics = () => {
-      totalQueries = total - totalQueries
+      totalLoaded = total - totalLoaded
       seconds++
       if (seconds % 10 === 0) {
-        console.log(`--> Average of ${lastTenSeconds / 10} q/s in the last 10 seconds`)
+        console.log(`--> Average of ${lastTenSeconds / 10} e/s in the last 10 seconds`)
         if (lastTenSeconds === 0) throw new Error('Problems!')
         lastTenSeconds = 0
       }
-      console.log(`\n${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (Entry count: ${total})`)
-      queriesPerSecond = 0
+      console.log(`\n${entriesLoadedPerSecond} entries loaded per second, ${totalLoaded} loaded in ${seconds} seconds (Entry count: ${total})`)
+      entriesLoadedPerSecond = 0
     }
 
     // Output metrics at 1 second interval
