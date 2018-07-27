@@ -7,38 +7,34 @@ const benchmarks = require('./benchmarks')
 
 const runOne = async (benchmark) => {
   console.log(`Running ${benchmark.name}`)
+
   let stats = {
-    count: 0,
-    seconds: 0
+    count: 0
   }
 
   let memory = {
     before: process.memoryUsage()
   }
 
-  const execute = async (log) => {
-    const interval = setInterval(() => {
-      stats.seconds++
-    }, 1000)
+  const log = await benchmark.prepare()
 
-    while (benchmark.while(stats)) {
-      await benchmark.cycle(log)
-      stats.count++
-    }
-
-    clearInterval(interval)
-    memory.after = process.memoryUsage()
+  const startTime = process.hrtime()
+  while (benchmark.while(stats, startTime)) {
+    await benchmark.cycle(log)
+    stats.count++
   }
 
-  const log = await benchmark.prepare()
-  await execute(log)
+  elapsed = process.hrtime(startTime)
+  memory.after = process.memoryUsage()
+
   await benchmark.teardown()
 
-  stats.avg = Math.round(stats.count / stats.seconds)
+  stats.avg = Math.round(stats.count / elapsed[0])
   return {
     name: benchmark.name,
     cpus: os.cpus(),
     loadavg: os.loadavg(),
+    elapsed,
     stats,
     memory
   }

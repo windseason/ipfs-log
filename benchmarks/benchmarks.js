@@ -11,8 +11,8 @@ module.exports = [{
   cycle: async function (log) {
     await log.append('Hello')
   },
-  while: (stats) => {
-    return stats.seconds < 10
+  while: (stats, startTime) => {
+    return process.hrtime(startTime)[0] < 10
   },
   teardown: async function() {
     //this._ipfs.stop(done) // TODO: get Already Stopped Error??
@@ -31,7 +31,7 @@ module.exports = [{
     }
     return log
   },
-  while: (stats) => {
+  while: (stats, startTime) => {
     return stats.count < 1
   },
   cycle: async function (log) {
