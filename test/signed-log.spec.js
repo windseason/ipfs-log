@@ -262,5 +262,21 @@ apis.forEach((IPFS) => {
       assert.equal(log1.values.length, 1)
       assert.equal(log1.values[0].payload, 'one')
     })
+
+    it('throws an error if log is signed but the signature is valid and doesn\'t verify', async () => {
+
+      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      let err
+
+      await log1.append('one')
+      await log2.append('two')
+      console.log("Sig is:", log2.values[0].sig)
+      log2.values[0].sig = { r: "0".repeat(64), s: "0".repeat(64) }
+      await log1.join(log2)
+
+      assert.equal(log1.values.length, 1)
+      assert.equal(log1.values[0].payload, 'one')
+    })
   })
 })
