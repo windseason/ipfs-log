@@ -5,7 +5,6 @@ const Keystore = require('orbit-db-keystore')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
-const MemStore = require('../test/utils/mem-store')
 
 // State
 let ipfs
@@ -40,8 +39,8 @@ let run = (() => {
 
   const repoConf = {
     storageBackends: {
-      blocks: DatastoreLevel,
-    },
+      blocks: DatastoreLevel
+    }
   }
 
   ipfs = new IPFS({
@@ -49,7 +48,7 @@ let run = (() => {
     start: false,
     EXPERIMENTAL: {
       pubsub: true
-    },
+    }
   })
 
   ipfs.on('error', (err) => {
