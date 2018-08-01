@@ -37,12 +37,12 @@ class EntryIO {
     const addToLoadingQueue = e => loadingQueue.push(e)
 
     // Add entries that we don't need to fetch to the "cache"
-    var addToExcludeCache = e => cache[e.hash] = e
+    var addToExcludeCache = e => (cache[e.hash] = e)
     exclude.forEach(addToExcludeCache)
 
     const shouldFetchMore = () => {
-      return loadingQueue.length > 0
-          && (result.length < amount || amount < 0)
+      return loadingQueue.length > 0 &&
+          (result.length < amount || amount < 0)
     }
 
     const fetchEntry = () => {
@@ -55,12 +55,12 @@ class EntryIO {
       return new Promise((resolve, reject) => {
         // Resolve the promise after a timeout (if given) in order to
         // not get stuck loading a block that is unreachable
-        const timer = timeout 
-        ? setTimeout(() => {
+        const timer = timeout
+          ? setTimeout(() => {
             console.warn(`Warning: Couldn't fetch entry '${hash}', request timed out (${timeout}ms)`)
             resolve()
-          } , timeout) 
-        : null
+          }, timeout)
+          : null
 
         const addToResults = (entry) => {
           clearTimeout(timer)
@@ -78,9 +78,7 @@ class EntryIO {
         Entry.fromMultihash(ipfs, hash)
           .then(addToResults)
           .then(resolve)
-          .catch(err => {
-            resolve()
-          })
+          .catch(reject)
       })
     }
 

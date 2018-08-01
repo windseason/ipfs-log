@@ -59,7 +59,7 @@ class Log extends GSet {
 
     // Signing related setup
     this._keystore = this._storage.keystore
-    this._key = key 
+    this._key = key
     this._keys = Array.isArray(keys) ? keys : [keys]
 
     // Add entries to the internal cache
@@ -72,7 +72,8 @@ class Log extends GSet {
 
     // Index of all next pointers in this log
     this._nextsIndex = {}
-    entries.forEach(e => e.next.forEach(a => this._nextsIndex[a] = e.hash))
+    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.hash))
+    entries.forEach(addToNextsIndex)
 
     // Set the length, we calculate the length manually internally
     this._length = entries ? entries.length : 0
@@ -82,7 +83,7 @@ class Log extends GSet {
     // Take the given key as the clock id is it's a Key instance,
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
-    const clockId = (key && key.getPublic) ? key.getPublic('hex') : (key ? key : this._id)
+    const clockId = (key && key.getPublic) ? key.getPublic('hex') : (key || this._id)
     this._clock = new Clock(clockId, maxTime)
   }
 
@@ -174,7 +175,7 @@ class Log extends GSet {
     const addRootHash = rootEntry => {
       result[rootEntry.hash] = rootEntry.hash
       traversed[rootEntry.hash] = true
-      count ++
+      count++
     }
 
     rootEntries.forEach(addRootHash)
@@ -183,7 +184,7 @@ class Log extends GSet {
       const hash = stack.shift()
       const entry = this.get(hash)
       if (entry) {
-        count ++
+        count++
         result[entry.hash] = entry.hash
         traversed[entry.hash] = true
         entry.next.forEach(addToStack)
@@ -199,10 +200,10 @@ class Log extends GSet {
    */
   async append (data, pointerCount = 1) {
     // Verify that we're allowed to append
-    if ((this._key && this._key.getPublic)
-        && !this._keys.includes(this._key.getPublic('hex')) 
-        && !this._keys.includes('*')) {
-      throw new Error("Not allowed to write")
+    if ((this._key && this._key.getPublic) &&
+        !this._keys.includes(this._key.getPublic('hex')) &&
+        !this._keys.includes('*')) {
+      throw new Error('Not allowed to write')
     }
 
     // Update the clock (find the latest clock)
@@ -213,11 +214,11 @@ class Log extends GSet {
     // Create the entry and add it to the internal cache
     const entry = await Entry.create(this._storage, this._keystore, this.id, data, nexts, this.clock, this._key)
     this._entryIndex[entry.hash] = entry
-    nexts.forEach(e => this._nextsIndex[e] = entry.hash)
+    nexts.forEach(e => (this._nextsIndex[e] = entry.hash))
     this._headsIndex = {}
     this._headsIndex[entry.hash] = entry
     // Update the length
-    this._length ++
+    this._length++
     return entry
   }
 
@@ -244,25 +245,24 @@ class Log extends GSet {
     // TODO: move to Entry
     const verifyEntries = async (entries) => {
       const isTrue = e => e === true
-      const getPubKey = e => e.getPublic ? e.getPublic('hex') : e
       const checkAllKeys = (keys, entry) => {
         const keyMatches = e => e === entry.key
         return keys.find(keyMatches)
       }
-      const pubkeys = this._keys.map(getPubKey)
 
       const verify = async (entry) => {
         if (!entry.key) throw new Error("Entry doesn't have a public key")
         if (!entry.sig) throw new Error("Entry doesn't have a signature")
 
-        if (this._keys.length === 1 && this._keys[0] === this._key ) {
-          if (entry.id !== this.id) 
+        if (this._keys.length === 1 && this._keys[0] === this._key) {
+          if (entry.id !== this.id) {
             throw new Error("Entry doesn't belong in this log (wrong ID)")
+          }
         }
 
-        if (this._keys.length > 0 
-            && !this._keys.includes('*') 
-            && !checkAllKeys(this._keys.concat([this._key]), entry)) {
+        if (this._keys.length > 0 &&
+            !this._keys.includes('*') &&
+            !checkAllKeys(this._keys.concat([this._key]), entry)) {
           console.warn("Warning: Input log contains entries that are not allowed in this log. Logs weren't joined.")
           return false
         }
@@ -272,8 +272,6 @@ class Log extends GSet {
         } catch (e) {
           throw new Error(`Invalid signature in entry '${entry.hash}'`)
         }
-
-        return false
       }
 
       const checked = await pMap(entries, verify)
@@ -295,7 +293,7 @@ class Log extends GSet {
       while (stack.length > 0) {
         const hash = stack.shift()
         const entry = log.get(hash)
-          if (entry && !exclude.get(hash) && entry.id === this.id) {
+        if (entry && !exclude.get(hash) && entry.id === this.id) {
           res[entry.hash] = entry
           traversed[entry.hash] = true
           entry.next.forEach(pushToStack)
@@ -311,15 +309,16 @@ class Log extends GSet {
     if (this._key && this._key.getPublic) {
       const canJoin = await verifyEntries(Object.values(newItems))
       // Return early if any of the given entries didn't verify
-      if (!canJoin)
+      if (!canJoin) {
         return this
+      }
     }
 
     // Update the internal entry index
     this._entryIndex = Object.assign(this._entryIndex, newItems)
 
     // Update the internal next pointers index
-    const addToNextsIndex = e => e.next.forEach(a => this._nextsIndex[a] = e.hash)
+    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.hash))
     Object.values(newItems).forEach(addToNextsIndex)
 
     // Update the length
@@ -365,7 +364,7 @@ class Log extends GSet {
     return {
       id: this.id,
       heads: this.heads,
-      values: this.values,
+      values: this.values
     }
   }
   /**
@@ -405,9 +404,9 @@ class Log extends GSet {
    * @returns {true|false}
    */
   static isLog (log) {
-    return log.id !== undefined
-      && log.heads !== undefined
-      && log._entryIndex !== undefined
+    return log.id !== undefined &&
+      log.heads !== undefined &&
+      log._entryIndex !== undefined
   }
 
   /**
@@ -498,7 +497,7 @@ class Log extends GSet {
    */
   static findHeads (entries) {
     var indexReducer = (res, entry, idx, arr) => {
-      var addToResult = e => res[e] = entry.hash
+      var addToResult = e => (res[e] = entry.hash)
       entry.next.forEach(addToResult)
       return res
     }
@@ -562,8 +561,7 @@ class Log extends GSet {
   // but referenced by other entries
   static findTailHashes (entries) {
     var hashes = {}
-    var addToIndex = (e) => hashes[e.hash] = true
-
+    var addToIndex = e => (hashes[e.hash] = true)
     var reduceTailHashes = (res, entry, idx, arr) => {
       var addToResult = (e) => {
         /* istanbul ignore else */

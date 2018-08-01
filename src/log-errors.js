@@ -7,5 +7,5 @@ const NotALogError = () => new Error('Given argument is not an instance of Log')
 module.exports = {
   ImmutableDBNotDefinedError: ImmutableDBNotDefinedError,
   LogNotDefinedError: LogNotDefinedError,
-  NotALogError: NotALogError,
+  NotALogError: NotALogError
 }

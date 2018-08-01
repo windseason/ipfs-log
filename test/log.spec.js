@@ -17,8 +17,8 @@ const dataDir = './ipfs/tests/log'
 
 const repoConf = {
   storageBackends: {
-    blocks: DatastoreLevel,
-  },
+    blocks: DatastoreLevel
+  }
 }
 
 let ipfs
@@ -28,19 +28,18 @@ const last = (arr) => {
 }
 
 apis.forEach((IPFS) => {
-
-  describe('Log', function() {
+  describe('Log', function () {
     this.timeout(20000)
 
     before((done) => {
       rmrf.sync(dataDir)
-      ipfs = new IPFS({ 
+      ipfs = new IPFS({
         repo: new IPFSRepo(dataDir, repoConf),
         EXPERIMENTAL: {
           pubsub: true,
           dht: false,
-          sharding: false,
-        },
+          sharding: false
+        }
       })
 
       // Use memory store for quicker tests
@@ -53,8 +52,9 @@ apis.forEach((IPFS) => {
     })
 
     after(async () => {
-      if (ipfs) 
+      if (ipfs) {
         await ipfs.stop()
+      }
     })
 
     describe('constructor', async () => {
@@ -83,7 +83,7 @@ apis.forEach((IPFS) => {
         let err
         try {
           const log = new Log()
-        } catch(e) {
+        } catch (e) {
           err = e
         }
         assert.equal(err.message, 'ImmutableDB instance not defined')
@@ -140,7 +140,7 @@ apis.forEach((IPFS) => {
         let err
         try {
           const log = new Log(ipfs, 'A', {})
-        } catch(e) {
+        } catch (e) {
           err = e
         }
         assert.notEqual(err, undefined)
@@ -151,7 +151,7 @@ apis.forEach((IPFS) => {
         let err
         try {
           const log = new Log(ipfs, 'A', [], {})
-        } catch(e) {
+        } catch (e) {
           err = e
         }
         assert.notEqual(err, undefined)
@@ -180,16 +180,16 @@ apis.forEach((IPFS) => {
     describe('get', async () => {
       let log
 
-      const expectedData = { 
+      const expectedData = {
         hash: 'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
         id: 'AAA',
         payload: 'one',
         next: [],
         v: 0,
-        clock: { 
+        clock: {
           id: 'AAA',
-          time: 1,
-        },
+          time: 1
+        }
       }
 
       beforeEach(async () => {
@@ -199,28 +199,28 @@ apis.forEach((IPFS) => {
 
       it('returns an Entry', () => {
         const entry = log.get(log.values[0].hash)
-        assert.deepEqual(entry, expectedData)
+        assert.deepStrictEqual(entry, expectedData)
       })
 
       it('returns undefined when Entry is not in the log', () => {
         const entry = log.get('QmFoo')
-        assert.deepEqual(entry, null)
+        assert.deepStrictEqual(entry, undefined)
       })
     })
 
     describe('has', async () => {
       let log
 
-      const expectedData = { 
+      const expectedData = {
         hash: 'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
         id: 'AAA',
         payload: 'one',
         next: [],
         v: 0,
-        clock: { 
+        clock: {
           id: 'AAA',
-          time: 1,
-        },
+          time: 1
+        }
       }
 
       beforeEach(async () => {
@@ -268,10 +268,10 @@ apis.forEach((IPFS) => {
           values: [
             'QmXMNDsmtQHW92TSQBnS6zmgZwHXBv9cS65QvziowsfeLo',
             'QmWq9pXL3FUKefRUP84UZ9yNqCMzNkTCVor6GH2UCX7HVe',
-            'QmZJmkhxvzKDJF1foDXq3ic1sNgXn8MUusuDNtaCQzcmrA',
+            'QmZJmkhxvzKDJF1foDXq3ic1sNgXn8MUusuDNtaCQzcmrA'
           ]
         }
-        
+
         it('returns the log snapshot', () => {
           const snapshot = log.toSnapshot()
           assert.equal(snapshot.id, expectedData.id)
@@ -300,7 +300,7 @@ apis.forEach((IPFS) => {
         })
 
         it('log serialized to ipfs contains the correct data', async () => {
-          const expectedData = { 
+          const expectedData = {
             id: 'A',
             heads: ['QmTctXe3aLBowJkNFZjH1U5JzHJtP6bHjagno6AxcHuua4']
           }
@@ -389,7 +389,7 @@ apis.forEach((IPFS) => {
           const amount = 100
           const size = amount / 2
           let log = new Log(ipfs, 'A')
-          for (let i = 0; i < amount; i ++) {
+          for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
           const hash = await log.toMultihash()
@@ -400,7 +400,7 @@ apis.forEach((IPFS) => {
         it('creates a log from ipfs hash up without size limit', async () => {
           const amount = 100
           let log = new Log(ipfs, 'A')
-          for (let i = 0; i < amount; i ++) {
+          for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
           const hash = await log.toMultihash()
@@ -436,7 +436,7 @@ apis.forEach((IPFS) => {
           const res = await ipfs.object.put(Buffer.from('{}'))
           try {
             await Log.fromMultihash(ipfs, res.toJSON().multihash)
-          } catch(e) {
+          } catch (e) {
             err = e
           }
           assert.equal(err.message, 'Given argument is not an instance of Log')
@@ -448,7 +448,7 @@ apis.forEach((IPFS) => {
           const res = await ipfs.object.put(Buffer.from('hello'))
           try {
             await Log.fromMultihash(ipfs, res.toJSON().multihash)
-          } catch(e) {
+          } catch (e) {
             err = e
           }
           assert.equal(err.message, 'Unexpected token h in JSON at position 0')
@@ -457,7 +457,7 @@ apis.forEach((IPFS) => {
         it('onProgress callback is fired for each entry', async () => {
           const amount = 100
           let log = new Log(ipfs, 'A')
-          for (let i = 0; i < amount; i ++) {
+          for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
 
@@ -469,7 +469,7 @@ apis.forEach((IPFS) => {
             assert.equal(entry.hash, items[items.length - i - 1].hash)
             assert.equal(entry.payload, items[items.length - i - 1].payload)
             assert.equal(depth - 1, i)
-            i ++
+            i++
           }
 
           try {
@@ -504,7 +504,7 @@ apis.forEach((IPFS) => {
 
         before(async () => {
           log = new Log(ipfs, 'A')
-          await log.append("hello1")
+          await log.append('hello1')
         })
 
         it('added the correct amount of items', () => {
@@ -545,8 +545,8 @@ apis.forEach((IPFS) => {
 
         before(async () => {
           log = new Log(ipfs, 'A')
-          for(let i = 0; i < amount; i ++) {
-            await log.append("hello" + i, nextPointerAmount)
+          for (let i = 0; i < amount; i++) {
+            await log.append('hello' + i, nextPointerAmount)
             // Make sure the log has the right heads after each append
             const values = log.values
             assert.equal(log.heads.length, 1)
@@ -594,7 +594,7 @@ apis.forEach((IPFS) => {
         let items2 = []
         let items3 = []
         const amount = 100
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
@@ -617,7 +617,7 @@ apis.forEach((IPFS) => {
           console.error(e)
         }
         assert.equal(logA.length, items3.length + items2.length + items1.length)
-        // The last entry, 'entryC100', should be the only head 
+        // The last entry, 'entryC100', should be the only head
         // (it points to entryB100, entryB100 and entryC99)
         assert.equal(logA.heads.length, 1)
       })
@@ -637,7 +637,7 @@ apis.forEach((IPFS) => {
         let err
         try {
           await log1.join({})
-        } catch(e) {
+        } catch (e) {
           err = e
         }
         assert.notEqual(err, null)
@@ -652,8 +652,8 @@ apis.forEach((IPFS) => {
         log1.join(log2)
         log1.join(log2)
 
-        const expectedData = [ 
-          'helloA1', 'helloB1', 'helloA2', 'helloB2',
+        const expectedData = [
+          'helloA1', 'helloB1', 'helloA2', 'helloB2'
         ]
 
         assert.equal(log1.length, 4)
@@ -671,9 +671,8 @@ apis.forEach((IPFS) => {
         log1.join(log2)
         log2.join(log1)
 
-
-        const expectedData = [ 
-          'helloA1', 'helloB1', 'helloA2', 'helloB2',
+        const expectedData = [
+          'helloA1', 'helloB1', 'helloA2', 'helloB2'
         ]
 
         assert.deepEqual(log1.values.map((e) => e.hash), log2.values.map((e) => e.hash))
@@ -690,8 +689,8 @@ apis.forEach((IPFS) => {
         await log2.append('helloB2')
         log2.join(log1)
 
-        const expectedData = [ 
-          'helloA1', 'helloB1', 'helloA2', 'helloB2',
+        const expectedData = [
+          'helloA1', 'helloB1', 'helloA2', 'helloB2'
         ]
 
         assert.equal(log2.length, 4)
@@ -709,7 +708,7 @@ apis.forEach((IPFS) => {
         log2.join(log1)
 
         const expectedData = [
-          'helloA1', 'helloB1', 'helloA2', 'helloB2', 
+          'helloA1', 'helloB1', 'helloA2', 'helloB2'
         ]
 
         assert.equal(log2.length, 4)
@@ -729,7 +728,7 @@ apis.forEach((IPFS) => {
         log1.join(log3)
         log1.join(log4)
 
-        const expectedData = [ 
+        const expectedData = [
           'helloA1',
           'helloB1',
           'helloC1',
@@ -737,7 +736,7 @@ apis.forEach((IPFS) => {
           'helloA2',
           'helloB2',
           'helloC2',
-          'helloD2',
+          'helloD2'
         ]
 
         assert.equal(log1.length, 8)
@@ -804,7 +803,7 @@ apis.forEach((IPFS) => {
         await log4.append('helloD6')
         assert.deepEqual(log4.clock.time, 8)
 
-        const expectedData = [ 
+        const expectedData = [
           { payload: 'helloA1', id: 'X', clock: { id: 'A', time: 1} },
           { payload: 'helloB1', id: 'X', clock: { id: 'B', time: 1} },
           { payload: 'helloD1', id: 'X', clock: { id: 'D', time: 1} },
@@ -817,7 +816,7 @@ apis.forEach((IPFS) => {
           { payload: 'helloD4', id: 'X', clock: { id: 'D', time: 6} },
           { payload: 'helloA5', id: 'X', clock: { id: 'A', time: 7} },
           { payload: 'helloD5', id: 'X', clock: { id: 'D', time: 7} },
-          { payload: 'helloD6', id: 'X', clock: { id: 'D', time: 8} },
+          { payload: 'helloD6', id: 'X', clock: { id: 'D', time: 8} }
         ]
 
         const transformed = log4.values.map((e) => {
@@ -861,7 +860,7 @@ apis.forEach((IPFS) => {
         assert.equal(log4.clock.id, 'D')
         assert.equal(log4.clock.time, 6)
 
-        const expectedData = [ 
+        const expectedData = [
           'helloA1',
           'helloB1',
           'helloD1',
@@ -871,7 +870,7 @@ apis.forEach((IPFS) => {
           'helloC1',
           'helloC2',
           'helloD3',
-          'helloD4',
+          'helloD4'
         ]
 
         assert.equal(log4.length, 10)
@@ -889,8 +888,8 @@ apis.forEach((IPFS) => {
         it('joins only specified amount of entries - one entry', async () => {
           await log1.join(log2, 1)
 
-          const expectedData = [ 
-            'helloB2',
+          const expectedData = [
+            'helloB2'
           ]
           const lastEntry = last(log1.values)
 
@@ -902,8 +901,8 @@ apis.forEach((IPFS) => {
         it('joins only specified amount of entries - two entries', async () => {
           await log1.join(log2, 2)
 
-          const expectedData = [ 
-            'helloA2', 'helloB2',
+          const expectedData = [
+            'helloA2', 'helloB2'
           ]
           const lastEntry = last(log1.values)
 
@@ -915,8 +914,8 @@ apis.forEach((IPFS) => {
         it('joins only specified amount of entries - three entries', async () => {
           await log1.join(log2, 3)
 
-          const expectedData = [ 
-            'helloB1', 'helloA2', 'helloB2',
+          const expectedData = [
+            'helloB1', 'helloA2', 'helloB2'
           ]
           const lastEntry = last(log1.values)
 
@@ -928,8 +927,8 @@ apis.forEach((IPFS) => {
         it('joins only specified amount of entries - (all) four entries', async () => {
           await log1.join(log2, 4)
 
-          const expectedData = [ 
-            'helloA1', 'helloB1', 'helloA2', 'helloB2',
+          const expectedData = [
+            'helloA1', 'helloB1', 'helloA2', 'helloB2'
           ]
           const lastEntry = last(log1.values)
 
@@ -985,7 +984,7 @@ apis.forEach((IPFS) => {
         const log1 = new Log(ipfs, 'A')
         let items1 = []
         const amount = 100
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const n1 = await Entry.create(ipfs, null, 'A', 'entryA' + i, [prev1])
           items1.push(n1)
@@ -1000,7 +999,7 @@ apis.forEach((IPFS) => {
           assert.equal(entry.payload, items1[items1.length - i - 1].payload)
           assert.equal(depth - 1, i)
 
-          i ++
+          i++
           prevDepth = depth
         }
 
@@ -1015,7 +1014,7 @@ apis.forEach((IPFS) => {
         let items2 = []
         let items3 = []
         const amount = 100
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
@@ -1040,7 +1039,7 @@ apis.forEach((IPFS) => {
         const log1 = new Log(ipfs, 'A')
         let items1 = []
         const amount = 5
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const n1 = await Entry.create(ipfs, null, 'A', 'entryA' + i, [prev1])
           items1.push(n1)
@@ -1073,7 +1072,7 @@ apis.forEach((IPFS) => {
           items1 = []
           items2 = []
           items3 = []
-          for(let i = 1; i <= amount; i ++) {
+          for (let i = 1; i <= amount; i++) {
             const prev1 = last(items1)
             const prev2 = last(items2)
             const prev3 = last(items3)
@@ -1122,7 +1121,7 @@ apis.forEach((IPFS) => {
         let items2 = []
         let items3 = []
         const amount = 10
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
@@ -1152,7 +1151,7 @@ apis.forEach((IPFS) => {
         let items2 = []
         let items3 = []
         const amount = 10
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
@@ -1182,7 +1181,7 @@ apis.forEach((IPFS) => {
         let items2 = []
         let items3 = []
         const amount = 10
-        for(let i = 1; i <= amount; i ++) {
+        for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
@@ -1206,7 +1205,7 @@ apis.forEach((IPFS) => {
         const a = await Log.fromEntry(ipfs, last(items1), amount)
         assert.equal(a.length, amount)
 
-        const itemsInB = [ 
+        const itemsInB = [
           'entryA1',
           'entryB1',
           'entryA2',
@@ -1226,7 +1225,7 @@ apis.forEach((IPFS) => {
           'entryA9',
           'entryB9',
           'entryA10',
-          'entryB10' 
+          'entryB10'
         ]
 
         const b = await Log.fromEntry(ipfs, last(items2), amount * 2)
@@ -1237,7 +1236,7 @@ apis.forEach((IPFS) => {
         await c.append('EOF')
         assert.equal(c.length, amount * 3 + 1)
 
-        const tmp = [ 
+        const tmp = [
           'entryA1',
           'entryB1',
           'entryC1',
@@ -1268,7 +1267,7 @@ apis.forEach((IPFS) => {
           'entryA10',
           'entryB10',
           'entryC10',
-          'EOF' 
+          'EOF'
         ]
         assert.deepEqual(c.values.map(e => e.payload), tmp)
 
@@ -1295,33 +1294,33 @@ apis.forEach((IPFS) => {
         let log2 = new Log(ipfs, 'X', null, null, null, 'B')
         let log3 = new Log(ipfs, 'X', null, null, null, 'C')
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await log1.append('entryA' + i)
         }
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await log2.append('entryB' + i)
         }
 
         log3.join(log1)
         log3.join(log2)
 
-        for(let i = 6; i <= 10; i ++) {
+        for (let i = 6; i <= 10; i++) {
           await log1.append('entryA' + i)
         }
 
         log1.join(log3)
 
-        for(let i = 11; i <= 15; i ++) {
+        for (let i = 11; i <= 15; i++) {
           await log1.append('entryA' + i)
         }
 
-        const expectedData = [ 
-          'entryA1', 'entryB1', 'entryA2', 'entryB2', 
-          'entryA3', 'entryB3', 'entryA4', 'entryB4', 
+        const expectedData = [
+          'entryA1', 'entryB1', 'entryA2', 'entryB2',
+          'entryA3', 'entryB3', 'entryA4', 'entryB4',
           'entryA5', 'entryB5',
           'entryA6', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
-          'entryA11', 'entryA12', 'entryA13', 'entryA14', 'entryA15' 
+          'entryA11', 'entryA12', 'entryA13', 'entryA14', 'entryA15'
         ]
 
         assert.deepEqual(log1.values.map(e => e.payload), expectedData)
@@ -1331,20 +1330,20 @@ apis.forEach((IPFS) => {
         let logA = new Log(ipfs, 'X', null, null, null, 'A')
         let logB = new Log(ipfs, 'X', null, null, null, 'B')
         let log3 = new Log(ipfs, 'X', null, null, null, 'C')
-        let log  = new Log(ipfs, 'X', null, null, null, 'D')
+        let log = new Log(ipfs, 'X', null, null, null, 'D')
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i)
         }
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logB.append('entryB' + i)
         }
 
         log3.join(logA)
         log3.join(logB)
 
-        for(let i = 6; i <= 10; i ++) {
+        for (let i = 6; i <= 10; i++) {
           await logA.append('entryA' + i)
         }
 
@@ -1352,12 +1351,12 @@ apis.forEach((IPFS) => {
         await log.append('entryC0')
         log.join(logA, 16)
 
-        const expectedData = [ 
-          'entryA1', 'entryB1', 'entryA2', 'entryB2', 
-          'entryA3', 'entryB3', 'entryA4', 'entryB4', 
+        const expectedData = [
+          'entryA1', 'entryB1', 'entryA2', 'entryB2',
+          'entryA3', 'entryB3', 'entryA4', 'entryB4',
           'entryA5', 'entryB5',
           'entryA6',
-          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(log.values.map(e => e.payload), expectedData)
@@ -1368,25 +1367,25 @@ apis.forEach((IPFS) => {
         let log = testLog.log
         const expectedData = testLog.expectedData
 
-        const expectedData2 = [ 
+        const expectedData2 = [
           'entryA1', 'entryB1', 'entryA2', 'entryB2',
-          'entryA3', 'entryB3', 'entryA4', 'entryB4', 
+          'entryA3', 'entryB3', 'entryA4', 'entryB4',
           'entryA5', 'entryB5',
-          'entryA6', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryA6', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
-        const expectedData3 = [ 
+        const expectedData3 = [
           'entryA1', 'entryB1', 'entryA2', 'entryB2',
           'entryA3', 'entryB3', 'entryA4', 'entryB4',
-          'entryA5', 'entryB5', 'entryA6', 'entryC0', 
-          'entryA7', 'entryA8', 'entryA9',
+          'entryA5', 'entryB5', 'entryA6', 'entryC0',
+          'entryA7', 'entryA8', 'entryA9'
         ]
 
-        const expectedData4 = [ 
+        const expectedData4 = [
           'entryA1', 'entryB1', 'entryA2', 'entryB2',
           'entryA3', 'entryB3', 'entryA4', 'entryB4',
-          'entryA5', 'entryA6', 'entryC0', 'entryA7', 
-          'entryA8', 'entryA9', 'entryA10',
+          'entryA5', 'entryA6', 'entryC0', 'entryA7',
+          'entryA8', 'entryA9', 'entryA10'
         ]
 
         let fetchOrder = log.values.slice().sort(Entry.compare)
@@ -1421,7 +1420,7 @@ apis.forEach((IPFS) => {
         assert.deepEqual(fetchOrder.map(e => e.payload), expectedData)
 
         let sorted
-        for (let i = 0; i < 1000; i ++) {
+        for (let i = 0; i < 1000; i++) {
           const randomOrder = log.values.slice().sort((a, b) => 0.5 - Math.random())
           sorted = randomOrder.sort(Entry.compare)
           assert.deepEqual(sorted.map(e => e.payload), expectedData)
@@ -1441,20 +1440,20 @@ apis.forEach((IPFS) => {
         let logA = new Log(ipfs, 'X', null, null, null, 'A')
         let logB = new Log(ipfs, 'X', null, null, null, 'B')
         let log3 = new Log(ipfs, 'X', null, null, null, 'C')
-        let log  = new Log(ipfs, 'X', null, null, null, 'D')
+        let log = new Log(ipfs, 'X', null, null, null, 'D')
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i, nextPointerAmount)
         }
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logB.append('entryB' + i, nextPointerAmount)
         }
 
         log3.join(logA)
         log3.join(logB)
 
-        for(let i = 6; i <= 10; i ++) {
+        for (let i = 6; i <= 10; i++) {
           await logA.append('entryA' + i, nextPointerAmount)
         }
 
@@ -1468,8 +1467,8 @@ apis.forEach((IPFS) => {
         // First 5
         let res = await Log.fromMultihash(ipfs, mh, 5)
 
-        const first5 = [ 
-          'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10',
+        const first5 = [
+          'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10'
         ]
 
         // console.log(log.values.map(e => e.payload))
@@ -1479,11 +1478,11 @@ apis.forEach((IPFS) => {
         // First 11
         res = await Log.fromMultihash(ipfs, mh, 11)
 
-        const first11 = [ 
-          'entryA3', 'entryB3', 'entryA4', 'entryB4', 
-          'entryA5', 'entryB5', 
+        const first11 = [
+          'entryA3', 'entryB3', 'entryA4', 'entryB4',
+          'entryA5', 'entryB5',
           'entryC0',
-          'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), first11)
@@ -1491,11 +1490,11 @@ apis.forEach((IPFS) => {
         // All but one
         res = await Log.fromMultihash(ipfs, mh, 16 - 1)
 
-        const all = [ 
+        const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
-          'entryA6', 
-          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryA6',
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), all)
@@ -1507,20 +1506,20 @@ apis.forEach((IPFS) => {
         let logA = new Log(ipfs, 'X', null, null, null, 'A')
         let logB = new Log(ipfs, 'X', null, null, null, 'B')
         let log3 = new Log(ipfs, 'X', null, null, null, 'C')
-        let log  = new Log(ipfs, 'X', null, null, null, 'D')
+        let log = new Log(ipfs, 'X', null, null, null, 'D')
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i, nextPointersAmount)
         }
 
-        for(let i = 1; i <= 5; i ++) {
+        for (let i = 1; i <= 5; i++) {
           await logB.append('entryB' + i, nextPointersAmount)
         }
 
         log3.join(logA)
         log3.join(logB)
 
-        for(let i = 6; i <= 10; i ++) {
+        for (let i = 6; i <= 10; i++) {
           await logA.append('entryA' + i, nextPointersAmount)
         }
 
@@ -1534,8 +1533,8 @@ apis.forEach((IPFS) => {
         // First 5
         let res = await Log.fromMultihash(ipfs, mh, 5)
 
-        const first5 = [ 
-          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+        const first5 = [
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), first5)
@@ -1543,11 +1542,11 @@ apis.forEach((IPFS) => {
         // First 11
         res = await Log.fromMultihash(ipfs, mh, 11)
 
-        const first11 = [ 
-             'entryA1', 'entryA2', 'entryA3', 'entryA4',
-             'entryA5', 'entryA6',
-             'entryC0',
-             'entryA7', 'entryA8', 'entryA9', 'entryA10',
+        const first11 = [
+          'entryA1', 'entryA2', 'entryA3', 'entryA4',
+          'entryA5', 'entryA6',
+          'entryC0',
+          'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), first11)
@@ -1555,11 +1554,11 @@ apis.forEach((IPFS) => {
         // All but one
         res = await Log.fromMultihash(ipfs, mh, 16 - 1)
 
-        const all = [ 
+        const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
-          'entryA6', 
-          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10',
+          'entryA6',
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepEqual(res.values.map(e => e.payload), all)
@@ -1815,7 +1814,7 @@ apis.forEach((IPFS) => {
         log2.join(log3)
         log1.join(log2)
 
-        const res1 = log1.values.slice()//.map((e) => e.hash).join(",")
+        const res1 = log1.values.slice()// .map((e) => e.hash).join(",")
 
         log1 = new Log(ipfs, 'X', null, null, null, 'A')
         log2 = new Log(ipfs, 'X', null, null, null, 'B')
@@ -1831,10 +1830,10 @@ apis.forEach((IPFS) => {
         log1.join(log2)
         log3.join(log1)
 
-        const res2 = log3.values.slice()//.map((e) => e.hash).join(",")
+        const res2 = log3.values.slice()// .map((e) => e.hash).join(",")
 
         // associativity: a + (b + c) == (a + b) + c
-        const len = 6//(46 + 1) * 6- 1 // 46 == ipfs hash, +1 == .join(","), * 4 == number of items, -1 == last item doesn't get a ',' from .join
+        const len = 6// (46 + 1) * 6- 1 // 46 == ipfs hash, +1 == .join(","), * 4 == number of items, -1 == last item doesn't get a ',' from .join
         assert.equal(res1.length, len)
         assert.equal(res2.length, len)
         assert.deepEqual(res1, res2)
@@ -1848,7 +1847,7 @@ apis.forEach((IPFS) => {
 
         // b + a
         log2.join(log1)
-        const res1 = log2.values.slice()//.map((e) => e.hash).join(",")
+        const res1 = log2.values.slice()// .map((e) => e.hash).join(",")
 
         log1 = new Log(ipfs, 'X', null, null, null, 'A')
         log2 = new Log(ipfs, 'X', null, null, null, 'B')
@@ -1859,7 +1858,7 @@ apis.forEach((IPFS) => {
 
         // a + b
         log1.join(log2)
-        const res2 = log1.values.slice()//.map((e) => e.hash).join(",")
+        const res2 = log1.values.slice()// .map((e) => e.hash).join(",")
 
         // commutativity: a + b == b + a
         // const len = (46 + 1) * 4 - 1 // 46 == ipfs hash length, +1 == .join(","), * 4 == number of items, -1 == last item doesn't get a ',' from .join
@@ -1995,5 +1994,4 @@ apis.forEach((IPFS) => {
       })
     })
   })
-
 })
