@@ -6,7 +6,7 @@ const os = require('os')
 const benchmarks = require('./benchmarks')
 
 const runOne = async (benchmark) => {
-  console.log(`Running ${benchmark.name}`)
+  console.log(`\rRunning ${benchmark.name}`)
 
   let stats = {
     count: 0
@@ -20,6 +20,7 @@ const runOne = async (benchmark) => {
 
   const startTime = process.hrtime()
   while (benchmark.while(stats, startTime)) {
+    process.stdout.write(`\rCycles: ${stats.count}`)
     await benchmark.cycle(log)
     stats.count++
   }

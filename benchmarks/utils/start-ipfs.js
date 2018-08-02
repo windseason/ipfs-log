@@ -10,8 +10,10 @@ const startIpfs = (repoPath) => {
       }
     }
 
+    const repo = new IPFSRepo(repoPath, repoConf)
+
     ipfs = new IPFS({
-      repo: new IPFSRepo(repoPath, repoConf),
+      repo: repo,
       start: false,
       EXPERIMENTAL: {
         pubsub: false,
@@ -25,7 +27,7 @@ const startIpfs = (repoPath) => {
     })
 
     ipfs.on('ready', () => {
-      resolve(ipfs)
+      resolve({ ipfs, repo })
     })
   })
 }
