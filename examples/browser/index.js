@@ -8,7 +8,7 @@ const ipfs = new IPFS({
   start: false,
   EXPERIMENTAL: {
     pubsub: true
-  },
+  }
 })
 
 ipfs.on('error', (e) => console.error(e))
