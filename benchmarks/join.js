@@ -8,11 +8,18 @@ const base = {
   prepare: async function () {
     const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/ipfs')
     this._repo = repo
-    const log = new Log(ipfs, 'A')
-    return log
+    const log1 = new Log(ipfs, 'A')
+    const log2 = new Log(ipfs, 'B')
+    return { log1, log2 }
   },
-  cycle: async function (log) {
-    await log.append('Hello')
+  cycle: async function (logs) {
+    const { log1, log2 } = logs
+    const add1 = await log1.append('Hello1')
+    const add2 = await log2.append('Hello2')
+
+    await Promise.all([add1, add2])
+    log1.join(log2)
+    log2.join(log1)
   },
   teardown: async function() {
     await releaseRepo(this._repo)
@@ -23,12 +30,13 @@ const signed = {
   prepare: async function () {
     const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/ipfs')
     const keystore = Keystore.create('./test-keys')
-    const key = keystore.createKey('benchmark-append-signed')
+    const key = keystore.createKey('benchmark-join-signed')
     ipfs.keystore = keystore
 
     this._repo = repo
-    const log = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
-    return log
+    const log1 = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
+    const log2 = new Log(ipfs, 'B', null, null, null, key, key.getPublic('hex'))
+    return { log1, log2 }
   }
 }
 
@@ -45,8 +53,8 @@ const stress = {
 }
 
 module.exports = [
-  { name: 'append-baseline', ...base, ...baseline},
-  { name: 'append-stress', ...base, ...stress},
-  { name: 'append-signed-baseline', ...base, ...signed, ...baseline},
-  { name: 'append-signed-stress', ...base, ...signed, ...stress}
+  { name: 'join-baseline', ...base, ...baseline},
+  { name: 'join-stress', ...base, ...stress},
+  { name: 'join-signed-baseline', ...base, ...signed, ...baseline},
+  { name: 'join-signed-stress', ...base, ...signed, ...stress}
 ]
