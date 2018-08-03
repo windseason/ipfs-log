@@ -1,7 +1,9 @@
 /* global process */
 const os = require('os')
+const args = require('yargs').argv
 
-//TODO: parse args for benchmark names and parameters
+const DEFAULT_GREP = /.*/
+const grep = args.grep ? new RegExp(args.grep) : DEFAULT_GREP
 
 const benchmarks = require('./benchmarks')
 
@@ -46,6 +48,9 @@ const start = async () => {
 
   try {
     for (const benchmark of benchmarks) {
+      if (!grep.test(benchmark.name)) {
+        continue
+      }
       const result = await runOne(benchmark)
       results.push(result)
     }
