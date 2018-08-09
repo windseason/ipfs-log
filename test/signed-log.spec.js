@@ -5,7 +5,8 @@ const rmrf = require('rimraf')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const Keystore = require('orbit-db-keystore')
-const Log = require('../src/log.js')
+const Log = require('../src/log')
+const { getTestACL, getTestIdentity } = require('./utils/test-entry-validator')
 
 const apis = [require('ipfs')]
 
@@ -26,7 +27,7 @@ const ipfsConf = {
   }
 }
 
-let ipfs, key1, key2, key3
+let ipfs, key1, key2, key3, id1, acl1, id2, acl2
 
 apis.forEach((IPFS) => {
   describe('Signed Log', function () {
@@ -39,6 +40,13 @@ apis.forEach((IPFS) => {
       key1 = keystore.getKey('A')
       key2 = keystore.getKey('B')
       key3 = keystore.getKey('C')
+
+      acl1 = getTestACL(key1.getPublic('hex'))
+      id1 = getTestIdentity(key1.getPublic('hex'))
+
+      acl2 = getTestACL(key2.getPublic('hex'))
+      id2 = getTestIdentity(key2.getPublic('hex'))
+
       ipfs = new IPFS(ipfsConf)
       ipfs.keystore = keystore
       ipfs.on('error', done)
@@ -52,28 +60,13 @@ apis.forEach((IPFS) => {
     })
 
     it('creates a signed log', () => {
-      const log = new Log(ipfs, 'A', null, null, null, key1)
+      const log = new Log(ipfs, 'A', null, null, null, acl1, id1)
       assert.notStrictEqual(log.id, null)
-      assert.deepStrictEqual(log._key, key1)
-      assert.deepStrictEqual(log._keys, [])
-    })
-
-    it('takes an array of write-access public keys as an argument', () => {
-      const log = new Log(ipfs, 'A', null, null, null, key1, [key2.getPublic('hex'), key3.getPublic('hex')])
-      assert.notStrictEqual(log.id, null)
-      assert.deepStrictEqual(log._key, key1)
-      assert.deepStrictEqual(log._keys, [key2.getPublic('hex'), key3.getPublic('hex')])
-    })
-
-    it('takes a single write-access public key as an argument', () => {
-      const log = new Log(ipfs, 'A', null, null, null, key1, key2.getPublic('hex'))
-      assert.notStrictEqual(log.id, null)
-      assert.deepStrictEqual(log._key, key1)
-      assert.deepStrictEqual(log._keys, [key2.getPublic('hex')])
+      assert.strictEqual(log._identity.id, key1.getPublic('hex'))
     })
 
     it('entries contain a signature and a public signing key', async () => {
-      const log = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex')])
+      const log = new Log(ipfs, 'A', null, null, null, acl1, id1)
       await log.append('one')
       assert.notStrictEqual(log.values[0].sig, null)
       assert.strictEqual(log.values[0].key, key1.getPublic('hex'))
@@ -98,72 +91,19 @@ apis.forEach((IPFS) => {
       } catch (e) {
         err = e.toString()
       }
-      assert.strictEqual(err, 'Error: Not allowed to write')
-    })
+      assert.strictEqual(err, 'Error: ACL is required')
 
-    it('allows only the specified keys to write when write-access keys are defined', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
-
-      let err
       try {
-        await log1.append('one')
-        await log2.append('two')
-        await log1.join(log2)
+        const log = new Log(ipfs, 'A', null, null, null, acl1)
       } catch (e) {
         err = e.toString()
-        throw e
       }
-      assert.strictEqual(err, undefined)
-      assert.strictEqual(log1.id, 'A')
-      assert.strictEqual(log1.values.length, 2)
-      assert.strictEqual(log1.values[0].payload, 'one')
-      assert.strictEqual(log1.values[1].payload, 'two')
-    })
-
-    it('allows others than the owner to write', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key2.getPublic('hex')])
-
-      let err
-      try {
-        await log2.append('one')
-        await log2.append('two')
-        await log1.join(log2)
-      } catch (e) {
-        err = e.toString()
-        throw e
-      }
-      assert.strictEqual(err, undefined)
-      assert.strictEqual(log1.id, 'A')
-      assert.strictEqual(log1.values.length, 2)
-      assert.strictEqual(log1.values[0].payload, 'one')
-      assert.strictEqual(log1.values[1].payload, 'two')
-    })
-
-    it('allows anyone to write', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, ['*'])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, ['*'])
-
-      let err
-      try {
-        await log2.append('one')
-        await log2.append('two')
-        await log1.join(log2)
-      } catch (e) {
-        err = e.toString()
-        throw e
-      }
-      assert.strictEqual(err, undefined)
-      assert.strictEqual(log1.id, 'A')
-      assert.strictEqual(log1.values.length, 2)
-      assert.strictEqual(log1.values[0].payload, 'one')
-      assert.strictEqual(log1.values[1].payload, 'two')
+      assert.strictEqual(err, 'Error: Identity is required')
     })
 
     it('doesn\'t join logs with different IDs ', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, ['*'])
-      const log2 = new Log(ipfs, 'B', null, null, null, key1, ['*'])
+      const log1 = new Log(ipfs, 'A', null, null, null, acl1, id1)
+      const log2 = new Log(ipfs, 'B', null, null, null, acl2, id2)
 
       let err
       try {
@@ -206,8 +146,8 @@ apis.forEach((IPFS) => {
     })
 
     it('throws an error if log is signed but trying to merge with an entry that doesn\'t have public signing key', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log1 = new Log(ipfs, 'A', null, null, null, acl1, id1)
+      const log2 = new Log(ipfs, 'A', null, null, null, acl2, id2)
 
       let err
       try {
@@ -222,8 +162,8 @@ apis.forEach((IPFS) => {
     })
 
     it('throws an error if log is signed but trying to merge an entry that doesn\'t have a signature', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log1 = new Log(ipfs, 'A', null, null, null, acl1, id1)
+      const log2 = new Log(ipfs, 'A', null, null, null, acl2, id2)
 
       let err
       try {
@@ -242,8 +182,8 @@ apis.forEach((IPFS) => {
         return str.substr(0, index) + replacement + str.substr(index + replacement.length)
       }
 
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+      const log1 = new Log(ipfs, 'A', null, null, null, acl1, id1)
+      const log2 = new Log(ipfs, 'A', null, null, null, acl2, id2)
       let err
 
       try {
@@ -254,24 +194,36 @@ apis.forEach((IPFS) => {
       } catch (e) {
         err = e.toString()
       }
-      assert.strictEqual(err, `Error: Invalid signature in entry '${log2.values[0].hash}'`)
+      assert.strictEqual(err, `Error: Could not validate signature: '${log2.values[0].sig}' for key '${log2.values[0].key}'`)
       assert.strictEqual(log1.values.length, 1)
       assert.strictEqual(log1.values[0].payload, 'one')
     })
 
-    it('Do not add the entry to the log if the entry is signed but the signature is valid and doesn\'t verify', async () => {
-      const log1 = new Log(ipfs, 'A', null, null, null, key1, [key1.getPublic('hex'), key2.getPublic('hex')])
-      const log2 = new Log(ipfs, 'A', null, null, null, key2, [key1.getPublic('hex'), key2.getPublic('hex')])
+    it('throws an error if entry doesn\'t have append access', async () => {
+      // This should be done at the orbit-db level, this is part of orbit ACL
+      // It simulates a scenario where "key2" is not allowed to append to the log
+      const canAppend = entry => {
+        if (entry.key !== key1.getPublic('hex')) throw new Error('Not allowed to write')
+      }
 
-      await log1.append('one')
-      await log2.append('two')
-      // This is a valid signature, it will not cause an exception in validate entry,
-      // but it should still get rejected from the join log
-      log2.values[0].sig = { r: '0'.repeat(64), s: '0'.repeat(64) }
-      await log1.join(log2)
+      acl1 = getTestACL(key1.getPublic('hex'), canAppend)
+      id1 = getTestIdentity(key1.getPublic('hex'))
 
-      assert.strictEqual(log1.values.length, 1)
-      assert.strictEqual(log1.values[0].payload, 'one')
+      acl2 = getTestACL(key2.getPublic('hex'), canAppend)
+      id2 = getTestIdentity(key2.getPublic('hex'))
+
+      const log1 = new Log(ipfs, 'A', null, null, null, acl1, id1)
+      const log2 = new Log(ipfs, 'A', null, null, null, acl2, id2)
+
+      let err
+      try {
+        await log1.append('one')
+        await log2.append('two')
+        await log1.join(log2)
+      } catch (e) {
+        err = e.toString()
+      }
+      assert.strictEqual(err, 'Error: Not allowed to write')
     })
   })
 })
