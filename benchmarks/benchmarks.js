@@ -3,6 +3,7 @@ const Log = require('../src/log')
 
 const append = require('./append.js')
 const fromEntryHash = require('./from-entry-hash.js')
+const fromMultihash = require('./from-multihash.js')
 const get = require('./get.js')
 const has = require('./has.js')
 const heads = require('./heads.js')
@@ -16,6 +17,7 @@ const values = require('./values.js')
 module.exports = [
   ...append,
   ...fromEntryHash,
+  ...fromMultihash,
   ...get,
   ...has,
   ...heads,
