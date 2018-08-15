@@ -12,18 +12,10 @@ const base = {
     const refCount = 64
     for (let i = 1; i < this.count + 1; i ++) {
       await log.append('hello' + i, refCount)
-      process.stdout.write(`\rWriting ${i} / ${this.count}`)
     }
     return log
   },
-  while: (stats, startTime) => {
-    return stats.count < 1
-  },
   cycle: async function (log) {
-    const onDataUpdated = (hash, entry, resultLength, result, queue) => {
-      total = resultLength
-      process.stdout.write(`\rLoading ${total} / ${this.count}`)
-    }
     await Log.fromEntryHash(
       this._ipfs,
       log.heads.map(e => e.hash),
@@ -31,8 +23,7 @@ const base = {
       -1,
       [],
       log._key,
-      log._keys,
-      onDataUpdated
+      log._keys
     )
   },
   teardown: async function() {
@@ -40,14 +31,24 @@ const base = {
   }
 }
 
+const baseline = {
+  while: (stats, startTime) => {
+    return stats.count < 1000
+  }
+}
+
+const stress = {
+  while: (stats, startTime) => {
+    return process.hrtime(startTime)[0] < 300
+  }
+}
+
 const counts = [1, 100, 1000, 10000]
 let benchmarks = []
 for (const count of counts) {
-  const benchmark = {
-    name: `fromEntryHash-${count}`,
-    count: count
-  }
-  benchmarks.push({ ...base, ...benchmark })
+  const c = { count }
+  if (count < 1000) benchmarks.push({ name: `fromEntryHash-${count}-baseline`, ...base, ...c, ...baseline })
+  benchmarks.push({ name: `fromEntryHash-${count}-stress`, ...base, ...c, ...stress })
 }
 
 module.exports = benchmarks
