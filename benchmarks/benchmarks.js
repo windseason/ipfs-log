@@ -2,6 +2,7 @@ const startIPFS = require('./utils/start-ipfs')
 const Log = require('../src/log')
 
 const append = require('./append.js')
+const fromEntry = require('./from-entry.js')
 const fromEntryHash = require('./from-entry-hash.js')
 const fromMultihash = require('./from-multihash.js')
 const get = require('./get.js')
@@ -16,6 +17,7 @@ const values = require('./values.js')
 
 module.exports = [
   ...append,
+  ...fromEntry,
   ...fromEntryHash,
   ...fromMultihash,
   ...get,
