@@ -4,9 +4,11 @@ const Log = require('../src/log')
 const append = require('./append.js')
 const fromEntryHash = require('./from-entry-hash.js')
 const join = require('./join.js')
+const values = require('./values.js')
 
 module.exports = [
   ...append,
   ...fromEntryHash,
-  ...join
+  ...join,
+  ...values
 ]
