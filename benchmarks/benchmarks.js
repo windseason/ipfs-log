@@ -5,6 +5,7 @@ const append = require('./append.js')
 const fromEntryHash = require('./from-entry-hash.js')
 const heads = require('./heads.js')
 const join = require('./join.js')
+const tails = require('./tails.js')
 const values = require('./values.js')
 
 module.exports = [
@@ -12,5 +13,6 @@ module.exports = [
   ...fromEntryHash,
   ...heads,
   ...join,
+  ...tails,
   ...values
 ]
