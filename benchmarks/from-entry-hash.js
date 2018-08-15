@@ -10,7 +10,9 @@ const base = {
 
     const log = new Log(this._ipfs, 'A')
     const refCount = 64
+    process.stdout.clearLine()
     for (let i = 1; i < this.count + 1; i ++) {
+      process.stdout.write(`\r${this.name} / Preparing / Writing: ${i}/${this.count}`)
       await log.append('hello' + i, refCount)
     }
     return log

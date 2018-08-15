@@ -8,7 +8,9 @@ const base = {
     this._repo = repo
     const log = new Log(ipfs, 'A')
 
+    process.stdout.clearLine()
     for (let i = 1; i<this.count + 1; i++) {
+      process.stdout.write(`\r${this.name} - Preparing - Writing: ${i}/${this.count}`)
       await log.append(`Hello World: ${i}`)
     }
 
