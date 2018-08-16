@@ -53,7 +53,7 @@ class Entry {
   }
 
   static async signEntry (keystore, entry, key) {
-    const signature = await keystore.sign(key, Buffer.from(JSON.stringify(entry)))
+    const signature = await keystore.sign(key, Entry.toBuffer(entry))
     entry.sig = signature
     entry.key = key.getPublic('hex')
     return entry
@@ -70,7 +70,11 @@ class Entry {
     })
 
     const pubKey = await keystore.importPublicKey(entry.key)
-    await keystore.verify(entry.sig, pubKey, Buffer.from(JSON.stringify(e)))
+    await keystore.verify(entry.sig, pubKey, Entry.toBuffer(e))
+  }
+
+  static toBuffer (entry) {
+    return Buffer.from(JSON.stringify(entry))
   }
 
   /**
@@ -83,7 +87,7 @@ class Entry {
    * // "Qm...Foo"
    * @returns {Promise<string>}
    */
-  static toMultihash (ipfs, entry) {
+  static async toMultihash (ipfs, entry) {
     if (!ipfs) throw IpfsNotDefinedError()
     const isValidEntryObject = entry => entry.id && entry.clock && entry.next && entry.payload && entry.v >= 0
     if (!isValidEntryObject(entry)) {
@@ -103,9 +107,9 @@ class Entry {
     if (entry.sig) Object.assign(e, { sig: entry.sig })
     if (entry.key) Object.assign(e, { key: entry.key })
 
-    const data = Buffer.from(JSON.stringify(e))
-    return ipfs.object.put(data)
-      .then((res) => res.toJSON().multihash)
+    const data = Entry.toBuffer(e)
+    const object = await ipfs.object.put(data)
+    return object.toJSON().multihash
   }
 
   /**
