@@ -7,6 +7,11 @@ const DEFAULT_GREP = /.*/
 const grep = args.grep ? new RegExp(args.grep) : DEFAULT_GREP
 
 const benchmarks = require('./benchmarks')
+const report = require('./report')
+
+const getElapsed = (time) => {
+  return +time[0] * 1e9 + +time[1]
+}
 
 const runOne = async (benchmark) => {
   let stats = {
@@ -21,21 +26,20 @@ const runOne = async (benchmark) => {
   const log = await benchmark.prepare()
 
   process.stdout.clearLine()
-  const startTime = process.hrtime()
+  const startTime = process.hrtime() // eventually convert to hrtime.bigint
   while (benchmark.while(stats, startTime)) {
     process.stdout.write(`\r${benchmark.name} / Cycles: ${stats.count}`)
     await benchmark.cycle(log)
     stats.count++
   }
 
-  elapsed = process.hrtime(startTime)
+  elapsed = getElapsed(process.hrtime(startTime))
   memory.after = process.memoryUsage()
 
   process.stdout.write(`\r${benchmark.name} / Finishing`)
   await benchmark.teardown()
   process.stdout.clearLine()
 
-  stats.avg = Math.round(stats.count / elapsed[0])
   return {
     name: benchmark.name,
     cpus: os.cpus(),
@@ -48,8 +52,8 @@ const runOne = async (benchmark) => {
 
 const start = async () => {
   let results = []
-
   const baselineOnly = args.b || args.baseline
+  const runnerStartTime = process.hrtime()
 
   process.stdout.write(`Running ${baselineOnly ? 'baseline ' : ''}benchmarks matching: ${grep}`)
   process.stdout.write('\n')
@@ -67,7 +71,14 @@ const start = async () => {
       results.push(result)
     }
 
-    process.stdout.write(`\rCompleted ${results.length} benchmark${results.length > 1 ? 's' : ''}`)
+    const runnerElapsed = getElapsed(process.hrtime(runnerStartTime))
+    let output = `\rCompleted ${results.length} benchmark${results.length > 1 ? 's' : ''}`
+    output += ` in ${(runnerElapsed / 1000000000).toFixed(2)} seconds`
+    process.stdout.write(output)
+
+    if (args.r || args.report) {
+      report(results)
+    }
   } catch (e) {
     console.log(e)
   }
