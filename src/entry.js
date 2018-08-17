@@ -53,7 +53,7 @@ class Entry {
   }
 
   static async signEntry (keystore, entry, key) {
-    const signature = await keystore.sign(key, Buffer.from(JSON.stringify(entry)))
+    const signature = await keystore.sign(key, Entry.toBuffer(entry))
     entry.sig = signature
     entry.key = key.getPublic('hex')
     return entry
@@ -73,6 +73,10 @@ class Entry {
     return await keystore.verify(entry.sig, pubKey, Buffer.from(JSON.stringify(e)))
   }
 
+  static toBuffer (entry) {
+    return Buffer.from(JSON.stringify(entry))
+  }
+
   /**
    * Get the multihash of an Entry
    * @param {IPFS} [ipfs] An IPFS instance
@@ -83,11 +87,29 @@ class Entry {
    * // "Qm...Foo"
    * @returns {Promise<string>}
    */
-  static toMultihash (ipfs, entry) {
+  static async toMultihash (ipfs, entry) {
     if (!ipfs) throw IpfsNotDefinedError()
-    const data = Buffer.from(JSON.stringify(entry))
-    return ipfs.object.put(data)
-      .then((res) => res.toJSON().multihash)
+    const isValidEntryObject = entry => entry.id && entry.clock && entry.next && entry.payload && entry.v >= 0
+    if (!isValidEntryObject(entry)) {
+      throw new Error('Invalid object format, cannot generate entry multihash')
+    }
+
+    // Ensure `entry` follows the correct format
+    const e = {
+      hash: null,
+      id: entry.id,
+      payload: entry.payload,
+      next: entry.next,
+      v: entry.v,
+      clock: entry.clock,
+    }
+
+    if (entry.sig) Object.assign(e, { sig: entry.sig })
+    if (entry.key) Object.assign(e, { key: entry.key })
+
+    const data = Entry.toBuffer(e)
+    const object = await ipfs.object.put(data)
+    return object.toJSON().multihash
   }
 
   /**

@@ -179,4 +179,4 @@ If you find a bug or something is broken, let us know! PRs and [issues](https://
 
 ## License
 
-[MIT](LICENSE) © 2017 Haadcode
+[MIT](LICENSE) © 2016-2018 Protocol Labs Inc., Haja Networks Oy
