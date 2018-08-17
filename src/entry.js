@@ -70,7 +70,7 @@ class Entry {
     })
 
     const pubKey = await keystore.importPublicKey(entry.key)
-    await keystore.verify(entry.sig, pubKey, Entry.toBuffer(e))
+    return await keystore.verify(entry.sig, pubKey, Buffer.from(JSON.stringify(e)))
   }
 
   static toBuffer (entry) {
