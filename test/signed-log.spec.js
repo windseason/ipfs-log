@@ -28,7 +28,11 @@ const ipfsConf = {
   }
 }
 
-let ipfs, testIdentity, testIdentity2
+let ipfs, testACL, testIdentity, testIdentity2, testIdentity3
+
+const last = (arr) => {
+  return arr[arr.length - 1]
+}
 
 apis.forEach((IPFS) => {
   describe('Signed Log', function () {
