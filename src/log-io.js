@@ -1,13 +1,11 @@
 'use strict'
 
-const pMap = require('p-map')
 const Entry = require('./entry')
 const EntryIO = require('./entry-io')
 const Clock = require('./lamport-clock')
 const LogError = require('./log-errors')
 const isDefined = require('./utils/is-defined')
 const _uniques = require('./utils/uniques')
-const intersection = require('./utils/intersection')
 const difference = require('./utils/difference')
 
 const last = (arr, n) => arr.slice(arr.length - n, arr.length)
@@ -55,7 +53,7 @@ class LogIO {
               id: logData.id,
               values: finalEntries,
               heads: heads,
-              clock: clock,
+              clock: clock
             }
           })
       })
@@ -77,7 +75,7 @@ class LogIO {
         // or if given length is -1, then take all
         const sliced = length > -1 ? last(entries, length) : entries
         return {
-          values: sliced,
+          values: sliced
         }
       })
   }
@@ -91,7 +89,7 @@ class LogIO {
         return {
           id: json.id,
           values: finalEntries,
-          heads: json.heads,
+          heads
         }
       })
   }
@@ -147,7 +145,7 @@ class LogIO {
         const result = replaceInFront(sliced, missingSourceEntries)
         return {
           id: result[result.length - 1].id,
-          values: result,
+          values: result
         }
       })
   }

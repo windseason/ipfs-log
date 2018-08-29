@@ -19,8 +19,8 @@ module.exports = {
         webRTCStar: {
           Enabled: false
         }
-      },
-    },
+      }
+    }
   },
   daemon2: {
     repo: './ipfs/tests/replication/daemon2',
@@ -42,7 +42,7 @@ module.exports = {
         webRTCStar: {
           Enabled: false
         }
-      },
-    },
-  },
+      }
+    }
+  }
 }

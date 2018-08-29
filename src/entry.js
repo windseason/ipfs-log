@@ -40,12 +40,12 @@ class Entry {
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of Multihashes
       v: 0, // For future data structure updates, should currently always be 0
-      clock: new Clock(clockId, clockTime),
+      clock: new Clock(clockId, clockTime)
     }
 
     // If signing key was passedd, sign the enrty
     if (keystore && signKey) {
-      entry = await Entry.signEntry(keystore, entry, signKey) 
+      entry = await Entry.signEntry(keystore, entry, signKey)
     }
 
     entry.hash = await Entry.toMultihash(ipfs, entry)
@@ -66,11 +66,11 @@ class Entry {
       payload: entry.payload,
       next: entry.next,
       v: entry.v,
-      clock: entry.clock,
+      clock: entry.clock
     })
 
     const pubKey = await keystore.importPublicKey(entry.key)
-    return await keystore.verify(entry.sig, pubKey, Buffer.from(JSON.stringify(e)))
+    return keystore.verify(entry.sig, pubKey, Entry.toBuffer(e))
   }
 
   static toBuffer (entry) {
@@ -101,7 +101,7 @@ class Entry {
       payload: entry.payload,
       next: entry.next,
       v: entry.v,
-      clock: entry.clock,
+      clock: entry.clock
     }
 
     if (entry.sig) Object.assign(e, { sig: entry.sig })
@@ -134,7 +134,7 @@ class Entry {
           payload: data.payload,
           next: data.next,
           v: data.v,
-          clock: data.clock,
+          clock: data.clock
         }
         if (data.sig) Object.assign(entry, { sig: data.sig })
         if (data.key) Object.assign(entry, { key: data.key })
@@ -148,12 +148,12 @@ class Entry {
    * @returns {boolean}
    */
   static isEntry (obj) {
-    return obj.id !== undefined
-      && obj.next !== undefined
-      && obj.hash !== undefined
-      && obj.payload !== undefined
-      && obj.v !== undefined
-      && obj.clock !== undefined
+    return obj.id !== undefined &&
+      obj.next !== undefined &&
+      obj.hash !== undefined &&
+      obj.payload !== undefined &&
+      obj.v !== undefined &&
+      obj.clock !== undefined
   }
 
   static compare (a, b) {
@@ -201,7 +201,7 @@ class Entry {
       prev = parent
       parent = values.find((e) => Entry.isParent(prev, e))
     }
-    stack = stack.sort((a, b) => a.clock.time > a.clock.time)
+    stack = stack.sort((a, b) => a.clock.time > b.clock.time)
     return stack
   }
 }

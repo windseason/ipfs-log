@@ -4,7 +4,6 @@ const Log = require('../src/log')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
-const MemStore = require('../test/utils/mem-store')
 
 // State
 let ipfs
@@ -29,8 +28,8 @@ let run = (() => {
 
   const repoConf = {
     storageBackends: {
-      blocks: DatastoreLevel,
-    },
+      blocks: DatastoreLevel
+    }
   }
 
   ipfs = new IPFS({
@@ -39,8 +38,8 @@ let run = (() => {
     EXPERIMENTAL: {
       pubsub: false,
       sharding: false,
-      dht: false,
-    },
+      dht: false
+    }
   })
 
   ipfs.on('error', (err) => {

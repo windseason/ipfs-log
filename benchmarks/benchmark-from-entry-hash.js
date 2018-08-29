@@ -1,7 +1,6 @@
 'use strict'
 
 const Log = require('../src/log')
-const EntryIO = require('../src/entry-io')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
@@ -46,29 +45,27 @@ let run = (() => {
 
     const count = parseInt(process.argv[2]) || 50000
     const refCount = 64
-    const concurrency = 128
-    const delay = 0
 
-    console.log("Creating a log...")
+    console.log('Creating a log...')
 
     const st = new Date().getTime()
 
     try {
-      for (let i = 1; i < count + 1; i ++) {
+      for (let i = 1; i < count + 1; i++) {
         await log.append('hello' + i, refCount)
-        process.stdout.write("\rWriting " + i + " / " + count)
+        process.stdout.write('\rWriting ' + i + ' / ' + count)
       }
       const dt1 = new Date().getTime()
-      process.stdout.write(" (" + (dt1 - st) + " ms)\n")
+      process.stdout.write(' (' + (dt1 - st) + ' ms)\n')
     } catch (e) {
       console.log(e)
     }
 
-    const onDataUpdated = (hash, entry, resultLength, result, queue) => {
+    const onDataUpdated = (hash, entry, resultLength) => {
       entriesLoadedPerSecond++
       lastTenSeconds++
       total = resultLength
-      process.stdout.write("\rLoading " + total + " / " + count)
+      process.stdout.write('\rLoading ' + total + ' / ' + count)
     }
 
     const outputMetrics = () => {
@@ -91,12 +88,12 @@ let run = (() => {
     if (global.gc) {
       global.gc()
     } else {
-      console.warn('Start benchmark with --expose-gc flag');
+      console.warn('Start benchmark with --expose-gc flag')
     }
 
     const m1 = process.memoryUsage()
 
-    const result = await Log.fromEntryHash(
+    await Log.fromEntryHash(
       ipfs,
       log.heads.map(e => e.hash),
       log._id,
@@ -109,7 +106,7 @@ let run = (() => {
 
     outputMetrics()
     const et = new Date().getTime()
-    console.log("Loading took:", (et - dt2), "ms")
+    console.log('Loading took:', (et - dt2), 'ms')
 
     const m2 = process.memoryUsage()
     const usedDelta = m1.heapUsed && Math.abs(m1.heapUsed - m2.heapUsed) / m1.heapUsed * 100

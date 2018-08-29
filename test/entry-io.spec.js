@@ -13,36 +13,37 @@ const dataDir = './ipfs/tests/fetch'
 
 const repoConf = {
   storageBackends: {
-    blocks: DatastoreLevel,
-  },
+    blocks: DatastoreLevel
+  }
 }
 
-let ipfs, ipfsDaemon
+let ipfs
 
 const last = arr => arr[arr.length - 1]
 
 apis.forEach((IPFS) => {
-  describe('Entry - Persistency', function() {
+  describe('Entry - Persistency', function () {
     this.timeout(20000)
 
     before((done) => {
       rmrf.sync(dataDir)
-      ipfs = new IPFS({ 
+      ipfs = new IPFS({
         repo: new IPFSRepo(dataDir, repoConf),
         start: true,
         EXPERIMENTAL: {
           pubsub: true,
           dht: false,
-          sharding: false,
-        },
+          sharding: false
+        }
       })
       ipfs.on('error', done)
       ipfs.on('ready', () => done())
     })
 
     after(async () => {
-      if (ipfs) 
+      if (ipfs) {
         await ipfs.stop()
+      }
     })
 
     it('log with one entry', async () => {
@@ -50,7 +51,7 @@ apis.forEach((IPFS) => {
       await log.append('one')
       const hash = log.values[0].hash
       const res = await EntryIO.fetchAll(ipfs, hash, 1)
-      assert.equal(res.length, 1)
+      assert.strictEqual(res.length, 1)
     })
 
     it('log with 2 entries', async () => {
@@ -59,7 +60,7 @@ apis.forEach((IPFS) => {
       await log.append('two')
       const hash = last(log.values).hash
       const res = await EntryIO.fetchAll(ipfs, hash, 2)
-      assert.equal(res.length, 2)
+      assert.strictEqual(res.length, 2)
     })
 
     it('loads max 1 entriy from a log of 2 entry', async () => {
@@ -68,25 +69,26 @@ apis.forEach((IPFS) => {
       await log.append('two')
       const hash = last(log.values).hash
       const res = await EntryIO.fetchAll(ipfs, hash, 1)
-      assert.equal(res.length, 1)
+      assert.strictEqual(res.length, 1)
     })
 
     it('log with 100 entries', async () => {
       const count = 100
       let log = new Log(ipfs, 'X')
-      for (let i = 0; i < count; i ++)
+      for (let i = 0; i < count; i++) {
         await log.append('hello' + i)
+      }
 
       const hash = await log.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash)
-      assert.equal(result.length, count)
+      assert.strictEqual(result.length, count)
     })
 
     it('load only 42 entries from a log with 100 entries', async () => {
       const count = 100
       let log = new Log(ipfs, 'X')
       let log2 = new Log(ipfs, 'X')
-      for (let i = 1; i <= count; i ++) {
+      for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           log2 = new Log(ipfs, log2.id, log2.values, log2.heads.concat(log.heads))
@@ -96,15 +98,14 @@ apis.forEach((IPFS) => {
 
       const hash = await log.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash, 42)
-      assert.equal(result.length, 42)
+      assert.strictEqual(result.length, 42)
     })
 
     it('load only 99 entries from a log with 100 entries', async () => {
       const count = 100
       let log = new Log(ipfs, 'X')
       let log2 = new Log(ipfs, 'X')
-      let log3 = new Log(ipfs, 'X')
-      for (let i = 1; i <= count; i ++) {
+      for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           log2 = new Log(ipfs, log2.id, log2.values)
@@ -115,7 +116,7 @@ apis.forEach((IPFS) => {
 
       const hash = await log2.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash, 99)
-      assert.equal(result.length, 99)
+      assert.strictEqual(result.length, 99)
     })
 
     it('load only 10 entries from a log with 100 entries', async () => {
@@ -123,7 +124,7 @@ apis.forEach((IPFS) => {
       let log = new Log(ipfs, 'X')
       let log2 = new Log(ipfs, 'X')
       let log3 = new Log(ipfs, 'X')
-      for (let i = 1; i <= count; i ++) {
+      for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           log2 = new Log(ipfs, log2.id, log2.values, log2.heads)
@@ -139,15 +140,15 @@ apis.forEach((IPFS) => {
       log3.join(log2)
       const hash = await log3.toMultihash()
       const result = await Log.fromMultihash(ipfs, hash, 10)
-      assert.equal(result.length, 10)
+      assert.strictEqual(result.length, 10)
     })
 
     it('load only 10 entries and then expand to max from a log with 100 entries', async () => {
       const count = 30
-      let log =  new Log(ipfs, 'X', null, null, null, 'A')
+      let log = new Log(ipfs, 'X', null, null, null, 'A')
       let log2 = new Log(ipfs, 'X', null, null, null, 'B')
       let log3 = new Log(ipfs, 'X', null, null, null, 'C')
-      for (let i = 1; i <= count; i ++) {
+      for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           await log2.append('hi' + i)
@@ -168,7 +169,7 @@ apis.forEach((IPFS) => {
       const values3 = log3.values.map((e) => e.payload)
       const values4 = log4.values.map((e) => e.payload)
 
-      assert.deepEqual(values3, values4)
+      assert.deepStrictEqual(values3, values4)
     })
   })
 })

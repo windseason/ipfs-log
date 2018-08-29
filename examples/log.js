@@ -11,7 +11,7 @@ const ipfs = new IPFS({
   start: false,
   EXPERIMENTAL: {
     pubsub: true
-  },
+  }
 })
 
 ipfs.on('error', (err) => console.error(err))
@@ -19,7 +19,7 @@ ipfs.on('ready', async () => {
   const keystore = new Keystore(dataPath + '/keystore')
   ipfs.keystore = keystore
 
-  let key1, key2, key3
+  let key1, key2
   try {
     key1 = keystore.getKey('A') || keystore.createKey('A')
     key2 = keystore.getKey('C') || keystore.createKey('C')
