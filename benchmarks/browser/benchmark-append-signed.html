@@ -11,7 +11,10 @@
       const testKeyPath = '../test/fixtures/keys'
       const keystore = Keystore.create(testKeyPath)
       const identityProvider = new IdentityProvider(keystore)
-      const identitySignerFn = (key, data) => keystore.sign(key, data)
+      const identitySignerFn = async (id, data) => {
+        const key = await keystore.getKey(id)
+        return await keystore.sign(key, data)
+      }
       const access = new AccessController()
       const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
 
@@ -78,7 +81,10 @@
           const testKeyPath = '../test/fixtures/keys'
           const keystore = Keystore.create(testKeyPath)
           const identityProvider = new IdentityProvider(keystore)
-          const identitySignerFn = (key, data) => keystore.sign(key, data)
+          const identitySignerFn = async (id, data) => {
+            const key = await keystore.getKey(id)
+            return await keystore.sign(key, data)
+          }
           const access = new AccessController()
           const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
 
