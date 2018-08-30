@@ -17,7 +17,10 @@ const ipfs = new IPFS({
 ipfs.on('error', (err) => console.error(err))
 ipfs.on('ready', async () => {
   const keystore = Keystore.create(dataPath + '/keystore')
-  const identitySignerFn = (key, data) => keystore.sign(key, data)
+  const identitySignerFn = async (id, data) => {
+    const key = await keystore.getKey(id)
+    return await keystore.sign(key, data)
+  }
   const access = new AccessController()
 
   let identityA, identityB, identityC
