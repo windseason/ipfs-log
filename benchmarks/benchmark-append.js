@@ -54,13 +54,12 @@ let run = (() => {
     // ipfs.object.get = memstore.get.bind(memstore)
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return await keystore.sign(key, data)
+    const identitySignerFn = (id, data) => {
+      const key = keystore.getKey(id)
+      return keystore.sign(key, data)
     }
     const access = new AccessController()
     const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
-
 
     log = new Log(ipfs, access, identity, 'A')
 

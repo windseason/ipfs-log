@@ -10,9 +10,9 @@
     <pre><i>
     const testKeyPath = '../test/fixtures/keys'
     const keystore = Keystore.create(testKeyPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return await keystore.sign(key, data)
+    const identitySignerFn = (id, data) => {
+      const key = keystore.getKey(id)
+      return keystore.sign(key, data)
     }
     const access = new AccessController()
     const identity1 = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
@@ -93,9 +93,9 @@
 
           const testKeyPath = '../test/fixtures/keys'
           const keystore = Keystore.create(testKeyPath)
-          const identitySignerFn = async (id, data) => {
-            const key = await keystore.getKey(id)
-            return await keystore.sign(key, data)
+          const identitySignerFn = (id, data) => {
+            const key = keystore.getKey(id)
+            return keystore.sign(key, data)
           }
           const access = new AccessController()
           const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
