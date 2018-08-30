@@ -7,7 +7,6 @@ const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
 const isDefined = require('./utils/is-defined')
-const isFunction = require('./utils/is-function')
 const _uniques = require('./utils/uniques')
 const AccessController = require('./default-access-controller')
 const IdentityProvider = require('orbit-db-identity-provider')
@@ -63,14 +62,6 @@ class Log extends GSet {
 
     if (isDefined(heads) && !Array.isArray(heads)) {
       throw new Error(`'heads' argument must be an array`)
-    }
-
-    if (!isDefined(access)) {
-      throw new Error('Access controller is required')
-    }
-
-    if (!isDefined(identity)) {
-      throw new Error('Identity is required')
     }
 
     super()

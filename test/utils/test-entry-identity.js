@@ -36,7 +36,7 @@ const getTestIdentity = (
 
 const getTestACL = (
   publicKey = DEFAULT_PUBLIC_KEY,
-  checkPermissionFn,
+  checkPermissionFn
 ) => {
   const permissionCheckingFn = checkPermissionFn || defaultPermissionCheckingFn(publicKey)
   return new ACL(permissionCheckingFn)

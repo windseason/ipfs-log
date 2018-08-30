@@ -1,9 +1,7 @@
 'use strict'
 
 class AccessController {
-  constructor () {}
-
-  async canAppend(entry, identityProvider) {
+  async canAppend (entry, identityProvider) {
     return true
   }
 }

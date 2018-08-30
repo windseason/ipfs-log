@@ -13,8 +13,8 @@ const apis = [require('ipfs')]
 
 const repoConf = {
   storageBackends: {
-    blocks: DatastoreLevel,
-  },
+    blocks: DatastoreLevel
+  }
 }
 
 const channel = 'XXX'
@@ -22,12 +22,12 @@ const channel = 'XXX'
 // Shared database name
 const waitForPeers = (ipfs, channel) => {
   return new Promise((resolve, reject) => {
-    console.log("Waiting for peers...")
+    console.log('Waiting for peers...')
     const interval = setInterval(() => {
       ipfs.pubsub.peers(channel)
         .then((peers) => {
           if (peers.length > 0) {
-            console.log("Found peers, running tests...")
+            console.log('Found peers, running tests...')
             clearInterval(interval)
             resolve()
           }
@@ -38,16 +38,16 @@ const waitForPeers = (ipfs, channel) => {
 }
 
 apis.forEach((IPFS) => {
-  describe('ipfs-log - Replication', function() {
+  describe('ipfs-log - Replication', function () {
     this.timeout(40000)
 
-    let ipfs1, ipfs2, client1, client2, db1, db2, id1, id2, testIdentity, testIdentity2
+    let ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
 
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
-      return await keystore.sign(key, data)
+      return keystore.sign(key, data)
     }
     const testACL = new AccessController()
 
@@ -60,16 +60,15 @@ apis.forEach((IPFS) => {
       ipfs1.on('error', done)
       ipfs1.on('ready', () => {
         ipfs1.id()
-          .then((id) => id1 = id.id)
+          .then((id) => (id1 = id.id))
           .then(() => {
             config.damon2 = Object.assign({}, config.daemon2, { repo: new IPFSRepo(config.daemon2.repo, repoConf) })
             ipfs2 = new IPFS(config.daemon2)
             ipfs2.on('error', done)
             ipfs2.on('ready', () => {
               ipfs2.id()
-                .then((id) => id2 = id.id)
+                .then((id) => (id2 = id.id))
                 .then(async () => {
-
                   // Use memory store for quicker tests
                   const memstore = new MemStore()
                   ipfs1.object.put = memstore.put.bind(memstore)
@@ -92,14 +91,16 @@ apis.forEach((IPFS) => {
     })
 
     after(async () => {
-      if (ipfs1)
+      if (ipfs1) {
         await ipfs1.stop()
+      }
 
-      if (ipfs2)
+      if (ipfs2) {
         await ipfs2.stop()
+      }
     })
 
-    describe('replicates logs deterministically', function() {
+    describe('replicates logs deterministically', function () {
       const amount = 128 + 1
 
       let log1, log2, input1, input2
@@ -108,29 +109,29 @@ apis.forEach((IPFS) => {
       let processing = 0
 
       const handleMessage = async (message) => {
-        if (id1 === message.from)
+        if (id1 === message.from) {
           return
+        }
         buffer1.push(message.data.toString())
-        processing ++
-        const exclude = log1.values.map((e) => e.hash)
+        processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
         const log = await Log.fromMultihash(ipfs1, testACL, testIdentity, message.data.toString(), -1)
         await log1.join(log)
-        processing --
+        processing--
       }
 
       const handleMessage2 = async (message) => {
-        if (id2 === message.from)
+        if (id2 === message.from) {
           return
+        }
         buffer2.push(message.data.toString())
-        processing ++
+        processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const exclude = log2.values.map((e) => e.hash)
         const log = await Log.fromMultihash(ipfs2, testACL, testIdentity2, message.data.toString(), -1, null)
         await log2.join(log)
-        processing --
+        processing--
       }
 
       beforeEach((done) => {
@@ -139,13 +140,15 @@ apis.forEach((IPFS) => {
         input1 = new Log(ipfs1, testACL, testIdentity, 'A')
         input2 = new Log(ipfs2, testACL, testIdentity2, 'A')
         ipfs1.pubsub.subscribe(channel, handleMessage, (err) => {
-          if (err)
+          if (err) {
             return done(err)
+          }
           ipfs2.pubsub.subscribe(channel, handleMessage2, (err) => {
-            if (err)
+            if (err) {
               done(err)
-            else
+            } else {
               done()
+            }
           })
         })
       })
@@ -153,24 +156,24 @@ apis.forEach((IPFS) => {
       it('replicates logs', (done) => {
         waitForPeers(ipfs1, channel)
           .then(async () => {
-            for(let i = 1; i <= amount; i ++) {
-              await input1.append("A" + i)
-              await input2.append("B" + i)
+            for (let i = 1; i <= amount; i++) {
+              await input1.append('A' + i)
+              await input2.append('B' + i)
               const mh1 = await input1.toMultihash()
               const mh2 = await input2.toMultihash()
               await ipfs1.pubsub.publish(channel, Buffer.from(mh1))
               await ipfs2.pubsub.publish(channel, Buffer.from(mh2))
             }
 
-            console.log("\nAll messages sent")
+            console.log('\nAll messages sent')
 
             const whileProcessingMessages = (timeoutMs) => {
               return new Promise((resolve, reject) => {
                 setTimeout(() => reject(new Error('timeout')), timeoutMs)
                 const timer = setInterval(() => {
-                  if (buffer1.length + buffer2.length === amount * 2
-                      && processing === 0) {
-                    console.log("\nAll messages received")
+                  if (buffer1.length + buffer2.length === amount * 2 &&
+                      processing === 0) {
+                    console.log('\nAll messages received')
                     clearInterval(timer)
                     resolve()
                   }
@@ -178,7 +181,7 @@ apis.forEach((IPFS) => {
               })
             }
 
-            console.log("Waiting for all to process")
+            console.log('Waiting for all to process')
             try {
               const timeout = 30000
               await whileProcessingMessages(timeout)
@@ -187,24 +190,23 @@ apis.forEach((IPFS) => {
               await result.join(log1)
               await result.join(log2)
 
-              assert.equal(buffer1.length, amount)
-              assert.equal(buffer2.length, amount)
-              assert.equal(result.length, amount * 2)
-              assert.equal(log1.length, amount)
-              assert.equal(log2.length, amount)
-              assert.equal(result.values[0].payload, 'A1')
-              assert.equal(result.values[1].payload, 'B1')
-              assert.equal(result.values[2].payload, 'A2')
-              assert.equal(result.values[3].payload, 'B2')
-              assert.equal(result.values[99].payload, 'B50')
-              assert.equal(result.values[100].payload, 'A51')
-              assert.equal(result.values[198].payload, 'A100')
-              assert.equal(result.values[199].payload, 'B100')
+              assert.strictEqual(buffer1.length, amount)
+              assert.strictEqual(buffer2.length, amount)
+              assert.strictEqual(result.length, amount * 2)
+              assert.strictEqual(log1.length, amount)
+              assert.strictEqual(log2.length, amount)
+              assert.strictEqual(result.values[0].payload, 'A1')
+              assert.strictEqual(result.values[1].payload, 'B1')
+              assert.strictEqual(result.values[2].payload, 'A2')
+              assert.strictEqual(result.values[3].payload, 'B2')
+              assert.strictEqual(result.values[99].payload, 'B50')
+              assert.strictEqual(result.values[100].payload, 'A51')
+              assert.strictEqual(result.values[198].payload, 'A100')
+              assert.strictEqual(result.values[199].payload, 'B100')
               done()
-            } catch(e) {
+            } catch (e) {
               done(e)
             }
-
           })
           .catch(done)
       })

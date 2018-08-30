@@ -1,7 +1,6 @@
 'use strict'
 
 const Log = require('../src/log')
-const EntryIO = require('../src/entry-io')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')

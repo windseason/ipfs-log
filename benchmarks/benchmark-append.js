@@ -4,7 +4,6 @@ const Log = require('../src/log')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
-const MemStore = require('../test/utils/mem-store')
 const { AccessController, IdentityProvider, Keystore } = Log
 
 // State

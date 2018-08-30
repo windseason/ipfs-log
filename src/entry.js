@@ -4,7 +4,6 @@ const Clock = require('./lamport-clock')
 const isDefined = require('./utils/is-defined')
 
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
-const encode = data => Buffer.from(JSON.stringify(data))
 
 class Entry {
   /**
@@ -38,7 +37,7 @@ class Entry {
       clock: clock || new Clock(identity.publicKey)
     }
 
-    const signature = await identity.provider.sign(identity, encode(entry))
+    const signature = await identity.provider.sign(identity, Entry.toBuffer(entry))
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
     entry.sig = signature
@@ -67,7 +66,11 @@ class Entry {
       clock: entry.clock
     })
 
-    return identityProvider.verify(entry.sig, entry.key, encode(e))
+    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e))
+  }
+
+  static toBuffer (entry) {
+    return Buffer.from(JSON.stringify(entry))
   }
 
   /**
