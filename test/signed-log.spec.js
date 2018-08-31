@@ -55,9 +55,10 @@ apis.forEach((IPFS) => {
     })
 
     it('creates a signed log', () => {
-      const log = new Log(ipfs, testACL, testIdentity, 'A')
+      const logId = 'A'
+      const log = new Log(ipfs, testACL, testIdentity, logId)
       assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, testIdentity.id)
+      assert.strictEqual(log.id, logId)
     })
 
     it('has the correct identity', () => {
@@ -71,17 +72,20 @@ apis.forEach((IPFS) => {
 
     it('has the correct public key', () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
-      assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, testIdentity.id)
+      assert.strictEqual(log._identity.publicKey, testIdentity.publicKey)
     })
 
     it('has the correct pkSignature', () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
-      assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, testIdentity.id)
+      assert.strictEqual(log._identity.pkSignature, testIdentity.pkSignature)
     })
 
-    it('entries contain a signature and a public signing key', async () => {
+    it('has the correct signature', () => {
+      const log = new Log(ipfs, testACL, testIdentity, 'A')
+      assert.strictEqual(log._identity.signature, testIdentity.signature)
+    })
+
+    it('entries contain an identity', async () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
       await log.append('one')
       assert.notStrictEqual(log.values[0].sig, null)
