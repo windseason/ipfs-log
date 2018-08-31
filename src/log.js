@@ -35,9 +35,9 @@ class Log extends GSet {
   /**
    * Create a new Log instance
    * @param  {IPFS}           [ipfs]          An IPFS instance
-   * @param  {Object}         [access]           ACL following an interface that provides functions for checking permissions
-   * @param  {Object}         [identity]      Identity following an interface that provides functions for verifying entries signature and signing entries
-   * @param  {String}         [logId]            ID of the log
+   * @param  {Object}         [access]        AccessController (./default-access-controller)
+   * @param  {Object}         [identity]      Identity (https://github.com/orbitdb/orbit-db-identity-provider/blob/master/src/identity.js)
+   * @param  {String}         [logId]         ID of the log
    * @param  {Array<Entry>}   [entries]       An Array of Entries from which to create the log
    * @param  {Array<Entry>}   [heads]         Set the heads of the log
    * @param  {Clock}          [clock]         Set the clock of the log
@@ -69,7 +69,7 @@ class Log extends GSet {
     this._storage = ipfs
     this._id = logId || randomId()
 
-    // ACL
+    // Access Controller
     this._access = access
     // Identity
     this._identity = identity
@@ -95,7 +95,6 @@ class Log extends GSet {
     // Take the given key as the clock id is it's a Key instance,
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
-    // const clockId = this._identity ? this._identity.publicKey : this._id
     this._clock = new Clock(this._identity.publicKey, maxTime)
   }
 
