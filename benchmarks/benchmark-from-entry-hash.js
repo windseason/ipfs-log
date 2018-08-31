@@ -44,7 +44,10 @@ let run = (() => {
     // Create a log
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
-    const identitySignerFn = (key, data) => keystore.sign(key, data)
+    const identitySignerFn = (id, data) => {
+      const key = keystore.getKey(id)
+      return keystore.sign(key, data)
+    }
     const access = new AccessController()
     const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
 
@@ -102,12 +105,12 @@ let run = (() => {
 
     await Log.fromEntryHash(
       ipfs,
+      log._access,
+      log._identity,
       log.heads.map(e => e.hash),
       log._id,
       -1,
       [],
-      log._access,
-      log._identity,
       onDataUpdated
     )
 

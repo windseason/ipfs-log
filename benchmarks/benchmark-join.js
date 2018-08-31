@@ -65,12 +65,16 @@ let run = (() => {
 
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
-    const identitySignerFn = (key, data) => keystore.sign(key, data)
+    const identitySignerFn = (id, data) => {
+      const key = keystore.getKey(id)
+      return keystore.sign(key, data)
+    }
     const access = new AccessController()
     const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+    const identity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
 
     log1 = new Log(ipfs, access, identity, 'A')
-    log2 = new Log(ipfs, access, identity, 'B')
+    log2 = new Log(ipfs, access, identity2, 'B')
 
     // Output metrics at 1 second interval
     setInterval(() => {

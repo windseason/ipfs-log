@@ -17,7 +17,10 @@ ipfs.on('error', (e) => console.error(e))
 
 ipfs.on('ready', async () => {
   const keystore = Keystore.create(dataPath + '/keystore')
-  const identitySignerFn = (key, data) => keystore.sign(key, data)
+  const identitySignerFn = (id, data) => {
+    const key = keystore.getKey(id)
+    return keystore.sign(key, data)
+  }
   const access = new AccessController()
   const identity = await IdentityProvider.createIdentity(keystore, 'exampleUser', identitySignerFn)
   const outputElm = document.getElementById('output')
