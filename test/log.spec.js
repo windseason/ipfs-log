@@ -6,10 +6,11 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const LogCreator = require('./utils/log-creator')
 const bigLogString = require('./fixtures/big-log.fixture.js')
-const Log = require('../src/log')
 const Entry = require('../src/entry')
 const Clock = require('../src/lamport-clock')
-const { AccessController, IdentityProvider, Keystore } = Log
+const Keystore = require('orbit-db-keystore')
+const Log = require('../src/log')
+const { AccessController, IdentityProvider } = Log
 const startIpfs = require('./utils/start-ipfs')
 
 const apis = [require('ipfs')]
@@ -47,7 +48,7 @@ apis.forEach((IPFS) => {
   const testACL = new AccessController()
 
   describe('Log', function () {
-    this.timeout(20000)
+    this.timeout(45000)
 
     before(async () => {
       rmrf.sync(dataDir)

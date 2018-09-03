@@ -10,7 +10,6 @@ const isDefined = require('./utils/is-defined')
 const _uniques = require('./utils/uniques')
 const AccessController = require('./default-access-controller')
 const IdentityProvider = require('orbit-db-identity-provider')
-const Keystore = require('orbit-db-keystore')
 const randomId = () => new Date().getTime().toString()
 const getHash = e => e.hash
 const flatMap = (res, acc) => res.concat(acc)
@@ -575,4 +574,3 @@ class Log extends GSet {
 module.exports = Log
 module.exports.AccessController = AccessController
 module.exports.IdentityProvider = IdentityProvider
-module.exports.Keystore = Keystore

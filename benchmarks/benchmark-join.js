@@ -1,10 +1,11 @@
 'use strict'
 
-const Log = require('../src/log')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
-const { AccessController, IdentityProvider, Keystore } = Log
+const Keystore = require('orbit-db-keystore')
+const Log = require('../src/log')
+const { AccessController, IdentityProvider } = Log
 
 // State
 let ipfs

@@ -7,6 +7,7 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
@@ -22,7 +23,7 @@
       ipfs.on('error', (e) => console.error(e))
 
       ipfs.on('ready', async () => {
-        const { AccessController, IdentityProvider, Keystore } = Log
+        const { AccessController, IdentityProvider } = Log
         const keystore = Keystore.create(dataPath + '/keystore')
         const identitySignerFn = (id, data) => {
           const key = keystore.getKey(id)
