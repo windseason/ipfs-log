@@ -26,6 +26,7 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
@@ -37,7 +38,7 @@
       let queriesPerSecond = 0
       let lastTenSeconds = 0
 
-      const { AccessController, IdentityProvider, Keystore } = Log
+      const { AccessController, IdentityProvider } = Log
       const queryLoop = () => {
         return log.append(totalQueries.toString())
           .then((res) => {

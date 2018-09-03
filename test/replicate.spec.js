@@ -5,9 +5,10 @@ const rmrf = require('rimraf')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const config = require('./config/ipfs-daemon.config')
-const Log = require('../src/log.js')
 const MemStore = require('./utils/mem-store')
-const { AccessController, IdentityProvider, Keystore } = Log
+const Keystore = require('orbit-db-keystore')
+const Log = require('../src/log.js')
+const { AccessController, IdentityProvider } = Log
 
 const apis = [require('ipfs')]
 

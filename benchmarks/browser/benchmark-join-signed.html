@@ -33,6 +33,7 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
@@ -45,7 +46,7 @@
       let lastTenSeconds = 0
       let log1, log2
 
-      const { AccessController, IdentityProvider, Keystore } = Log
+      const { AccessController, IdentityProvider } = Log
       const queryLoop = () => {
         const add1 = log1.append("a" + totalQueries)
         const add2 = log2.append("b" + totalQueries)

@@ -1,8 +1,9 @@
 'use strict'
 
 const IPFS = require('ipfs')
+const Keystore = require('orbit-db-keystore')
 const Log = require('../../src/log')
-const { AccessController, IdentityProvider, Keystore } = Log
+const { AccessController, IdentityProvider } = Log
 
 const dataPath = './ipfs-log/examples/browser/ipfs-0.30.0'
 const ipfs = new IPFS({
