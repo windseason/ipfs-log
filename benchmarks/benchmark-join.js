@@ -4,6 +4,7 @@ const Log = require('../src/log')
 const IPFS = require('ipfs')
 const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
+const { AccessController, IdentityProvider, Keystore } = Log
 
 // State
 let ipfs
@@ -17,12 +18,13 @@ let lastTenSeconds = 0
 
 const queryLoop = async () => {
   try {
-    const add1 = await log1.append('a' + totalQueries)
-    const add2 = await log2.append('b' + totalQueries)
+    await Promise.all([
+      log1.append('a' + totalQueries),
+      log2.append('b' + totalQueries)
+    ])
 
-    await Promise.all([add1, add2])
-    log1.join(log2)
-    log2.join(log1)
+    await log1.join(log2)
+    await log2.join(log1)
     totalQueries++
     lastTenSeconds++
     queriesPerSecond++
@@ -55,14 +57,24 @@ let run = (() => {
     process.exit(1)
   })
 
-  ipfs.on('ready', () => {
+  ipfs.on('ready', async () => {
     // Use memory store to test without disk IO
     // const memstore = new MemStore()
     // ipfs.object.put = memstore.put.bind(memstore)
     // ipfs.object.get = memstore.get.bind(memstore)
 
-    log1 = new Log(ipfs, 'A')
-    log2 = new Log(ipfs, 'B')
+    const testKeysPath = './test/fixtures/keys'
+    const keystore = Keystore.create(testKeysPath)
+    const identitySignerFn = (id, data) => {
+      const key = keystore.getKey(id)
+      return keystore.sign(key, data)
+    }
+    const access = new AccessController()
+    const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+    const identity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
+
+    log1 = new Log(ipfs, access, identity, 'A')
+    log2 = new Log(ipfs, access, identity2, 'B')
 
     // Output metrics at 1 second interval
     setInterval(() => {
