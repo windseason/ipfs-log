@@ -48,7 +48,7 @@ Returns the current timestamp of the log.
 Returns the heads of the log. Heads are the entries that are not referenced by other entries in the log.
 
 ```javascript
-const tails = log.tails
+const heads = log.heads
 // TODO: output example
 ```
 
