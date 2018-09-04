@@ -125,7 +125,7 @@ apis.forEach((IPFS) => {
         if (i % 10 === 0) {
           log2 = new Log(ipfs, testACL, testIdentity, log2.id, log2.values)
           await log2.append('hi' + i)
-          log2.join(log)
+          await log2.join(log)
         }
       }
 

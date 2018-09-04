@@ -252,7 +252,7 @@ class Log extends GSet {
    * @param {string} [id]   ID to use for the new log
    *
    * @example
-   * log1.join(log2)
+   * await log1.join(log2)
    *
    * @returns {Promise<Log>}
    */
@@ -393,14 +393,13 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} onProgressCallback
    * @return {Promise<Log>}      New Log
    */
-  static fromMultihash (ipfs, access, identity, hash, length = -1, exclude, onProgressCallback) {
+  static async fromMultihash (ipfs, access, identity, hash, length = -1, exclude, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
     // TODO: need to verify the entries with 'key'
-    // TODO: Change these to use await
-    return LogIO.fromMultihash(ipfs, hash, length, exclude, onProgressCallback)
-      .then((data) => new Log(ipfs, access, identity, data.id, data.values, data.heads, data.clock))
+    const data = await LogIO.fromMultihash(ipfs, hash, length, exclude, onProgressCallback)
+    return new Log(ipfs, access, identity, data.id, data.values, data.heads, data.clock)
   }
 
   /**
@@ -411,13 +410,13 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} onProgressCallback
    * @return {Promise<Log>}      New Log
    */
-  static fromEntryHash (ipfs, access, identity, hash, id, length = -1, exclude, onProgressCallback) {
+  static async fromEntryHash (ipfs, access, identity, hash, id, length = -1, exclude, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(hash)) throw new Error("'hash' must be defined")
 
     // TODO: need to verify the entries with 'key'
-    return LogIO.fromEntryHash(ipfs, hash, id, length, exclude, onProgressCallback)
-      .then((data) => new Log(ipfs, access, identity, id, data.values))
+    const data = await LogIO.fromEntryHash(ipfs, hash, id, length, exclude, onProgressCallback)
+    return new Log(ipfs, access, identity, id, data.values)
   }
 
   /**
@@ -428,12 +427,12 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} [onProgressCallback]
    * @return {Promise<Log>}      New Log
    */
-  static fromJSON (ipfs, access, identity, json, length = -1, timeout, onProgressCallback) {
+  static async fromJSON (ipfs, access, identity, json, length = -1, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
 
     // TODO: need to verify the entries with 'key'
-    return LogIO.fromJSON(ipfs, json, length, timeout, onProgressCallback)
-      .then((data) => new Log(ipfs, access, identity, data.id, data.values))
+    const data = await LogIO.fromJSON(ipfs, json, length, timeout, onProgressCallback)
+    return new Log(ipfs, access, identity, data.id, data.values)
   }
 
   /**
@@ -445,13 +444,13 @@ class Log extends GSet {
    * @param {Function(hash, entry, parent, depth)} [onProgressCallback]
    * @return {Promise<Log>}       New Log
    */
-  static fromEntry (ipfs, access, identity, sourceEntries, length = -1, exclude, onProgressCallback) {
+  static async fromEntry (ipfs, access, identity, sourceEntries, length = -1, exclude, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
     // TODO: need to verify the entries with 'key'
-    return LogIO.fromEntry(ipfs, sourceEntries, length, exclude, onProgressCallback)
-      .then((data) => new Log(ipfs, access, identity, data.id, data.values))
+    const data = await LogIO.fromEntry(ipfs, sourceEntries, length, exclude, onProgressCallback)
+    return new Log(ipfs, access, identity, data.id, data.values)
   }
 
   /**
