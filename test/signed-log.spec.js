@@ -2,39 +2,25 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const IPFSRepo = require('ipfs-repo')
-const DatastoreLevel = require('datastore-level')
 const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
-const startIpfs = require('./utils/start-ipfs')
 
-const apis = [require('ipfs')]
-const dataDir = './ipfs/tests/log'
-
-const repoConf = {
-  storageBackends: {
-    blocks: DatastoreLevel
-  }
-}
-
-const ipfsConf = {
-  repo: new IPFSRepo(dataDir, repoConf),
-  EXPERIMENTAL: {
-    pubsub: true,
-    dht: false,
-    sharding: false
-  }
-}
+// Test utils
+const {
+  config,
+  testAPIs,
+  startIpfs,
+  stopIpfs
+} = require('./utils')
 
 let ipfs, testIdentity, testIdentity2
 
-apis.forEach((IPFS) => {
+testAPIs.forEach((IPFS) => {
   describe('Signed Log', function () {
-    this.timeout(10000)
+    this.timeout(config.timeout)
 
-    const testKeysPath = './test/fixtures/keys'
-    const keystore = Keystore.create(testKeysPath)
+    const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
@@ -42,17 +28,15 @@ apis.forEach((IPFS) => {
     const testACL = new AccessController()
 
     before(async () => {
-      rmrf.sync(dataDir)
+      rmrf.sync(config.defaultIpfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
-      ipfs = await startIpfs(IPFS, ipfsConf)
+      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
     })
 
     after(async () => {
-      if (ipfs) {
-        await ipfs.stop()
-      }
-      rmrf.sync(dataDir)
+      await stopIpfs(ipfs)
+      rmrf.sync(config.defaultIpfsConfig.repo)
     })
 
     it('creates a signed log', () => {

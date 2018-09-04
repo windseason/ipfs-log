@@ -2,40 +2,27 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const IPFSRepo = require('ipfs-repo')
-const DatastoreLevel = require('datastore-level')
-const Entry = require('../src/entry')
 const Keystore = require('orbit-db-keystore')
-const { AccessController, IdentityProvider } = require('../src/log')
-const startIpfs = require('./utils/start-ipfs')
+const Entry = require('../src/entry')
+const Log = require('../src/log')
+const { AccessController, IdentityProvider } = Log
 
-const apis = [require('ipfs')]
-const dataDir = './ipfs/tests/entry'
-
-const repoConf = {
-  storageBackends: {
-    blocks: DatastoreLevel
-  }
-}
-
-const ipfsConf = {
-  repo: new IPFSRepo(dataDir, repoConf),
-  EXPERIMENTAL: {
-    pubsub: true,
-    dht: false,
-    sharding: false
-  }
-}
+// Test utils
+const {
+  config,
+  testAPIs,
+  startIpfs,
+  stopIpfs
+} = require('./utils')
 
 let ipfs, testIdentity
 
-apis.forEach((IPFS) => {
+testAPIs.forEach((IPFS) => {
   describe('Entry', function () {
-    this.timeout(20000)
+    this.timeout(config.timeout)
 
     const testUserId = 'userA'
-    const testKeysPath = './test/fixtures/keys'
-    const keystore = Keystore.create(testKeysPath)
+    const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
@@ -43,17 +30,14 @@ apis.forEach((IPFS) => {
     const testACL = new AccessController()
 
     before(async () => {
-      rmrf.sync(dataDir)
+      rmrf.sync(config.daemon1.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, testUserId, identitySignerFn)
-      ipfs = await startIpfs(IPFS, ipfsConf)
+      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
     })
 
     after(async () => {
-      if (ipfs) {
-        await ipfs.stop()
-      }
-
-      rmrf.sync(dataDir)
+      await stopIpfs(ipfs)
+      rmrf.sync(config.defaultIpfsConfig.repo)
     })
 
     describe('create', () => {
@@ -117,7 +101,7 @@ apis.forEach((IPFS) => {
       it('throws an error if ipfs is not defined', async () => {
         let err
         try {
-          await Entry.create() // eslint-disable-line no-unused-
+          await Entry.create()
         } catch (e) {
           err = e
         }
