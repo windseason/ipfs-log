@@ -85,11 +85,13 @@ apis.forEach((IPFS) => {
       })
 
       it('throws an error if ImmutableDB instance is not passed as an argument', () => {
+        let err
         try {
           const log = new Log() // eslint-disable-line no-unused-vars
-        } catch (err) {
-          assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+        } catch (e) {
+          err = e
         }
+        assert.strictEqual(err.message, 'ImmutableDB instance not defined')
       })
 
       it('sets an id', () => {
@@ -140,37 +142,47 @@ apis.forEach((IPFS) => {
       })
 
       it('throws an error if entries is not an array', () => {
+        let err
         try {
           const log = new Log(ipfs, testACL, testIdentity, 'A', {}) // eslint-disable-line no-unused-vars
-        } catch (err) {
-          assert.notStrictEqual(err, undefined)
-          assert.strictEqual(err.message, `'entries' argument must be an array of Entry instances`)
+        } catch (e) {
+          err = e
         }
+        assert.notStrictEqual(err, undefined)
+        assert.strictEqual(err.message, `'entries' argument must be an array of Entry instances`)
       })
 
       it('throws an error if heads is not an array', () => {
+        let err
         try {
           const log = new Log(ipfs, testACL, testIdentity, 'A', [], {}) // eslint-disable-line no-unused-vars
-        } catch (err) {
-          assert.notStrictEqual(err, undefined)
-          assert.strictEqual(err.message, `'heads' argument must be an array`)
+        } catch (e) {
+          err = e
         }
+        assert.notStrictEqual(err, undefined)
+        assert.strictEqual(err.message, `'heads' argument must be an array`)
       })
 
-      it('throws an error if ACL and Identity are not defined', () => {
+      it('throws an error if AccessController is not defined', () => {
+        let err
         try {
           const log = new Log(ipfs) // eslint-disable-line no-unused-vars
-        } catch (err) {
-          assert.notStrictEqual(err, undefined)
-          assert.strictEqual(err.message, 'Access controller is required')
+        } catch (e) {
+          err = e
         }
+        assert.notStrictEqual(err, undefined)
+        assert.strictEqual(err.message, 'Access controller is required')
+      })
 
+      it('throws an error if identity is not defined', () => {
+        let err
         try {
           const log = new Log(ipfs, testACL) // eslint-disable-line no-unused-vars
-        } catch (err) {
-          assert.notStrictEqual(err, undefined)
-          assert.strictEqual(err.message, 'Identity is required')
+        } catch (e) {
+          err = e
         }
+        assert.notStrictEqual(err, undefined)
+        assert.strictEqual(err.message, 'Identity is required')
       })
     })
 
@@ -314,7 +326,6 @@ apis.forEach((IPFS) => {
           await log.append('one')
           const hash = await log.toMultihash()
           assert.strictEqual(hash, expectedHash)
-          // const result = await ipfs.get(hash)
           const result = await ipfs.object.get(hash)
           const res = JSON.parse(result.toJSON().data.toString())
           assert.deepStrictEqual(res.heads, expectedData.heads)
@@ -342,7 +353,6 @@ apis.forEach((IPFS) => {
           let log = new Log(ipfs, testACL, testIdentity, 'X')
           await log.append('one')
           const hash = await log.toMultihash()
-          // fromMultihash length = -1
           const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
           assert.strictEqual(res.length, 1)
@@ -353,7 +363,6 @@ apis.forEach((IPFS) => {
 
         it('creates a log from ipfs hash - three entries', async () => {
           const hash = await log.toMultihash()
-          // fromMultihash length = -1
           const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.values[0].payload, 'one')
@@ -366,7 +375,6 @@ apis.forEach((IPFS) => {
 
         it('has the right sequence number after creation and appending', async () => {
           const hash = await log.toMultihash()
-          // fromMultihash length = -1
           let res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
           assert.strictEqual(res.length, 3)
           await res.append('four')
@@ -385,7 +393,6 @@ apis.forEach((IPFS) => {
           await log1.join(log2)
           await log1.join(log3)
           const hash = await log1.toMultihash()
-          // fromMultihash length = -1
           const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
@@ -420,7 +427,7 @@ apis.forEach((IPFS) => {
         it('throws an error if ipfs is not defined', async () => {
           let err
           try {
-            const log = await Log.fromMultihash() // eslint-disable-line no-unused-vars
+            await Log.fromMultihash()
           } catch (e) {
             err = e
           }
@@ -431,7 +438,7 @@ apis.forEach((IPFS) => {
         it('throws an error if hash is not defined', async () => {
           let err
           try {
-            const log = await Log.fromMultihash(ipfs) // eslint-disable-line no-unused-vars
+            await Log.fromMultihash(ipfs)
           } catch (e) {
             err = e
           }
@@ -452,11 +459,13 @@ apis.forEach((IPFS) => {
 
         it('throws an error if data from hash is not valid JSON', async () => {
           const res = await ipfs.object.put(Buffer.from('hello'))
+          let err
           try {
             await Log.fromMultihash(ipfs, testACL, testIdentity, res.toJSON().multihash)
-          } catch (err) {
-            assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
+          } catch (e) {
+            err = e
           }
+          assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
         })
 
         it('onProgress callback is fired for each entry', async () => {
@@ -620,11 +629,8 @@ apis.forEach((IPFS) => {
         assert.strictEqual(logA.length, items2.length + items1.length)
         assert.strictEqual(logB.length, items3.length + items2.length + items1.length)
 
-        try {
-          await logA.join(logB)
-        } catch (e) {
-          console.error(e)
-        }
+        await logA.join(logB)
+
         assert.strictEqual(logA.length, items3.length + items2.length + items1.length)
         // The last entry, 'entryC100', should be the only head
         // (it points to entryB100, entryB100 and entryC99)

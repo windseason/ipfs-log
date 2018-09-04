@@ -115,43 +115,53 @@ apis.forEach((IPFS) => {
       })
 
       it('throws an error if ipfs is not defined', async () => {
+        let err
         try {
           await Entry.create() // eslint-disable-line no-unused-
         } catch (e) {
-          assert.strictEqual(e.message, 'Ipfs instance not defined')
+          err = e
         }
+        assert.strictEqual(err.message, 'Ipfs instance not defined')
       })
 
       it('throws an error if identity are not defined', async () => {
+        let err
         try {
           await Entry.create(ipfs, null, 'A', 'hello2', [])
         } catch (e) {
-          assert.strictEqual(e.message, 'Identity is required, cannot create entry')
+          err = e
         }
+        assert.strictEqual(err.message, 'Identity is required, cannot create entry')
       })
 
       it('throws an error if id is not defined', async () => {
+        let err
         try {
           await Entry.create(ipfs, testIdentity, null, 'hello', [])
         } catch (e) {
-          assert.strictEqual(e.message, 'Entry requires an id')
+          err = e
         }
+        assert.strictEqual(err.message, 'Entry requires an id')
       })
 
       it('throws an error if data is not defined', async () => {
+        let err
         try {
           await Entry.create(ipfs, testIdentity, 'A', null, [])
         } catch (e) {
-          assert.strictEqual(e.message, 'Entry requires data')
+          err = e
         }
+        assert.strictEqual(err.message, 'Entry requires data')
       })
 
       it('throws an error if next is not an array', async () => {
+        let err
         try {
-          await Entry.create(ipfs, testIdentity, 'A', 'hello')
+          await Entry.create(ipfs, testIdentity, 'A', 'hello', {})
         } catch (e) {
-          assert.strictEqual(e.message, '\'next\' argument is not an array')
+          err = e
         }
+        assert.strictEqual(err.message, '\'next\' argument is not an array')
       })
     })
 
@@ -165,27 +175,33 @@ apis.forEach((IPFS) => {
       })
 
       it('throws an error if ipfs is not defined', async () => {
+        let err
         try {
           await Entry.toMultihash()
         } catch (e) {
-          assert.strictEqual(e.message, 'Ipfs instance not defined')
+          err = e
         }
+        assert.strictEqual(err.message, 'Ipfs instance not defined')
       })
 
       it('throws an error if the object being passed is invalid', async () => {
+        let err1, err2
         try {
           await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
         } catch (e) {
-          assert.strictEqual(e.message, 'Invalid object format, cannot generate entry multihash')
+          err1 = e
         }
+
+        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry multihash')
 
         try {
           const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
           delete entry.clock
           await Entry.toMultihash(ipfs, entry)
         } catch (e) {
-          assert.strictEqual(e.message, 'Invalid object format, cannot generate entry multihash')
+          err2 = e
         }
+        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry multihash')
       })
     })
 
@@ -205,19 +221,23 @@ apis.forEach((IPFS) => {
       })
 
       it('throws an error if ipfs is not present', async () => {
+        let err
         try {
           await Entry.fromMultihash()
         } catch (e) {
-          assert.strictEqual(e.message, 'Ipfs instance not defined')
+          err = e
         }
+        assert.strictEqual(err.message, 'Ipfs instance not defined')
       })
 
       it('throws an error if hash is undefined', async () => {
+        let err
         try {
           await Entry.fromMultihash(ipfs)
         } catch (e) {
-          assert.strictEqual(e.message, 'Invalid hash: undefined')
+          err = e
         }
+        assert.strictEqual(err.message, 'Invalid hash: undefined')
       })
     })
 
