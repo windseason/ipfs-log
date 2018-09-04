@@ -2,109 +2,73 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const IPFSRepo = require('ipfs-repo')
-const DatastoreLevel = require('datastore-level')
-const config = require('./config/ipfs-daemon.config')
-const MemStore = require('./utils/mem-store')
 const Keystore = require('orbit-db-keystore')
-const Log = require('../src/log.js')
+const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
 
-const apis = [require('ipfs')]
+// Test utils
+const {
+  config,
+  testAPIs,
+  startIpfs,
+  stopIpfs,
+  getIpfsPeerId,
+  connectPeers,
+  waitForPeers,
+  MemStore
+} = require('./utils')
 
-const repoConf = {
-  storageBackends: {
-    blocks: DatastoreLevel
-  }
-}
-
-const channel = 'XXX'
-
-// Shared database name
-const waitForPeers = (ipfs, channel) => {
-  return new Promise(async (resolve, reject) => {
-    console.log('Waiting for peers...')
-    const interval = setInterval(async () => {
-      try {
-        const peers = await ipfs.pubsub.peers(channel)
-        if (peers.length > 0) {
-          console.log('Found peers, running tests...')
-          clearInterval(interval)
-          resolve()
-        }
-      } catch (e) {
-        clearInterval(interval)
-        reject(e)
-      }
-    })
-  })
-}
-
-apis.forEach((IPFS) => {
+testAPIs.forEach((IPFS) => {
   describe('ipfs-log - Replication', function () {
-    this.timeout(40000)
+    this.timeout(config.timeout)
 
     let ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
 
-    const testKeysPath = './test/fixtures/keys'
-    const keystore = Keystore.create(testKeysPath)
+    const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
     }
     const testACL = new AccessController()
 
-    before(function (done) {
+    before(async () => {
       rmrf.sync(config.daemon1.repo)
       rmrf.sync(config.daemon2.repo)
 
-      config.daemon1 = Object.assign({}, config.daemon1, { repo: new IPFSRepo(config.daemon1.repo, repoConf) })
-      ipfs1 = new IPFS(config.daemon1)
-      ipfs1.on('error', done)
-      ipfs1.on('ready', () => {
-        ipfs1.id()
-          .then((id) => (id1 = id.id))
-          .then(() => {
-            config.daemon2 = Object.assign({}, config.daemon2, { repo: new IPFSRepo(config.daemon2.repo, repoConf) })
-            ipfs2 = new IPFS(config.daemon2)
-            ipfs2.on('error', done)
-            ipfs2.on('ready', () => {
-              ipfs2.id()
-                .then((id) => (id2 = id.id))
-                .then(async () => {
-                  // Use memory store for quicker tests
-                  const memstore = new MemStore()
-                  ipfs1.object.put = memstore.put.bind(memstore)
-                  ipfs1.object.get = memstore.get.bind(memstore)
-                  ipfs2.object.put = memstore.put.bind(memstore)
-                  ipfs2.object.get = memstore.get.bind(memstore)
+      // Start two IPFS instances
+      ipfs1 = await startIpfs(IPFS, config.daemon1)
+      ipfs2 = await startIpfs(IPFS, config.daemon2)
 
-                  // Connect the peers manually to speed up test times
-                  await ipfs2.swarm.connect(ipfs1._peerInfo.multiaddrs._multiaddrs[0].toString())
-                  await ipfs1.swarm.connect(ipfs2._peerInfo.multiaddrs._multiaddrs[0].toString())
+      // Get the peer IDs
+      id1 = await getIpfsPeerId(ipfs1)
+      id2 = await getIpfsPeerId(ipfs2)
 
-                  testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
-                  testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
+      // Use mem-store for faster testing (no disk IO)
+      const memstore = new MemStore()
+      ipfs1.object.put = memstore.put.bind(memstore)
+      ipfs1.object.get = memstore.get.bind(memstore)
+      ipfs2.object.put = memstore.put.bind(memstore)
+      ipfs2.object.get = memstore.get.bind(memstore)
 
-                  done()
-                })
-            })
-          })
-      })
+      // Connect the peers manually to speed up test times
+      await connectPeers(ipfs1, ipfs2)
+
+      // Create an identity for each peers
+      testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+      testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
     })
 
     after(async () => {
-      if (ipfs1) {
-        await ipfs1.stop()
-      }
-
-      if (ipfs2) {
-        await ipfs2.stop()
-      }
+      await stopIpfs(ipfs1)
+      await stopIpfs(ipfs2)
+      rmrf.sync(config.daemon1.repo)
+      rmrf.sync(config.daemon2.repo)
     })
 
     describe('replicates logs deterministically', function () {
       const amount = 128 + 1
+      const channel = 'XXX'
+      const logId = 'A'
 
       let log1, log2, input1, input2
       let buffer1 = []
@@ -138,16 +102,16 @@ apis.forEach((IPFS) => {
       }
 
       beforeEach(async () => {
-        log1 = new Log(ipfs1, testACL, testIdentity, 'A')
-        log2 = new Log(ipfs2, testACL, testIdentity2, 'A')
-        input1 = new Log(ipfs1, testACL, testIdentity, 'A')
-        input2 = new Log(ipfs2, testACL, testIdentity2, 'A')
+        log1 = new Log(ipfs1, testACL, testIdentity, logId)
+        log2 = new Log(ipfs2, testACL, testIdentity2, logId)
+        input1 = new Log(ipfs1, testACL, testIdentity, logId)
+        input2 = new Log(ipfs2, testACL, testIdentity2, logId)
         await ipfs1.pubsub.subscribe(channel, handleMessage)
         await ipfs2.pubsub.subscribe(channel, handleMessage2)
       })
 
       it('replicates logs', async () => {
-        await waitForPeers(ipfs1, channel)
+        await waitForPeers(ipfs1, [id2], channel)
 
         for (let i = 1; i <= amount; i++) {
           await input1.append('A' + i)
@@ -175,10 +139,9 @@ apis.forEach((IPFS) => {
         }
 
         console.log('Waiting for all to process')
-        const timeout = 30000
-        await whileProcessingMessages(timeout)
+        await whileProcessingMessages(config.timeout)
 
-        let result = new Log(ipfs1, testACL, testIdentity, 'A')
+        let result = new Log(ipfs1, testACL, testIdentity, logId)
         await result.join(log1)
         await result.join(log2)
 

@@ -2,42 +2,28 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const IPFSRepo = require('ipfs-repo')
-const DatastoreLevel = require('datastore-level')
-const EntryIO = require('../src/entry-io')
 const Keystore = require('orbit-db-keystore')
+const EntryIO = require('../src/entry-io')
 const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
-const startIpfs = require('./utils/start-ipfs')
 
-const apis = [require('ipfs')]
-
-const dataDir = './ipfs/tests/fetch'
-
-const repoConf = {
-  storageBackends: {
-    blocks: DatastoreLevel
-  }
-}
-
-const ipfsConf = {
-  repo: new IPFSRepo(dataDir, repoConf),
-  EXPERIMENTAL: {
-    pubsub: true,
-    dht: false,
-    sharding: false
-  }
-}
+// Test utils
+const {
+  config,
+  testAPIs,
+  startIpfs,
+  stopIpfs
+} = require('./utils')
 
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
 const last = arr => arr[arr.length - 1]
 
-apis.forEach((IPFS) => {
+testAPIs.forEach((IPFS) => {
   describe('Entry - Persistency', function () {
-    this.timeout(20000)
-    const testKeysPath = './test/fixtures/keys'
-    const keystore = Keystore.create(testKeysPath)
+    this.timeout(config.timeout)
+
+    const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
@@ -45,20 +31,17 @@ apis.forEach((IPFS) => {
     const testACL = new AccessController()
 
     before(async () => {
-      rmrf.sync(dataDir)
+      rmrf.sync(config.defaultIpfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
       testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', identitySignerFn)
       testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', identitySignerFn)
-
-      ipfs = await startIpfs(IPFS, ipfsConf)
+      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
     })
 
     after(async () => {
-      if (ipfs) {
-        await ipfs.stop()
-      }
-      rmrf.sync(dataDir)
+      await stopIpfs(ipfs)
+      rmrf.sync(config.defaultIpfsConfig.repo)
     })
 
     it('log with one entry', async () => {
