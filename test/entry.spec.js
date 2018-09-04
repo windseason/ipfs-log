@@ -17,8 +17,8 @@ const {
 
 let ipfs, testIdentity
 
-testAPIs.forEach((IPFS) => {
-  describe('Entry', function () {
+Object.keys(testAPIs).forEach((IPFS) => {
+  describe('Entry (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const testUserId = 'userA'
