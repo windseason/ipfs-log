@@ -25,8 +25,7 @@ class Entry {
 
     // Clean the next objects and convert to hashes
     const toEntry = (e) => e.hash ? e.hash : e
-    let nexts = next.filter(isDefined)
-      .map(toEntry)
+    const nexts = next.filter(isDefined).map(toEntry)
 
     const entry = {
       hash: null, // "Qm...Foo", we'll set the hash after persisting the entry
@@ -119,24 +118,26 @@ class Entry {
    * // { hash: "Qm...Foo", payload: "hello", next: [] }
    * @returns {Promise<Entry>}
    */
-  static fromMultihash (ipfs, hash) {
+  static async fromMultihash (ipfs, hash) {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!hash) throw new Error(`Invalid hash: ${hash}`)
-    return ipfs.object.get(hash, { enc: 'base58' })
-      .then((obj) => JSON.parse(obj.toJSON().data))
-      .then((data) => {
-        let entry = {
-          hash: hash,
-          id: data.id,
-          payload: data.payload,
-          next: data.next,
-          v: data.v,
-          clock: data.clock
-        }
-        if (data.sig) Object.assign(entry, { sig: data.sig })
-        if (data.key) Object.assign(entry, { key: data.key })
-        return entry
-      })
+
+    const obj = await ipfs.object.get(hash, { enc: 'base58' })
+
+    const data = JSON.parse(obj.toJSON().data)
+    let entry = {
+      hash: hash,
+      id: data.id,
+      payload: data.payload,
+      next: data.next,
+      v: data.v,
+      clock: data.clock
+    }
+
+    if (data.sig) Object.assign(entry, { sig: data.sig })
+    if (data.key) Object.assign(entry, { key: data.key })
+
+    return entry
   }
 
   /**

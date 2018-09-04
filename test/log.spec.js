@@ -320,11 +320,11 @@ apis.forEach((IPFS) => {
           assert.deepStrictEqual(res.heads, expectedData.heads)
         })
 
-        it('throws an error if log items is empty', () => {
+        it('throws an error if log items is empty', async () => {
           const emptyLog = new Log(ipfs, testACL, testIdentity)
           let err
           try {
-            emptyLog.toMultihash()
+            await emptyLog.toMultihash()
           } catch (e) {
             err = e
           }
@@ -417,31 +417,37 @@ apis.forEach((IPFS) => {
           assert.strictEqual(res.length, amount)
         })
 
-        it('throws an error if ipfs is not defined', () => {
+        it('throws an error if ipfs is not defined', async () => {
+          let err
           try {
-            const log = Log.fromMultihash() // eslint-disable-line no-unused-vars
-          } catch (err) {
-            assert.notStrictEqual(err, null)
-            assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+            const log = await Log.fromMultihash() // eslint-disable-line no-unused-vars
+          } catch (e) {
+            err = e
           }
+          assert.notStrictEqual(err, null)
+          assert.strictEqual(err.message, 'ImmutableDB instance not defined')
         })
 
-        it('throws an error if hash is not defined', () => {
+        it('throws an error if hash is not defined', async () => {
+          let err
           try {
-            const log = Log.fromMultihash(ipfs) // eslint-disable-line no-unused-vars
-          } catch (err) {
-            assert.notStrictEqual(err, null)
-            assert.strictEqual(err.message, 'Invalid hash: undefined')
+            const log = await Log.fromMultihash(ipfs) // eslint-disable-line no-unused-vars
+          } catch (e) {
+            err = e
           }
+          assert.notStrictEqual(err, null)
+          assert.strictEqual(err.message, 'Invalid hash: undefined')
         })
 
         it('throws an error when data from hash is not instance of Log', async () => {
           const res = await ipfs.object.put(Buffer.from('{}'))
+          let err
           try {
             await Log.fromMultihash(ipfs, testACL, testIdentity, res.toJSON().multihash)
-          } catch (err) {
-            assert.strictEqual(err.message, 'Given argument is not an instance of Log')
+          } catch (e) {
+            err = e
           }
+          assert.strictEqual(err.message, 'Given argument is not an instance of Log')
         })
 
         it('throws an error if data from hash is not valid JSON', async () => {
@@ -1998,7 +2004,7 @@ apis.forEach((IPFS) => {
         await logA.append('helloA3')
 
         // idempotence: a + a = a
-        logA.join(logA)
+        await logA.join(logA)
         assert.strictEqual(logA.length, 3)
       })
     })
