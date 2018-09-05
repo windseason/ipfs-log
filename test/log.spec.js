@@ -196,7 +196,7 @@ testAPIs.forEach((IPFS) => {
 
       it('returns an Entry', () => {
         const entry = log.get(log.values[0].hash)
-        assert.deepStrictEqual(entry.hash, 'QmVRpSH5Tq9zX7HNUHaVsuct69CihanpAptqF9dRmybTcJ')
+        assert.deepStrictEqual(entry.hash, 'QmbrkSuBPRkcwgoaFNwReKKgpxsRRqvu1VjRE2A5anbXVF')
       })
 
       it('returns undefined when Entry is not in the log', () => {
@@ -210,7 +210,7 @@ testAPIs.forEach((IPFS) => {
 
       before(async () => {
         expectedData = {
-          hash: 'QmVRpSH5Tq9zX7HNUHaVsuct69CihanpAptqF9dRmybTcJ',
+          hash: 'QmbrkSuBPRkcwgoaFNwReKKgpxsRRqvu1VjRE2A5anbXVF',
           id: 'AAA',
           payload: 'one',
           next: [],
@@ -244,7 +244,7 @@ testAPIs.forEach((IPFS) => {
       let log//, testIdentity2, testIdentity3, testIdentity4
       const expectedData = {
         id: 'AAA',
-        heads: ['QmPtC2HyWQFgP9zAsuomcC7viJhQLXwoBuk72f1hQoGqgQ']
+        heads: ['QmUq4N33J49UMtmVJQ7knzUF31ei8rkAtHpGxKRWhrcvou']
       }
 
       beforeEach(async () => {
@@ -263,11 +263,11 @@ testAPIs.forEach((IPFS) => {
       describe('toSnapshot', () => {
         const expectedData = {
           id: 'AAA',
-          heads: ['QmPtC2HyWQFgP9zAsuomcC7viJhQLXwoBuk72f1hQoGqgQ'],
+          heads: ['QmUq4N33J49UMtmVJQ7knzUF31ei8rkAtHpGxKRWhrcvou'],
           values: [
-            'QmVRpSH5Tq9zX7HNUHaVsuct69CihanpAptqF9dRmybTcJ',
-            'QmVuKMqjch4m6joYMqEM2Qr7WKkFY9jZ3SvQZu3jcSRqck',
-            'QmPtC2HyWQFgP9zAsuomcC7viJhQLXwoBuk72f1hQoGqgQ'
+            'QmbrkSuBPRkcwgoaFNwReKKgpxsRRqvu1VjRE2A5anbXVF',
+            'QmQDwgHCqNgnKKurqV9LHfvrC7WmSaohbq6i3EyE34KHpA',
+            'QmUq4N33J49UMtmVJQ7knzUF31ei8rkAtHpGxKRWhrcvou'
           ]
         }
 
@@ -291,7 +291,7 @@ testAPIs.forEach((IPFS) => {
 
       describe('toMultihash', async () => {
         it('returns the log as ipfs hash', async () => {
-          const expectedHash = 'QmTkwV5BwuEpQNV2TLpvfsodqvkdqqXMWuNkaaAgFTYxkB'
+          const expectedHash = 'QmNgNFhPLFcMWfVfHKuksTguHPj8VZSiQca2N3aJieB7aZ'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
@@ -301,9 +301,9 @@ testAPIs.forEach((IPFS) => {
         it('log serialized to ipfs contains the correct data', async () => {
           const expectedData = {
             id: 'A',
-            heads: ['QmYaoNpasjTXyEdnBezvFCyjuynAygzqveURK95MTCdbwh']
+            heads: ['QmSkv7dzQcrk5ysF53XkwzTKMgpgRzsCrN4t4hBHgUPM2Y']
           }
-          const expectedHash = 'QmTkwV5BwuEpQNV2TLpvfsodqvkdqqXMWuNkaaAgFTYxkB'
+          const expectedHash = 'QmNgNFhPLFcMWfVfHKuksTguHPj8VZSiQca2N3aJieB7aZ'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
@@ -330,7 +330,7 @@ testAPIs.forEach((IPFS) => {
         it('creates a log from ipfs hash - one entry', async () => {
           const expectedData = {
             id: 'X',
-            heads: ['Qmdw8hTMzVnG4VTYRN61VPcomrDGw244co26Jid7j4WDJ7']
+            heads: ['Qme3Cd5J2cqBZT1mGZ8LPoKAenjKNiowx9usUpNKoatv1p']
           }
           let log = new Log(ipfs, testACL, testIdentity, 'X')
           await log.append('one')
