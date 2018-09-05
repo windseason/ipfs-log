@@ -23,15 +23,11 @@ testAPIs.forEach((IPFS) => {
 
     const testUserId = 'userA'
     const keystore = Keystore.create(config.testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
     const testACL = new AccessController()
 
     before(async () => {
       rmrf.sync(config.daemon1.repo)
-      testIdentity = await IdentityProvider.createIdentity(keystore, testUserId, identitySignerFn)
+      testIdentity = await IdentityProvider.createIdentity(keystore, testUserId)
       ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
     })
 
@@ -42,7 +38,7 @@ testAPIs.forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedHash = 'QmUZqFJeeh8G9kiLxm8qZjyULoD23Kt9CxaZYH1fbu9Bsr'
+        const expectedHash = 'QmXfBCS9492S6eNfFT3J45W7ruFjnqJTre4iXcC5tg913X'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
         assert.strictEqual(entry.hash, expectedHash)
         assert.strictEqual(entry.id, 'A')
@@ -54,7 +50,7 @@ testAPIs.forEach((IPFS) => {
       })
 
       it('creates a entry with payload', async () => {
-        const expectedHash = 'Qmb4TaBbNb4n6QPbqj1RHfGo6yEJfAzASMWegQGMGhC6oZ'
+        const expectedHash = 'QmVPLSEsaiypMFtaZEPwGp3mEfkdwmRPGj86MvgYi6XX6m'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, testIdentity, 'A', payload, [])
         assert.strictEqual(entry.payload, payload)
@@ -67,7 +63,7 @@ testAPIs.forEach((IPFS) => {
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedHash = 'QmdEQdYRQUTuWXphFhAYqQW9NaiwMoVuth2ikyqNP8iY9W'
+        const expectedHash = 'Qmein7z1H9ECfHZ2ZoNYeLZBGvYuR35efcWYopCywqHy5Q'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -151,7 +147,7 @@ testAPIs.forEach((IPFS) => {
 
     describe('toMultihash', () => {
       it('returns an ipfs hash', async () => {
-        const expectedHash = 'QmUZqFJeeh8G9kiLxm8qZjyULoD23Kt9CxaZYH1fbu9Bsr'
+        const expectedHash = 'QmXfBCS9492S6eNfFT3J45W7ruFjnqJTre4iXcC5tg913X'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const hash = await Entry.toMultihash(ipfs, entry)
         assert.strictEqual(entry.hash, expectedHash)
@@ -191,14 +187,14 @@ testAPIs.forEach((IPFS) => {
 
     describe('fromMultihash', () => {
       it('creates a entry from ipfs hash', async () => {
-        const expectedHash = 'QmWatF9kgmtgB9z152QuvRBD6MKa1qWYK6BFV7coKSqgvD'
+        const expectedHash = 'QmVDZw6kFVnfBur62cdjJvypP7E8xuJ9mGb2fScBapdqe9'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
         const final = await Entry.fromMultihash(ipfs, entry2.hash)
 
-        assert.deepEqual(entry2, final)
+        assert.deepStrictEqual(entry2, final)
         assert.strictEqual(final.id, 'A')
         assert.strictEqual(final.payload, payload2)
         assert.strictEqual(final.next.length, 1)

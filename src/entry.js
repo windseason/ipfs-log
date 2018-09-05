@@ -131,7 +131,7 @@ class Entry {
       payload: data.payload,
       next: data.next,
       v: data.v,
-      clock: data.clock
+      clock: new Clock(data.clock.id, data.clock.time)
     }
 
     if (data.sig) Object.assign(entry, { sig: data.sig })
