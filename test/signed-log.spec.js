@@ -51,8 +51,8 @@ testAPIs.forEach((IPFS) => {
       assert.notStrictEqual(log.id, null)
       assert.strictEqual(log._identity.id, 'userA')
       assert.strictEqual(log._identity.publicKey, '042750228c5d81653e5142e6a56d5551231649160f77b25797dc427f8a5b2afd650acca10182f0dfc519dc6d6e5216b9a6612dbfc56e906bdbf34ea373c92b30d7')
-      assert.strictEqual(log._identity.pkSignature, '30440220590c0b1a84d5edabf4238ea924ad06481a47ba7f866d88d5950e89ee53670d04022068896f4d850297051c6b1acd5edb8d9dacc0a8fa3d11f436b79e193d14236a05')
-      assert.strictEqual(log._identity.signature, '304502210083bee84a2ecab7df452e0642b5d6f84ecc1c33927eac26049111bea64dfc0b8102202ef96123734077f171e211f21f632006a7cdce9d5757ea7c4edd4d54eadbe5d4')
+      assert.strictEqual(log._identity.signatures.id, '30440220590c0b1a84d5edabf4238ea924ad06481a47ba7f866d88d5950e89ee53670d04022068896f4d850297051c6b1acd5edb8d9dacc0a8fa3d11f436b79e193d14236a05')
+      assert.strictEqual(log._identity.signatures.publicKey, '304502210083bee84a2ecab7df452e0642b5d6f84ecc1c33927eac26049111bea64dfc0b8102202ef96123734077f171e211f21f632006a7cdce9d5757ea7c4edd4d54eadbe5d4')
     })
 
     it('has the correct public key', () => {
@@ -62,12 +62,12 @@ testAPIs.forEach((IPFS) => {
 
     it('has the correct pkSignature', () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
-      assert.strictEqual(log._identity.pkSignature, testIdentity.pkSignature)
+      assert.strictEqual(log._identity.signatures.id, testIdentity.signatures.id)
     })
 
     it('has the correct signature', () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
-      assert.strictEqual(log._identity.signature, testIdentity.signature)
+      assert.strictEqual(log._identity.signatures.publicKey, testIdentity.signatures.publicKey)
     })
 
     it('entries contain an identity', async () => {
