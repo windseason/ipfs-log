@@ -135,6 +135,7 @@ class Entry {
     }
 
     if (data.sig) Object.assign(entry, { sig: data.sig })
+    if (data.identity) Object.assign(entry, { identity: data.identity })
     if (data.key) Object.assign(entry, { key: data.key })
 
     return entry

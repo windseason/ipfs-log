@@ -197,6 +197,8 @@ testAPIs.forEach((IPFS) => {
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
         const final = await Entry.fromMultihash(ipfs, entry2.hash)
+
+        assert.deepEqual(entry2, final)
         assert.strictEqual(final.id, 'A')
         assert.strictEqual(final.payload, payload2)
         assert.strictEqual(final.next.length, 1)
