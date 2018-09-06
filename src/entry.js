@@ -131,10 +131,11 @@ class Entry {
       payload: data.payload,
       next: data.next,
       v: data.v,
-      clock: data.clock
+      clock: new Clock(data.clock.id, data.clock.time)
     }
 
     if (data.sig) Object.assign(entry, { sig: data.sig })
+    if (data.identity) Object.assign(entry, { identity: data.identity })
     if (data.key) Object.assign(entry, { key: data.key })
 
     return entry
