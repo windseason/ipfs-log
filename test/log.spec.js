@@ -459,7 +459,7 @@ testAPIs.forEach((IPFS) => {
 
           const items = log.values
           let i = 0
-          const callback = (hash, entry, depth) => {
+          const loadProgressCallback = (hash, entry, depth) => {
             assert.notStrictEqual(entry, null)
             assert.strictEqual(hash, items[items.length - i - 1].hash)
             assert.strictEqual(entry.hash, items[items.length - i - 1].hash)
@@ -468,12 +468,16 @@ testAPIs.forEach((IPFS) => {
             i++
           }
 
-          try {
-            const hash = await log.toMultihash()
-            await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1, [], callback)
-          } catch (e) {
-            throw e
-          }
+          const hash = await log.toMultihash()
+          const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1, [], loadProgressCallback)
+
+          // Make sure the onProgress callback was called for each entry
+          assert.strictEqual(i, amount)
+          // Make sure the log entries are correct ones
+          assert.strictEqual(result.values[0].clock.time, 1)
+          assert.strictEqual(result.values[0].payload, '0')
+          assert.strictEqual(result.values[result.length - 1].clock.time, 100)
+          assert.strictEqual(result.values[result.length - 1].payload, '99')
         })
       })
     })
