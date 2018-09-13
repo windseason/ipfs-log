@@ -13,13 +13,12 @@ const {
   startIpfs,
   stopIpfs,
   getIpfsPeerId,
-  connectPeers,
   waitForPeers,
   MemStore
 } = require('./utils')
 
-testAPIs.forEach((IPFS) => {
-  describe('ipfs-log - Replication', function () {
+Object.keys(testAPIs).forEach((IPFS) => {
+  describe('ipfs-log - Replication (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     let ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
@@ -49,9 +48,6 @@ testAPIs.forEach((IPFS) => {
       ipfs1.object.get = memstore.get.bind(memstore)
       ipfs2.object.put = memstore.put.bind(memstore)
       ipfs2.object.get = memstore.get.bind(memstore)
-
-      // Connect the peers manually to speed up test times
-      await connectPeers(ipfs1, ipfs2)
 
       // Create an identity for each peers
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)

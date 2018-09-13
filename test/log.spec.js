@@ -24,8 +24,8 @@ const last = (arr) => {
   return arr[arr.length - 1]
 }
 
-testAPIs.forEach((IPFS) => {
-  describe('Log', function () {
+Object.keys(testAPIs).forEach((IPFS) => {
+  describe('Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const keystore = Keystore.create(config.testKeysPath)

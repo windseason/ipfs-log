@@ -17,7 +17,7 @@ module.exports = {
       Discovery: {
         MDNS: {
           Enabled: true,
-          Interval: 1
+          Interval: 0
         },
         webRTCStar: {
           Enabled: false
@@ -41,7 +41,7 @@ module.exports = {
       Discovery: {
         MDNS: {
           Enabled: true,
-          Interval: 1
+          Interval: 0
         },
         webRTCStar: {
           Enabled: false
@@ -65,7 +65,7 @@ module.exports = {
       Discovery: {
         MDNS: {
           Enabled: true,
-          Interval: 1
+          Interval: 0
         },
         webRTCStar: {
           Enabled: false

@@ -145,8 +145,19 @@ See [API Documentation](https://github.com/orbitdb/ipfs-log/tree/master/API.md) 
 
 ## Tests
 
+Run all tests:
 ```
 npm test
+```
+
+Run tests with js-ipfs only (default):
+```
+mocha
+```
+
+Run tests with go-ipfs only:
+```
+TEST=go mocha
 ```
 
 ## Build
