@@ -62,7 +62,7 @@ class Entry {
       payload: entry.payload,
       next: entry.next,
       v: entry.v,
-      clock: entry.clock
+      clock: new Clock(entry.clock.id, entry.clock.time)
     })
 
     return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e))
@@ -99,9 +99,9 @@ class Entry {
       clock: entry.clock
     }
 
-    if (entry.sig) Object.assign(e, { sig: entry.sig })
-    if (entry.identity) Object.assign(e, { identity: entry.identity })
     if (entry.key) Object.assign(e, { key: entry.key })
+    if (entry.identity) Object.assign(e, { identity: entry.identity })
+    if (entry.sig) Object.assign(e, { sig: entry.sig })
 
     const data = Entry.toBuffer(e)
     const object = await ipfs.object.put(data)
@@ -134,9 +134,9 @@ class Entry {
       clock: new Clock(data.clock.id, data.clock.time)
     }
 
-    if (data.sig) Object.assign(entry, { sig: data.sig })
-    if (data.identity) Object.assign(entry, { identity: data.identity })
     if (data.key) Object.assign(entry, { key: data.key })
+    if (data.identity) Object.assign(entry, { identity: data.identity })
+    if (data.sig) Object.assign(entry, { sig: data.sig })
 
     return entry
   }
