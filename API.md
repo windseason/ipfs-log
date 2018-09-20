@@ -155,7 +155,7 @@ Log.isLog('hello')
 
 #### Log.expand(ipfs, log, [amount=-1])
 
-Expands a `log` by `amount` by retreiving more entries from the tails of the log. Returns a new `Log` instance. 
+Expands a `log` by `amount` by retrieving more entries from the tails of the log. Returns a new `Log` instance. 
 
 Expanding a log will retrieve new entries from IPFS, thus causing side effects.
 
