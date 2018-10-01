@@ -6,10 +6,10 @@ const Entry = require('./entry')
 const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
-const isDefined = require('./utils/is-defined')
-const _uniques = require('./utils/uniques')
 const AccessController = require('./default-access-controller')
 const IdentityProvider = require('orbit-db-identity-provider')
+const { isDefined, findUniques } = require('./utils')
+
 const randomId = () => new Date().getTime().toString()
 const getHash = e => e.hash
 const flatMap = (res, acc) => res.concat(acc)
@@ -511,7 +511,7 @@ class Log extends GSet {
     // Create our indices
     entries.forEach(addToIndex)
 
-    var addUniques = (res, entries, idx, arr) => res.concat(_uniques(entries, 'hash'))
+    var addUniques = (res, entries, idx, arr) => res.concat(findUniques(entries, 'hash'))
     var exists = e => hashes[e] === undefined
     var findFromReverseIndex = e => reverseIndex[e]
 
@@ -522,7 +522,7 @@ class Log extends GSet {
       .reduce(addUniques, []) // Flatten the result and take only uniques
       .concat(nullIndex) // Combine with tails the have no next refs (ie. first-in-their-chain)
 
-    return _uniques(tails, 'hash').sort(Entry.compare)
+    return findUniques(tails, 'hash').sort(Entry.compare)
   }
 
   // Find the hashes to entries that are not in a collection
