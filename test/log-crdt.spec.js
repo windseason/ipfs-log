@@ -17,7 +17,7 @@ const {
 let ipfs, testIdentity, testIdentity2, testIdentity3
 
 Object.keys(testAPIs).forEach((IPFS) => {
-  describe('Log (' + IPFS + ')', function () {
+  describe('Log - CRDT (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const keystore = Keystore.create(config.testKeysPath)

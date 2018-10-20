@@ -5,7 +5,6 @@ const rmrf = require('rimraf')
 const Keystore = require('orbit-db-keystore')
 const LogCreator = require('./utils/log-creator')
 const bigLogString = require('./fixtures/big-log.fixture.js')
-const Clock = require('../src/lamport-clock')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
@@ -34,24 +33,18 @@ Object.keys(testAPIs).forEach((IPFS) => {
       return keystore.sign(key, data)
     }
     const testACL = new AccessController()
-    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, { 
-      repo: config.defaultIpfsConfig.repo + (new Date().getTime())
-    })
 
     before(async () => {
       rmrf.sync(config.defaultIpfsConfig.repo)
-      // rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
       testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', identitySignerFn)
       testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', identitySignerFn)
       ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
-      // ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      // rmrf.sync(ipfsConfig.repo)
       rmrf.sync(config.defaultIpfsConfig.repo)
     })
 
