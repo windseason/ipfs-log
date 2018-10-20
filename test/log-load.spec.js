@@ -12,6 +12,7 @@ const { AccessController, IdentityProvider } = Log
 // Test utils
 const {
   config,
+  MemStore,
   testAPIs,
   startIpfs,
   stopIpfs
@@ -44,6 +45,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', identitySignerFn)
       testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', identitySignerFn)
       ipfs = await startIpfs(IPFS, ipfsConfig)
+
+      const memstore = new MemStore()
+      ipfs.object.put = memstore.put.bind(memstore)
+      ipfs.object.get = memstore.get.bind(memstore)
     })
 
     after(async () => {
