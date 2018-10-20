@@ -26,25 +26,29 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Join (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
+    const testACL = new AccessController()
     const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
     }
-    const testACL = new AccessController()
+
+    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
+      repo: config.defaultIpfsConfig.repo + '-log-join' + new Date().getTime()
+    })
 
     before(async () => {
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
       testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', identitySignerFn)
       testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', identitySignerFn)
-      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
+      ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
     })
 
     describe('join', () => {

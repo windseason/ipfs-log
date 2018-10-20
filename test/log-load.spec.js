@@ -27,25 +27,28 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Load (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
+    const testACL = new AccessController()
     const keystore = Keystore.create(config.testKeysPath)
     const identitySignerFn = async (id, data) => {
       const key = await keystore.getKey(id)
       return keystore.sign(key, data)
     }
-    const testACL = new AccessController()
+    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
+      repo: config.defaultIpfsConfig.repo + '-log-load' + new Date().getTime()
+    })
 
     before(async () => {
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
       testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', identitySignerFn)
       testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', identitySignerFn)
-      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
+      ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
     })
 
     describe('fromEntry', () => {
@@ -93,61 +96,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log3.values[4].payload, 'entryA8')
         assert.strictEqual(log3.values[5].payload, 'entryA9')
         assert.strictEqual(log3.values[6].payload, 'entryA10')
-      })
-
-      describe('fetches a log', () => {
-        const amount = 100
-        let items1 = []
-        let items2 = []
-        let items3 = []
-        let log1, log2, log3
-
-        beforeEach(async () => {
-          log1 = new Log(ipfs, testACL, testIdentity, 'X')
-          log2 = new Log(ipfs, testACL, testIdentity2, 'X')
-          log3 = new Log(ipfs, testACL, testIdentity3, 'X')
-          items1 = []
-          items2 = []
-          items3 = []
-          for (let i = 1; i <= amount; i++) {
-            const prev1 = last(items1)
-            const prev2 = last(items2)
-            const prev3 = last(items3)
-            const n1 = await Entry.create(ipfs, log1._identity, log1.id, 'entryA' + i, [prev1], log1.clock)
-            const n2 = await Entry.create(ipfs, log2._identity, log2.id, 'entryB' + i, [prev2, n1], log2.clock)
-            const n3 = await Entry.create(ipfs, log3._identity, log3.id, 'entryC' + i, [prev3, n1, n2], log3.clock)
-            log1.clock.tick()
-            log2.clock.tick()
-            log3.clock.tick()
-            log1.clock.merge(log2.clock)
-            log1.clock.merge(log3.clock)
-            log2.clock.merge(log1.clock)
-            log2.clock.merge(log3.clock)
-            log3.clock.merge(log1.clock)
-            log3.clock.merge(log2.clock)
-            items1.push(n1)
-            items2.push(n2)
-            items3.push(n3)
-          }
-        })
-
-        it('returns all entries - no excluded entries', async () => {
-          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1)
-          assert.strictEqual(a.length, amount)
-          assert.strictEqual(a.values[0].hash, items1[0].hash)
-        })
-
-        it('returns all entries - including excluded entries', async () => {
-          // One entry
-          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [items1[0]])
-          assert.strictEqual(a.length, amount)
-          assert.strictEqual(a.values[0].hash, items1[0].hash)
-
-          // All entries
-          const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, items1)
-          assert.strictEqual(b.length, amount)
-          assert.strictEqual(b.values[0].hash, items1[0].hash)
-        })
       })
 
       it('onProgress callback is fired for each entry', async () => {
@@ -680,6 +628,62 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
         assert.notStrictEqual(err, null)
         assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+      })
+
+      describe('fetches a log', () => {
+        const amount = 100
+        let items1 = []
+        let items2 = []
+        let items3 = []
+        let log1, log2, log3
+
+        beforeEach(async () => {
+          const ts = new Date().getTime()
+          log1 = new Log(ipfs, testACL, testIdentity, 'X')
+          log2 = new Log(ipfs, testACL, testIdentity2, 'X')
+          log3 = new Log(ipfs, testACL, testIdentity3, 'X')
+          items1 = []
+          items2 = []
+          items3 = []
+          for (let i = 1; i <= amount; i++) {
+            const prev1 = last(items1)
+            const prev2 = last(items2)
+            const prev3 = last(items3)
+            const n1 = await Entry.create(ipfs, log1._identity, log1.id, 'entryA' + i + '-' + ts, [prev1], log1.clock)
+            const n2 = await Entry.create(ipfs, log2._identity, log2.id, 'entryB' + i + '-' + ts, [prev2, n1], log2.clock)
+            const n3 = await Entry.create(ipfs, log3._identity, log3.id, 'entryC' + i + '-' + ts, [prev3, n1, n2], log3.clock)
+            log1.clock.tick()
+            log2.clock.tick()
+            log3.clock.tick()
+            log1.clock.merge(log2.clock)
+            log1.clock.merge(log3.clock)
+            log2.clock.merge(log1.clock)
+            log2.clock.merge(log3.clock)
+            log3.clock.merge(log1.clock)
+            log3.clock.merge(log2.clock)
+            items1.push(n1)
+            items2.push(n2)
+            items3.push(n3)
+          }
+        })
+
+        it('returns all entries - no excluded entries', async () => {
+          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1)
+          assert.strictEqual(a.length, amount)
+          assert.strictEqual(a.values[0].hash, items1[0].hash)
+        })
+
+        it('returns all entries - including excluded entries', async () => {
+          // One entry
+          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [items1[0]])
+          assert.strictEqual(a.length, amount)
+          assert.strictEqual(a.values[0].hash, items1[0].hash)
+
+          // All entries
+          const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, items1)
+          assert.strictEqual(b.length, amount)
+          assert.strictEqual(b.values[0].hash, items1[0].hash)
+        })
       })
     })
   })

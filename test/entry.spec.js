@@ -24,16 +24,19 @@ Object.keys(testAPIs).forEach((IPFS) => {
     const testUserId = 'userA'
     const keystore = Keystore.create(config.testKeysPath)
     const testACL = new AccessController()
+    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
+      repo: config.defaultIpfsConfig.repo + '-entry' + new Date().getTime()
+    })
 
     before(async () => {
-      rmrf.sync(config.daemon1.repo)
+      rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, testUserId)
-      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
+      ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
     })
 
     describe('create', () => {
