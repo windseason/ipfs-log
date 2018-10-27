@@ -62,14 +62,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(log.tails, [])
       })
 
-      it('throws an error if ImmutableDB instance is not passed as an argument', () => {
+      it('throws an error if IPFS instance is not passed as an argument', () => {
         let err
         try {
           const log = new Log() // eslint-disable-line no-unused-vars
         } catch (e) {
           err = e
         }
-        assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+        assert.strictEqual(err.message, 'IPFS instance not defined')
       })
 
       it('sets an id', () => {
@@ -410,7 +410,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             err = e
           }
           assert.notStrictEqual(err, null)
-          assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+          assert.strictEqual(err.message, 'IPFS instance not defined')
         })
 
         it('throws an error if hash is not defined', async () => {

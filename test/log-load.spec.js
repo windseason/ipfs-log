@@ -632,7 +632,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           err = e
         }
         assert.notStrictEqual(err, null)
-        assert.strictEqual(err.message, 'ImmutableDB instance not defined')
+        assert.strictEqual(err.message, 'IPFS instance not defined')
       })
 
       describe('fetches a log', () => {

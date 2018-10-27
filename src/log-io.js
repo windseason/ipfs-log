@@ -9,11 +9,11 @@ const { isDefined, findUniques, difference } = require('./utils')
 const last = (arr, n) => arr.slice(arr.length - n, arr.length)
 
 class LogIO {
-  static async toMultihash (immutabledb, log) {
-    if (!isDefined(immutabledb)) throw LogError.ImmutableDBNotDefinedError()
+  static async toMultihash (ipfs, log) {
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
-    const dagNode = await immutabledb.object.put(log.toBuffer())
+    const dagNode = await ipfs.object.put(log.toBuffer())
     return dagNode.toJSON().multihash
   }
 
@@ -25,15 +25,15 @@ class LogIO {
    * @param {function(hash, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Log>}
    */
-  static async fromMultihash (immutabledb, hash, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(immutabledb)) throw LogError.ImmutableDBNotDefinedError()
+  static async fromMultihash (ipfs, hash, length = -1, exclude, onProgressCallback) {
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
-    const dagNode = await immutabledb.object.get(hash, { enc: 'base58' })
+    const dagNode = await ipfs.object.get(hash, { enc: 'base58' })
     const logData = JSON.parse(dagNode.toJSON().data)
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
 
-    const entries = await EntryIO.fetchAll(immutabledb, logData.heads, length, exclude, null, onProgressCallback)
+    const entries = await EntryIO.fetchAll(ipfs, logData.heads, length, exclude, null, onProgressCallback)
 
     // Find latest clock
     const clock = entries.reduce((clock, entry) => {
@@ -72,7 +72,7 @@ class LogIO {
   }
 
   static async fromJSON (ipfs, json, length = -1, timeout, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     const headHashes = json.heads.map(e => e.hash)
     const entries = await EntryIO.fetchParallel(ipfs, headHashes, length, [], 16, timeout, onProgressCallback)
     const finalEntries = entries.slice().sort(Entry.compare)
@@ -92,8 +92,8 @@ class LogIO {
    * @param {function(hash, entry, parent, depth)} [onProgressCallback]
    * @returns {Promise<Log>}
    */
-  static async fromEntry (immutabledb, sourceEntries, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(immutabledb)) throw LogError.ImmutableDBNotDefinedError()
+  static async fromEntry (ipfs, sourceEntries, length = -1, exclude, onProgressCallback) {
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
     // Make sure we only have Entry objects as input
@@ -113,7 +113,7 @@ class LogIO {
     const hashes = sourceEntries.map(e => e.hash)
 
     // Fetch the entries
-    const entries = await EntryIO.fetchParallel(immutabledb, hashes, length, excludeHashes, null, null, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, hashes, length, excludeHashes, null, null, onProgressCallback)
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)

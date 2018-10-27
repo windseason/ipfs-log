@@ -44,7 +44,7 @@ class Log extends GSet {
    */
   constructor (ipfs, access, identity, logId, entries, heads, clock) {
     if (!isDefined(ipfs)) {
-      throw LogError.ImmutableDBNotDefinedError()
+      throw LogError.IPFSNotDefinedError()
     }
 
     if (!isDefined(access)) {
@@ -394,7 +394,7 @@ class Log extends GSet {
    * @return {Promise<Log>}      New Log
    */
   static async fromMultihash (ipfs, access, identity, hash, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
     // TODO: need to verify the entries with 'key'
@@ -411,7 +411,7 @@ class Log extends GSet {
    * @return {Promise<Log>}      New Log
    */
   static async fromEntryHash (ipfs, access, identity, hash, id, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(hash)) throw new Error("'hash' must be defined")
 
     // TODO: need to verify the entries with 'key'
@@ -428,7 +428,7 @@ class Log extends GSet {
    * @return {Promise<Log>}      New Log
    */
   static async fromJSON (ipfs, access, identity, json, length = -1, timeout, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
 
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromJSON(ipfs, json, length, timeout, onProgressCallback)
@@ -445,7 +445,7 @@ class Log extends GSet {
    * @return {Promise<Log>}       New Log
    */
   static async fromEntry (ipfs, access, identity, sourceEntries, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.ImmutableDBNotDefinedError()
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
     // TODO: need to verify the entries with 'key'
