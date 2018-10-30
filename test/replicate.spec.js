@@ -29,14 +29,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
       return keystore.sign(key, data)
     }
     const testACL = new AccessController()
+    const ipfsConfig1 = Object.assign({}, config.daemon1, {
+      repo: config.daemon1.repo + new Date().getTime()
+    })
+    const ipfsConfig2 = Object.assign({}, config.daemon2, {
+      repo: config.daemon2.repo + new Date().getTime()
+    })
 
     before(async () => {
-      rmrf.sync(config.daemon1.repo)
-      rmrf.sync(config.daemon2.repo)
+      rmrf.sync(ipfsConfig1.repo)
+      rmrf.sync(ipfsConfig2.repo)
 
       // Start two IPFS instances
-      ipfs1 = await startIpfs(IPFS, config.daemon1)
-      ipfs2 = await startIpfs(IPFS, config.daemon2)
+      ipfs1 = await startIpfs(IPFS, ipfsConfig1)
+      ipfs2 = await startIpfs(IPFS, ipfsConfig2)
 
       // Get the peer IDs
       id1 = await getIpfsPeerId(ipfs1)
@@ -57,8 +63,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs1)
       await stopIpfs(ipfs2)
-      rmrf.sync(config.daemon1.repo)
-      rmrf.sync(config.daemon2.repo)
+      rmrf.sync(ipfsConfig1.repo)
+      rmrf.sync(ipfsConfig2.repo)
     })
 
     describe('replicates logs deterministically', function () {

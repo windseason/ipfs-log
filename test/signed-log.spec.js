@@ -26,17 +26,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
       return keystore.sign(key, data)
     }
     const testACL = new AccessController()
+    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
+      repo: config.defaultIpfsConfig.repo + '-log-signed' + new Date().getTime()
+    })
 
     before(async () => {
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
       testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
-      ipfs = await startIpfs(IPFS, config.defaultIpfsConfig)
+      ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      rmrf.sync(config.defaultIpfsConfig.repo)
+      rmrf.sync(ipfsConfig.repo)
     })
 
     it('creates a signed log', () => {
