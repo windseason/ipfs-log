@@ -1,6 +1,6 @@
 {
   "name": "ipfs-log",
-  "version": "4.3.0",
+  "version": "4.2.0",
   "description": "Append-only log CRDT on IPFS",
   "main": "src/log.js",
   "author": "Haad",
