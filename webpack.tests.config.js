@@ -36,6 +36,7 @@ module.exports = {
   externals: {
     fs: '{}',
     rimraf: '{ sync: () => {} }',
+    "idb-readable-stream": "{}"
   },
   resolve: {
     modules: [
