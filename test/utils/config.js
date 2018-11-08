@@ -3,7 +3,7 @@ module.exports = {
   testKeysPath: './test/fixtures/keys',
   defaultIpfsConfig: {
     preload: {
-      enabled: false,
+      enabled: false
     },
     repo: './ipfs/ipfs-log/tests/daemon',
     start: true,
