@@ -4,10 +4,9 @@ deps:
 	npm install
 
 test: deps
-	npm run build:tests
 	npm run test
-	echo "To run browser tests, run npm run test:browser"
-
+	npm run test:browser
+	
 build: test
 	npm run build
 	@echo "Build success!"
