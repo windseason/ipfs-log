@@ -284,15 +284,15 @@ class Log extends GSet {
     await pMap(entriesToJoin, permitted, { concurrency: 1 })
     await pMap(entriesToJoin, verify, { concurrency: 1 })
 
-    // Update the internal entry index
-    this._entryIndex = Object.assign(this._entryIndex, newItems)
-
     // Update the internal next pointers index
-    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.hash))
+    const addToNextsIndex = e => {
+      if (!this.get(e.hash)) this._length++
+      e.next.forEach(a => (this._nextsIndex[a] = e.hash))
+    }
     Object.values(newItems).forEach(addToNextsIndex)
 
-    // Update the length
-    this._length += Object.values(newItems).length
+    // Update the internal entry index
+    this._entryIndex = Object.assign(this._entryIndex, newItems)
 
     // Slice to the requested size
     if (size > -1) {
