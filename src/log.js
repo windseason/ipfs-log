@@ -127,8 +127,45 @@ class Log extends GSet {
    * @returns {Array<Entry>}
    */
   get values () {
-    // Sort entries as "Last-Write-Wins", ie. by their clock time
-    return Object.values(this._entryIndex).sort(LastWriteWins)
+    const recurseValues = (results, stack, traversed) => {
+      var newStack = [];
+
+      while(stack.length > 0) {
+        const hash = stack.shift()
+        if(traversed.has(hash)) continue
+
+        const entry = this.get(hash)
+        if(!entry) continue;
+
+        entry.next
+          .filter(hash => !traversed.has(hash))
+          .forEach(hash => {
+            newStack.push(hash)
+          })
+        results.push(entry)
+        traversed.add(hash)
+      }
+
+      if (newStack.length !== 0) {
+        return recurseValues(results, newStack, traversed)
+      } else {
+        return results
+      }
+    }
+
+    const stack = this.heads.map(getNextPointers).reduce(flatMap, [])
+    const results = recurseValues(this.heads, stack, new Set())
+    const oldVals = Object.values(this._entryIndex).sort(LastWriteWins)
+
+    if (results.length !== oldVals.length) {
+      // console.log(results.map(d => d.hash), oldVals.map(d => d.hash))
+      throw new Error(`BAD LENGTH: ${results.length} vs ${oldVals.length}`)
+    }
+    // for(let i = 0; i < oldVals.length; i++) {
+    //   if(results[i].hash !== oldVals[i].hash) throw new Error("Logs do not match")
+    // }
+
+    return oldVals
   }
 
   /**
@@ -294,14 +331,6 @@ class Log extends GSet {
     // Update the internal entry index
     this._entryIndex = Object.assign(this._entryIndex, newItems)
 
-    // Slice to the requested size
-    if (size > -1) {
-      let tmp = this.values
-      tmp = tmp.slice(-size)
-      this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
-      this._length = Object.values(this._entryIndex).length
-    }
-
     // Merge the heads
     const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.hash)
     const notInCurrentNexts = e => !this._nextsIndex[e.hash]
@@ -312,6 +341,15 @@ class Log extends GSet {
       .reduce(uniqueEntriesReducer, {})
 
     this._headsIndex = mergedHeads
+
+    // Slice to the requested size
+    if (size > -1) {
+      let tmp = this.values
+      tmp = tmp.slice(-size)
+      this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
+      this._headsIndex = Log.findHeads(tmp)
+      this._length = Object.values(this._entryIndex).length
+    }
 
     // Find the latest clock from the heads
     const maxClock = Object.values(this._headsIndex).reduce(maxClockTimeReducer, 0)
