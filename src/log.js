@@ -127,34 +127,7 @@ class Log extends GSet {
    * @returns {Array<Entry>}
    */
   get values () {
-    const recurseValues = (results, stack, traversed) => {
-      var newStack = [];
-
-      while(stack.length > 0) {
-        const hash = stack.shift()
-        if(traversed.has(hash)) continue
-
-        const entry = this.get(hash)
-        if(!entry) continue;
-
-        entry.next
-          .filter(hash => !traversed.has(hash))
-          .forEach(hash => {
-            newStack.push(hash)
-          })
-        results.push(entry)
-        traversed.add(hash)
-      }
-
-      if (newStack.length !== 0) {
-        return recurseValues(results, newStack, traversed)
-      } else {
-        return results
-      }
-    }
-
-    const stack = this.heads.map(getNextPointers).reduce(flatMap, [])
-    const results = recurseValues(this.heads, stack, new Set())
+    const results = Object.values(this.traverse(this.heads))
     const oldVals = Object.values(this._entryIndex).sort(LastWriteWins)
 
     if (results.length !== oldVals.length) {
@@ -207,7 +180,7 @@ class Log extends GSet {
     return this._entryIndex[entry.hash || entry] !== undefined
   }
 
-  traverse (rootEntries, amount) {
+  traverse (rootEntries, amount = -1) {
     // console.log("traverse>", rootEntry)
     let stack = rootEntries.map(getNextPointers).reduce(flatMap, [])
     let traversed = {}
@@ -229,7 +202,8 @@ class Log extends GSet {
 
     rootEntries.forEach(addRootHash)
 
-    while (stack.length > 0 && count < amount) {
+    // If amount === -1, traverse all
+    while (stack.length > 0 && (amount === -1 || count < amount)) {
       const hash = stack.shift()
       const entry = this.get(hash)
       if (entry) {
