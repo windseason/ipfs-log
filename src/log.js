@@ -170,17 +170,24 @@ class Log extends GSet {
   }
 
   traverse (rootEntries, amount = -1) {
-    // console.log("traverse>", rootEntry)
-    let stack = rootEntries.map(getNextPointers).reduce(flatMap, [])
+    // console.log("traverse>", rootEntries)
+    let stack = rootEntries.sort(LastWriteWins)
+      .reverse()
+      .map(getNextPointers)
+      .reduce(flatMap, [])
+      .map(hash => this.get(hash))
+
     let traversed = {}
     let result = {}
     let count = 0
 
-    const addToStack = hash => {
-      if (!result[hash] && !traversed[hash]) {
-        stack.push(hash)
-        traversed[hash] = true
-      }
+    const addToStack = entry => {
+      if (traversed[entry.hash]) return
+
+      stack = [entry, ...stack]
+        .sort(LastWriteWins)
+        .reverse();
+      traversed[entry.hash] = true
     }
 
     const addRootHash = rootEntry => {
@@ -193,13 +200,16 @@ class Log extends GSet {
 
     // If amount === -1, traverse all
     while (stack.length > 0 && (amount === -1 || count < amount)) {
-      const hash = stack.shift()
-      const entry = this.get(hash)
+      const entry = stack.shift()
       if (entry) {
         count++
         result[entry.hash] = entry
         traversed[entry.hash] = true
-        entry.next.forEach(addToStack)
+        entry.next.map(e => this.get(e))
+          .filter(isDefined)
+          .sort(LastWriteWins)
+          .reverse()
+          .forEach(addToStack)
       }
     }
     return result
@@ -286,7 +296,8 @@ class Log extends GSet {
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
-      if (!this.get(e.hash)) this._length++
+      const entry = this.get(e.hash)
+      if (!entry) this._length++
       e.next.forEach(a => (this._nextsIndex[a] = e.hash))
     }
     Object.values(newItems).forEach(addToNextsIndex)
@@ -303,7 +314,9 @@ class Log extends GSet {
       .filter(notInCurrentNexts)
       .reduce(uniqueEntriesReducer, {})
 
-    this._headsIndex = mergedHeads
+    this._headsIndex = Object.values(mergedHeads)
+      .sort(LastWriteWins)
+      .reduce(uniqueEntriesReducer,  {})
 
     // Slice to the requested size
     if (size > -1) {
