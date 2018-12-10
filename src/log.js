@@ -127,18 +127,18 @@ class Log extends GSet {
    * @returns {Array<Entry>}
    */
   get values () {
-    const results = Object.values(this.traverse(this.heads))
+    const results = Object.values(this.traverse(this.heads)).reverse()
     const oldVals = Object.values(this._entryIndex).sort(LastWriteWins)
 
-    if (results.length !== oldVals.length) {
-      // console.log(results.map(d => d.hash), oldVals.map(d => d.hash))
-      throw new Error(`BAD LENGTH: ${results.length} vs ${oldVals.length}`)
-    }
+    // if (results.length !== oldVals.length) {
+    // console.log(results.map(d => d.hash), oldVals.map(d => d.hash))
+    // throw new Error(`BAD LENGTH: ${results.length} vs ${oldVals.length}`)
+    // }
     // for(let i = 0; i < oldVals.length; i++) {
     //   if(results[i].hash !== oldVals[i].hash) throw new Error("Logs do not match")
     // }
 
-    return oldVals
+    return results
   }
 
   /**
@@ -195,7 +195,7 @@ class Log extends GSet {
     }
 
     const addRootHash = rootEntry => {
-      result[rootEntry.hash] = rootEntry.hash
+      result[rootEntry.hash] = rootEntry
       traversed[rootEntry.hash] = true
       count++
     }
@@ -208,7 +208,7 @@ class Log extends GSet {
       const entry = this.get(hash)
       if (entry) {
         count++
-        result[entry.hash] = entry.hash
+        result[entry.hash] = entry
         traversed[entry.hash] = true
         entry.next.forEach(addToStack)
       }
