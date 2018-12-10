@@ -127,18 +127,7 @@ class Log extends GSet {
    * @returns {Array<Entry>}
    */
   get values () {
-    const results = Object.values(this.traverse(this.heads)).reverse()
-    const oldVals = Object.values(this._entryIndex).sort(LastWriteWins)
-
-    // if (results.length !== oldVals.length) {
-    // console.log(results.map(d => d.hash), oldVals.map(d => d.hash))
-    // throw new Error(`BAD LENGTH: ${results.length} vs ${oldVals.length}`)
-    // }
-    // for(let i = 0; i < oldVals.length; i++) {
-    //   if(results[i].hash !== oldVals[i].hash) throw new Error("Logs do not match")
-    // }
-
-    return results
+    return Object.values(this.traverse(this.heads)).reverse()
   }
 
   /**
