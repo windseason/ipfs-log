@@ -194,7 +194,6 @@ class Log extends GSet {
 
       count++
       result[entry.hash] = entry
-      traversed[entry.hash] = true
       entry.next.map(e => this.get(e)).filter(isDefined).forEach(addToStack)
     }
     return result
@@ -211,7 +210,7 @@ class Log extends GSet {
     this._clock = new Clock(this.clock.id, newTime)
 
     // Get the required amount of hashes to next entries (as per current state of the log)
-    const nexts = Object.keys(this.traverse(this.heads, pointerCount))
+    const nexts = this.heads.map(e => e.hash)
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
