@@ -171,11 +171,7 @@ class Log extends GSet {
 
   traverse (rootEntries, amount = -1) {
     // console.log("traverse>", rootEntries)
-    let stack = rootEntries.sort(LastWriteWins)
-      .reverse()
-      .map(getNextPointers)
-      .reduce(flatMap, [])
-      .map(hash => this.get(hash))
+    let stack = rootEntries.sort(LastWriteWins).reverse()
 
     let traversed = {}
     let result = {}
@@ -187,30 +183,19 @@ class Log extends GSet {
       stack = [entry, ...stack]
         .sort(LastWriteWins)
         .reverse();
+
       traversed[entry.hash] = true
     }
-
-    const addRootHash = rootEntry => {
-      result[rootEntry.hash] = rootEntry
-      traversed[rootEntry.hash] = true
-      count++
-    }
-
-    rootEntries.forEach(addRootHash)
 
     // If amount === -1, traverse all
     while (stack.length > 0 && (amount === -1 || count < amount)) {
       const entry = stack.shift()
-      if (entry) {
-        count++
-        result[entry.hash] = entry
-        traversed[entry.hash] = true
-        entry.next.map(e => this.get(e))
-          .filter(isDefined)
-          .sort(LastWriteWins)
-          .reverse()
-          .forEach(addToStack)
-      }
+      if(!entry) return;
+
+      count++
+      result[entry.hash] = entry
+      traversed[entry.hash] = true
+      entry.next.map(e => this.get(e)).filter(isDefined).forEach(addToStack)
     }
     return result
   }
