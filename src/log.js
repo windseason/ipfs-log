@@ -135,7 +135,7 @@ class Log extends GSet {
    * @returns {Array<string>}
    */
   get heads () {
-    return Object.values(this._headsIndex) || []
+    return Object.values(this._headsIndex).sort(LastWriteWins).reverse() || []
   }
 
   /**
