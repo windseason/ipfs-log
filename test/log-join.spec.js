@@ -195,8 +195,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
 
         assert.strictEqual(log2.length, 4)
-        console.log("---")
-        console.log()
         assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
       })
 
@@ -311,12 +309,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log4.join(log2)
         await log4.join(log1)
         await log4.join(log3)
-        console.log("")
-        console.log("-----------------------------------------")
-        console.log("log4.append('helloD3')")
         await log4.append('helloD3')
-        console.log(log4.values.map(e => e.payload))
-        console.log("-----------------------------------------")
         await log4.append('helloD4')
 
         await log1.join(log4)
@@ -349,13 +342,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const transformed = log4.values.map((e) => {
           return { payload: e.payload, id: e.id, clock: e.clock }
         })
-
-       const payloads = log4.values.map((e) => {
-          return e.hash + " | " + e.payload + " | " + e.next.map(a => log4.get(a).payload).join(", | " + e.next.join(","))
-        })
-
-        console.log(">>>>")
-        console.log(payloads.join("\n"))
 
         assert.strictEqual(log4.length, 13)
         assert.deepStrictEqual(transformed, expectedData)
