@@ -172,20 +172,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('joins 2 logs two ways', async () => {
         await log1.append('helloA1')
-        assert.strictEqual(log1.heads.length, 1)
-        assert.strictEqual(log1.heads[0].payload, 'helloA1')
         await log2.append('helloB1')
-        assert.strictEqual(log2.heads.length, 1)
-        assert.strictEqual(log2.heads[0].payload, 'helloB1')
-        await log2.join(log1) // Make sure we keep the original log id
-        assert.strictEqual(log2.heads.length, 2)
-        assert.strictEqual(log2.heads[0].payload, 'helloB1')
-        assert.strictEqual(log2.heads[1].payload, 'helloA1')
+        await log2.join(log1)
         await log1.join(log2)
-        assert.strictEqual(log1.heads.length, 2)
-        assert.strictEqual(log1.heads[0].payload, 'helloB1')
-        assert.strictEqual(log1.heads[1].payload, 'helloA1')
-
         await log1.append('helloA2')
         await log2.append('helloB2')
         await log2.join(log1)

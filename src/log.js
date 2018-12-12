@@ -175,7 +175,6 @@ class Log extends GSet {
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
-    // @TODO: refactor to an array?
     let result = {}
     // We keep a counter to check if we have traversed requested amount of entries
     let count = 0
