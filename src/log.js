@@ -170,37 +170,58 @@ class Log extends GSet {
   }
 
   traverse (rootEntries, amount = -1) {
-    // console.log("traverse>", rootEntries.map(e => e.payload))
+    // Sort the given given root entries and use as the starting stack
     let stack = rootEntries.sort(LastWriteWins).reverse()
-
+    // Cache for checking if we've processed an entry already
     let traversed = {}
+    // End result
+    // @TODO: refactor to an array?
     let result = {}
+    // We keep a counter to check if we have traversed requested amount of entries
     let count = 0
 
-    const addToStack = entry => {
-      // console.log("push>>", entry.payload)
-      if (traversed[entry.hash]) return
+    // Named function for getting an entry from the log
+    const getEntry = e => this.get(e)
 
+    // Add an entry to the stack and traversed nodes index
+    const addToStack = entry => {
+      // If we've already processed the entry, don't add it to the stack
+      if (traversed[entry.hash]) {
+        return
+      }
+
+      // Add the entry in front of the stack and sort
       stack = [entry, ...stack]
         .sort(LastWriteWins)
         .reverse()
 
+      // Add to the cache of processed entries
       traversed[entry.hash] = true
     }
 
-    // If amount === -1, traverse all
+    // Start traversal
+    // Process stack until it's empty (traversed the full log)
+    // or when we have the requested amount of entries
+    // If requested entry amount is -1, traverse all
     while (stack.length > 0 && (amount === -1 || count < amount)) {
-      // console.log("count:", count, "amount:", amount)
+      // Get the next element from the stack
       const entry = stack.shift()
-      if(!entry) return
 
-      // console.log("shift>", entry.payload)
+      // Is the stack empty?
+      if(!entry) {
+        return
+      }
+
+      // Add to the result
       count++
       result[entry.hash] = entry
-      entry.next.map(e => this.get(e)).filter(isDefined).forEach(addToStack)
-      // console.log("stack:", stack.map(e => e.payload + ":" + e.clock.time))
+
+      // Add entry's next references to the stack
+      entry.next.map(getEntry)
+        .filter(isDefined)
+        .forEach(addToStack)
     }
-    // console.log(":::", Object.values(result).map(e => e.payload))
+
     return result
   }
 
@@ -215,11 +236,8 @@ class Log extends GSet {
     this._clock = new Clock(this.clock.id, newTime)
 
     // Get the required amount of hashes to next entries (as per current state of the log)
-    // const nexts = this.heads.map(e => e.hash)
-    // console.log("heads:", this.heads.map(e => e.payload))
     const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
     const nexts = Object.keys(Object.assign({}, this._headsIndex, references))
-    // console.log("nexts:", nexts)
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
@@ -309,9 +327,6 @@ class Log extends GSet {
       .reduce(uniqueEntriesReducer, {})
 
     this._headsIndex = mergedHeads
-    // this._headsIndex = Object.values(mergedHeads)
-    //   .sort(LastWriteWins)
-    //   .reduce(uniqueEntriesReducer,  {})
 
     // Slice to the requested size
     if (size > -1) {
