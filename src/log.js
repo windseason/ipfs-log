@@ -203,12 +203,12 @@ class Log extends GSet {
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0 && (amount === -1 || count < amount)) {
+    while (stack.length > 0 && (amount === -1 || count < amount)) { // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
 
       // Is the stack empty?
-      if(!entry) {
+      if (!entry) {
         return
       }
 
