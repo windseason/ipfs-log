@@ -364,8 +364,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('creates a log from ipfs hash that has three heads', async () => {
           let log1 = new Log(ipfs, testACL, testIdentity, 'A')
-          let log2 = new Log(ipfs, testACL, testIdentity2, 'B')
-          let log3 = new Log(ipfs, testACL, testIdentity3, 'C')
+          let log2 = new Log(ipfs, testACL, testIdentity2, 'A')
+          let log3 = new Log(ipfs, testACL, testIdentity3, 'A')
           await log1.append('one') // order is determined by the identity's publicKey
           await log3.append('two')
           await log2.append('three')

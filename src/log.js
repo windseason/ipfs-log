@@ -264,7 +264,7 @@ class Log extends GSet {
   async join (log, size = -1) {
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!Log.isLog(log)) throw LogError.NotALogError()
-    if (this.id !== log.id) throw LogError.CannotJoinWithDifferentId()
+    if (this.id !== log.id) return
 
     // Get the difference of the logs
     const newItems = Log.difference(log, this)

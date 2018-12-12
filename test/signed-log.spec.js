@@ -90,7 +90,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       assert.strictEqual(err, 'Error: Access controller is required')
     })
 
-    it.skip('doesn\'t join logs with different IDs ', async () => {
+    it('doesn\'t join logs with different IDs ', async () => {
       const log1 = new Log(ipfs, testACL, testIdentity, 'A')
       const log2 = new Log(ipfs, testACL, testIdentity2, 'B')
 
