@@ -1,6 +1,7 @@
 'use strict'
 
 const pMap = require('p-map')
+const pWhilst = require('p-whilst')
 const GSet = require('./g-set')
 const Entry = require('./entry')
 const LogIO = require('./log-io')
@@ -76,7 +77,7 @@ class Log extends GSet {
 
     // Add entries to the internal cache
     entries = entries || []
-    this._entryIndex = entries.reduce(uniqueEntriesReducer, {})
+    // this._entryIndex = entries.reduce(uniqueEntriesReducer, {})
 
     // Set heads if not passed as an argument
     heads = heads || Log.findHeads(entries)
@@ -88,7 +89,7 @@ class Log extends GSet {
     entries.forEach(addToNextsIndex)
 
     // Set the length, we calculate the length manually internally
-    this._length = entries ? entries.length : 0
+    // this._length = entries ? entries.length : 0
 
     // Set the clock
     const maxTime = Math.max(clock ? clock.time : 0, this.heads.reduce(maxClockTimeReducer, 0))
@@ -119,7 +120,8 @@ class Log extends GSet {
    * @return {Number} Length
    */
   get length () {
-    return this._length
+    // return this._length
+    throw new Error('\'length\' has been deprecated')
   }
 
   /**
@@ -128,6 +130,11 @@ class Log extends GSet {
    */
   get values () {
     return Object.values(this.traverse(this.heads)).reverse()
+  }
+
+  async values (limit = -1) {
+    const values = await this.traverse(this.heads, limit)
+    return Object.values(values).reverse()
   }
 
   /**
@@ -161,15 +168,16 @@ class Log extends GSet {
    * @param {string} [hash] The Multihash of the entry as Base58 encoded string
    * @returns {Entry|undefined}
    */
-  get (hash) {
-    return this._entryIndex[hash]
+  async get (hash) {
+    return Entry.fromMultihash(this._storage, hash)
+    // return this._entryIndex[hash]
   }
 
-  has (entry) {
-    return this._entryIndex[entry.hash || entry] !== undefined
-  }
+  // has (entry) {
+  //   return this._entryIndex[entry.hash || entry] !== undefined
+  // }
 
-  traverse (rootEntries, amount = -1) {
+  async traverse (rootEntries, amount = -1) {
     // Sort the given given root entries and use as the starting stack
     let stack = rootEntries.sort(LastWriteWins).reverse()
     // Cache for checking if we've processed an entry already
@@ -203,7 +211,8 @@ class Log extends GSet {
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0 && (amount === -1 || count < amount)) {
+    await pWhilst(() => stack.length > 0 && (amount === -1 || count < amount), async () => {
+    // while (stack.length > 0 && (amount === -1 || count < amount)) {
       // Get the next element from the stack
       const entry = stack.shift()
 
@@ -217,10 +226,12 @@ class Log extends GSet {
       result[entry.hash] = entry
 
       // Add entry's next references to the stack
-      entry.next.map(getEntry)
-        .filter(isDefined)
-        .forEach(addToStack)
-    }
+      // entry.next.map(getEntry)
+      //   .filter(isDefined)
+      //   .forEach(addToStack)
+      const nexts = await pMap(entry.next, async (e) => await Entry.fromMultihash(this._storage, e))
+      nexts.filter(isDefined).forEach(addToStack)
+    })
 
     return result
   }
@@ -255,12 +266,12 @@ class Log extends GSet {
       throw new Error(`Could not append entry, key "${this._identity.id}" is not allowed to write to the log`)
     }
 
-    this._entryIndex[entry.hash] = entry
+    // this._entryIndex[entry.hash] = entry
     nexts.forEach(e => (this._nextsIndex[e] = entry.hash))
     this._headsIndex = {}
     this._headsIndex[entry.hash] = entry
     // Update the length
-    this._length++
+    // this._length++
     return entry
   }
 
@@ -285,7 +296,7 @@ class Log extends GSet {
     if (this.id !== log.id) throw LogError.CannotJoinWithDifferentId()
 
     // Get the difference of the logs
-    const newItems = Log.difference(log, this)
+    const newItems = await Log.difference(log, this)
 
     const identityProvider = this._identity.provider
     // Verify if entries are allowed to be added to the log and throws if
@@ -307,15 +318,15 @@ class Log extends GSet {
     await pMap(entriesToJoin, verify, { concurrency: 1 })
 
     // Update the internal next pointers index
-    const addToNextsIndex = e => {
-      const entry = this.get(e.hash)
-      if (!entry) this._length++
-      e.next.forEach(a => (this._nextsIndex[a] = e.hash))
-    }
-    Object.values(newItems).forEach(addToNextsIndex)
+    // const addToNextsIndex = e => {
+    //   const entry = this.get(e.hash)
+    //   if (!entry) this._length++
+    //   e.next.forEach(a => (this._nextsIndex[a] = e.hash))
+    // }
+    // Object.values(newItems).forEach(addToNextsIndex)
 
     // Update the internal entry index
-    this._entryIndex = Object.assign(this._entryIndex, newItems)
+    // this._entryIndex = Object.assign(this._entryIndex, newItems)
 
     // Merge the heads
     const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.hash)
@@ -330,11 +341,11 @@ class Log extends GSet {
 
     // Slice to the requested size
     if (size > -1) {
-      let tmp = this.values
+      let tmp = await this.values()
       tmp = tmp.slice(-size)
-      this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
-      this._headsIndex = Log.findHeads(tmp)
-      this._length = Object.values(this._entryIndex).length
+      // this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
+      this._headsIndex = Log.findHeads(tmp)// || {}
+      // this._length = Object.values(this._entryIndex).length
     }
 
     // Find the latest clock from the heads
@@ -402,8 +413,9 @@ class Log extends GSet {
    */
   static isLog (log) {
     return log.id !== undefined &&
-      log.heads !== undefined &&
-      log._entryIndex !== undefined
+      log.heads !== undefined
+      // log.heads !== undefined &&
+      // log._entryIndex !== undefined
   }
 
   /**
@@ -574,7 +586,7 @@ class Log extends GSet {
     return entries.reduce(reduceTailHashes, [])
   }
 
-  static difference (a, b) {
+  static async difference (a, b) {
     let stack = Object.keys(a._headsIndex)
     let traversed = {}
     let res = {}
@@ -586,15 +598,24 @@ class Log extends GSet {
       }
     }
 
-    while (stack.length > 0) {
+    // while (stack.length > 0) {
+    await pWhilst(() => stack.length > 0, async () => {
+      // console.log("stack:", stack)
       const hash = stack.shift()
-      const entry = a.get(hash)
-      if (entry && !b.get(hash) && entry.id === b.id) {
+
+      if (hash === undefined) {
+        return        
+      }
+
+      // console.log("hash:", hash)
+      const entry = await a.get(hash)
+      const entryInOther = await b.get(hash)
+      if (entry && !entryInOther && entry.id === b.id) {
         res[entry.hash] = entry
         traversed[entry.hash] = true
         entry.next.forEach(pushToStack)
       }
-    }
+    })
     return res
   }
 }

@@ -75,7 +75,7 @@ let run = (() => {
     const identity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
 
     log1 = new Log(ipfs, access, identity, 'A')
-    log2 = new Log(ipfs, access, identity2, 'B')
+    log2 = new Log(ipfs, access, identity2, 'A')
 
     // Output metrics at 1 second interval
     setInterval(() => {
@@ -85,7 +85,8 @@ let run = (() => {
         if (lastTenSeconds === 0) throw new Error('Problems!')
         lastTenSeconds = 0
       }
-      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. log1: ${log1.length}, log2: ${log2.length}`)
+      // console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds. log1: ${log1.length}, log2: ${log2.length}`)
+      console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds.`)
       queriesPerSecond = 0
     }, 1000)
 
