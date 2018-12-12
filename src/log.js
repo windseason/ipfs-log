@@ -170,7 +170,7 @@ class Log extends GSet {
   }
 
   traverse (rootEntries, amount = -1) {
-    // console.log("traverse>", rootEntries)
+    // console.log("traverse>", rootEntries.map(e => e.payload))
     let stack = rootEntries.sort(LastWriteWins).reverse()
 
     let traversed = {}
@@ -178,24 +178,29 @@ class Log extends GSet {
     let count = 0
 
     const addToStack = entry => {
+      // console.log("push>>", entry.payload)
       if (traversed[entry.hash]) return
 
       stack = [entry, ...stack]
         .sort(LastWriteWins)
-        .reverse();
+        .reverse()
 
       traversed[entry.hash] = true
     }
 
     // If amount === -1, traverse all
     while (stack.length > 0 && (amount === -1 || count < amount)) {
+      // console.log("count:", count, "amount:", amount)
       const entry = stack.shift()
-      if(!entry) return;
+      if(!entry) return
 
+      // console.log("shift>", entry.payload)
       count++
       result[entry.hash] = entry
       entry.next.map(e => this.get(e)).filter(isDefined).forEach(addToStack)
+      // console.log("stack:", stack.map(e => e.payload + ":" + e.clock.time))
     }
+    // console.log(":::", Object.values(result).map(e => e.payload))
     return result
   }
 
@@ -210,7 +215,11 @@ class Log extends GSet {
     this._clock = new Clock(this.clock.id, newTime)
 
     // Get the required amount of hashes to next entries (as per current state of the log)
-    const nexts = this.heads.map(e => e.hash)
+    // const nexts = this.heads.map(e => e.hash)
+    // console.log("heads:", this.heads.map(e => e.payload))
+    const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
+    const nexts = Object.keys(Object.assign({}, this._headsIndex, references))
+    // console.log("nexts:", nexts)
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
@@ -255,6 +264,7 @@ class Log extends GSet {
   async join (log, size = -1) {
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!Log.isLog(log)) throw LogError.NotALogError()
+    if (this.id !== log.id) throw LogError.CannotJoinWithDifferentId()
 
     // Get the difference of the logs
     const newItems = Log.difference(log, this)
@@ -298,9 +308,10 @@ class Log extends GSet {
       .filter(notInCurrentNexts)
       .reduce(uniqueEntriesReducer, {})
 
-    this._headsIndex = Object.values(mergedHeads)
-      .sort(LastWriteWins)
-      .reduce(uniqueEntriesReducer,  {})
+    this._headsIndex = mergedHeads
+    // this._headsIndex = Object.values(mergedHeads)
+    //   .sort(LastWriteWins)
+    //   .reduce(uniqueEntriesReducer,  {})
 
     // Slice to the requested size
     if (size > -1) {

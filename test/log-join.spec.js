@@ -172,9 +172,19 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('joins 2 logs two ways', async () => {
         await log1.append('helloA1')
+        assert.strictEqual(log1.heads.length, 1)
+        assert.strictEqual(log1.heads[0].payload, 'helloA1')
         await log2.append('helloB1')
+        assert.strictEqual(log2.heads.length, 1)
+        assert.strictEqual(log2.heads[0].payload, 'helloB1')
         await log2.join(log1) // Make sure we keep the original log id
+        assert.strictEqual(log2.heads.length, 2)
+        assert.strictEqual(log2.heads[0].payload, 'helloB1')
+        assert.strictEqual(log2.heads[1].payload, 'helloA1')
         await log1.join(log2)
+        assert.strictEqual(log1.heads.length, 2)
+        assert.strictEqual(log1.heads[0].payload, 'helloB1')
+        assert.strictEqual(log1.heads[1].payload, 'helloA1')
 
         await log1.append('helloA2')
         await log2.append('helloB2')
@@ -185,7 +195,42 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
 
         assert.strictEqual(log2.length, 4)
+        console.log("---")
+        console.log()
         assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
+      })
+
+      it('joins 2 logs two ways and has the right heads at every step', async () => {
+        await log1.append('helloA1')
+        assert.strictEqual(log1.heads.length, 1)
+        assert.strictEqual(log1.heads[0].payload, 'helloA1')
+
+        await log2.append('helloB1')
+        assert.strictEqual(log2.heads.length, 1)
+        assert.strictEqual(log2.heads[0].payload, 'helloB1')
+
+        await log2.join(log1)
+        assert.strictEqual(log2.heads.length, 2)
+        assert.strictEqual(log2.heads[0].payload, 'helloB1')
+        assert.strictEqual(log2.heads[1].payload, 'helloA1')
+
+        await log1.join(log2)
+        assert.strictEqual(log1.heads.length, 2)
+        assert.strictEqual(log1.heads[0].payload, 'helloB1')
+        assert.strictEqual(log1.heads[1].payload, 'helloA1')
+
+        await log1.append('helloA2')
+        assert.strictEqual(log1.heads.length, 1)
+        assert.strictEqual(log1.heads[0].payload, 'helloA2')
+
+        await log2.append('helloB2')
+        assert.strictEqual(log2.heads.length, 1)
+        assert.strictEqual(log2.heads[0].payload, 'helloB2')
+
+        await log2.join(log1)
+        assert.strictEqual(log2.heads.length, 2)
+        assert.strictEqual(log2.heads[0].payload, 'helloB2')
+        assert.strictEqual(log2.heads[1].payload, 'helloA2')
       })
 
       it('joins 4 logs to one', async () => {
@@ -266,7 +311,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log4.join(log2)
         await log4.join(log1)
         await log4.join(log3)
+        console.log("")
+        console.log("-----------------------------------------")
+        console.log("log4.append('helloD3')")
         await log4.append('helloD3')
+        console.log(log4.values.map(e => e.payload))
+        console.log("-----------------------------------------")
         await log4.append('helloD4')
 
         await log1.join(log4)
@@ -299,6 +349,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const transformed = log4.values.map((e) => {
           return { payload: e.payload, id: e.id, clock: e.clock }
         })
+
+       const payloads = log4.values.map((e) => {
+          return e.hash + " | " + e.payload + " | " + e.next.map(a => log4.get(a).payload).join(", | " + e.next.join(","))
+        })
+
+        console.log(">>>>")
+        console.log(payloads.join("\n"))
 
         assert.strictEqual(log4.length, 13)
         assert.deepStrictEqual(transformed, expectedData)
