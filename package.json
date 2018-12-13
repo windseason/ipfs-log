@@ -13,7 +13,7 @@
     "node": ">=8.0.0"
   },
   "dependencies": {
-    "orbit-db-identity-provider": "^0.0.3",
+    "orbit-db-identity-provider": "github:orbitdb/orbit-db-identity-provider#feat/resolvers",
     "p-map": "^1.1.1",
     "p-whilst": "^1.0.0"
   },
@@ -33,7 +33,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
     "mocha-headless-chrome": "~2.0.1",
-    "orbit-db-keystore": "github:orbitdb/orbit-db-keystore#fix/verification",
+    "orbit-db-keystore": "github:orbitdb/orbit-db-keystore#fix/static-verification",
     "rimraf": "^2.6.1",
     "standard": "^12.0.1",
     "uglifyjs-webpack-plugin": "~1.3.0",

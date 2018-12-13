@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
 
@@ -23,12 +22,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     let ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
 
-    const keystore = Keystore.create(config.testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
     const testACL = new AccessController()
+    const { identityKeysPath, signingKeysPath } = config
     const ipfsConfig1 = Object.assign({}, config.daemon1, {
       repo: config.daemon1.repo + new Date().getTime()
     })
@@ -56,8 +51,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       ipfs2.object.get = memstore.get.bind(memstore)
 
       // Create an identity for each peers
-      testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
-      testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
     })
 
     after(async () => {

@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
 const { AccessController, IdentityProvider } = Log
 
@@ -21,18 +20,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
     this.timeout(config.timeout)
 
     const testACL = new AccessController()
-    const keystore = Keystore.create(config.testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
+    const { identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-append' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 

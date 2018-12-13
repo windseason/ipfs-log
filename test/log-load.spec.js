@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const Keystore = require('orbit-db-keystore')
 const LogCreator = require('./utils/log-creator')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
@@ -29,21 +28,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
     this.timeout(config.timeout)
 
     const testACL = new AccessController()
-    const keystore = Keystore.create(config.testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
+    const { identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-load' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', { identitySignerFn })
-      testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', { identitySignerFn })
-      testIdentity3 = await IdentityProvider.createIdentity(keystore, 'userC', { identitySignerFn })
-      testIdentity4 = await IdentityProvider.createIdentity(keystore, 'userD', { identitySignerFn })
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
+      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
 
       const memstore = new MemStore()
@@ -290,7 +285,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const b = await Log.fromEntry(ipfs, testACL, testIdentity3, last(items2), amount * 2)
         assert.strictEqual(b.length, amount * 2)
-        assert.deepStrictEqual(itemsInB, b.values.map((e) => e.payload))
+        assert.deepStrictEqual(b.values.map((e) => e.payload), itemsInB)
 
         let c = await Log.fromEntry(ipfs, testACL, testIdentity4, last(items3), amount * 3)
         await c.append('EOF')

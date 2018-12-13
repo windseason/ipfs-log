@@ -1,6 +1,7 @@
 module.exports = {
   timeout: 30000,
-  testKeysPath: './test/fixtures/keys',
+  identityKeysPath: './test/fixtures/keys/identity-keys',
+  signingKeysPath: './test/fixtures/keys/signing-keys',
   defaultIpfsConfig: {
     preload: {
       enabled: false
