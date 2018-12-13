@@ -8,7 +8,6 @@ const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
 const { LastWriteWins } = require('./log-sorting')
 const AccessController = require('./default-access-controller')
-const IdentityProvider = require('orbit-db-identity-provider')
 const { isDefined, findUniques } = require('./utils')
 
 const randomId = () => new Date().getTime().toString()
@@ -600,4 +599,3 @@ class Log extends GSet {
 
 module.exports = Log
 module.exports.AccessController = AccessController
-module.exports.IdentityProvider = IdentityProvider
