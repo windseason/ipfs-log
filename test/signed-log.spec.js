@@ -179,5 +179,27 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       assert.strictEqual(err, `Error: Could not append entry, key "${testIdentity2.id}" is not allowed to write to the log`)
     })
+
+    it('throws an error upon join if entry doesn\'t have append access', async () => {
+      let testACL2 = { canAppend: () => true }
+      const log1 = new Log(ipfs, testACL2, testIdentity, 'A')
+      const log2 = new Log(ipfs, testACL2, testIdentity2, 'A')
+
+      let err
+      try {
+        await log1.append('one')
+        await log2.append('two')
+        testACL2 = { 
+          canAppend: (entry) => entry.identity.id !== testIdentity2.id
+        }
+        log1._access = testACL2 // monkey patch the log's acl
+        // Identity2 (log2) should not have append access anymore
+        await log1.join(log2)
+      } catch (e) {
+        err = e.toString()
+      }
+
+      assert.strictEqual(err, `Error: Could not append entry, key "${testIdentity2.id}" is not allowed to write to the log`)
+    })
   })
 })
