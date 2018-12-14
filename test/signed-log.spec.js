@@ -2,9 +2,9 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
-const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
-const { AccessController, IdentityProvider } = Log
+const AccessController = Log.AccessController
+const IdentityProvider = require('orbit-db-identity-provider')
 
 // Test utils
 const {
@@ -20,20 +20,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Signed Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const keystore = Keystore.create(config.testKeysPath)
-    const identitySignerFn = async (id, data) => {
-      const key = await keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
     const testACL = new AccessController()
+    const { identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-signed' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
-      testIdentity2 = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -52,10 +48,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
     it('has the correct identity', () => {
       const log = new Log(ipfs, testACL, testIdentity, 'A')
       assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, 'userA')
-      assert.strictEqual(log._identity.publicKey, '042750228c5d81653e5142e6a56d5551231649160f77b25797dc427f8a5b2afd650acca10182f0dfc519dc6d6e5216b9a6612dbfc56e906bdbf34ea373c92b30d7')
-      assert.strictEqual(log._identity.signatures.id, '30440220590c0b1a84d5edabf4238ea924ad06481a47ba7f866d88d5950e89ee53670d04022068896f4d850297051c6b1acd5edb8d9dacc0a8fa3d11f436b79e193d14236a05')
-      assert.strictEqual(log._identity.signatures.publicKey, '304502210083bee84a2ecab7df452e0642b5d6f84ecc1c33927eac26049111bea64dfc0b8102202ef96123734077f171e211f21f632006a7cdce9d5757ea7c4edd4d54eadbe5d4')
+      assert.strictEqual(log._identity.id, '04e9224ee3451772f3ad43068313dc5bdc6d3f2c9a8c3a6ba6f73a472d5f47a96ae6d776de13f2fc2076140fd68ca900df2ca4862b06192adbf8f8cb18a99d69aa')
+      assert.strictEqual(log._identity.publicKey, '0411a0d38181c9374eca3e480ecada96b1a4db9375c5e08c3991557759d22f6f2f902d0dc5364a948035002504d825308b0c257b7cbb35229c2076532531f8f4ef')
+      assert.strictEqual(log._identity.signatures.id, '3045022042fa401d9ffb0c32de2f02561dc1c5e605ccc5eb33eb56fb638bb8f17bd2adb7022100d8ae57f2d401c1fe0fb1614897f1c731a201230bc269e1a04d1f7d9faecc3ef7')
+      assert.strictEqual(log._identity.signatures.publicKey, '304402206b9c218629d3cd692ad074586834aefe9da480429352870562bb0b601129363e02203717125e9cdb85bea1f84f74d48e6a04b73cda28660486530f4a4fccacdbfa84')
     })
 
     it('has the correct public key', () => {
@@ -176,6 +172,28 @@ Object.keys(testAPIs).forEach((IPFS) => {
       try {
         await log1.append('one')
         await log2.append('two')
+        await log1.join(log2)
+      } catch (e) {
+        err = e.toString()
+      }
+
+      assert.strictEqual(err, `Error: Could not append entry, key "${testIdentity2.id}" is not allowed to write to the log`)
+    })
+
+    it('throws an error upon join if entry doesn\'t have append access', async () => {
+      let testACL2 = { canAppend: () => true }
+      const log1 = new Log(ipfs, testACL2, testIdentity, 'A')
+      const log2 = new Log(ipfs, testACL2, testIdentity2, 'A')
+
+      let err
+      try {
+        await log1.append('one')
+        await log2.append('two')
+        testACL2 = {
+          canAppend: (entry) => entry.identity.id !== testIdentity2.id
+        }
+        log1._access = testACL2 // monkey patch the log's acl
+        // Identity2 (log2) should not have append access anymore
         await log1.join(log2)
       } catch (e) {
         err = e.toString()
