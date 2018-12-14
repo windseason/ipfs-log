@@ -189,7 +189,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       try {
         await log1.append('one')
         await log2.append('two')
-        testACL2 = { 
+        testACL2 = {
           canAppend: (entry) => entry.identity.id !== testIdentity2.id
         }
         log1._access = testACL2 // monkey patch the log's acl

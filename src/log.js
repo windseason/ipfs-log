@@ -87,7 +87,7 @@ class Log extends GSet {
     entries.forEach(addToNextsIndex)
 
     // Set the length, we calculate the length manually internally
-    this._length = entries ? entries.length : 0
+    this._length = entries.length
 
     // Set the clock
     const maxTime = Math.max(clock ? clock.time : 0, this.heads.reduce(maxClockTimeReducer, 0))
@@ -134,7 +134,7 @@ class Log extends GSet {
    * @returns {Array<string>}
    */
   get heads () {
-    return Object.values(this._headsIndex).sort(LastWriteWins).reverse() || []
+    return Object.values(this._headsIndex).sort(LastWriteWins).reverse()
   }
 
   /**
@@ -184,7 +184,7 @@ class Log extends GSet {
     // Add an entry to the stack and traversed nodes index
     const addToStack = entry => {
       // If we've already processed the entry, don't add it to the stack
-      if (traversed[entry.hash]) {
+      if (!entry || traversed[entry.hash]) {
         return
       }
 
@@ -204,11 +204,6 @@ class Log extends GSet {
     while (stack.length > 0 && (amount === -1 || count < amount)) { // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
-
-      // Is the stack empty?
-      if (!entry) {
-        return
-      }
 
       // Add to the result
       count++
@@ -290,7 +285,9 @@ class Log extends GSet {
     // there's an invalid entry
     const permitted = async (entry) => {
       const canAppend = await this._access.canAppend(entry, identityProvider)
-      if (!canAppend) throw new Error('Append not permitted')
+      if (!canAppend) {
+        throw new Error(`Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`)
+      }
     }
 
     // Verify signature for each entry and throws if there's an invalid signature
@@ -307,7 +304,7 @@ class Log extends GSet {
     // Update the internal next pointers index
     const addToNextsIndex = e => {
       const entry = this.get(e.hash)
-      if (!entry) this._length++
+      if (!entry) this._length++ /* istanbul ignore else */
       e.next.forEach(a => (this._nextsIndex[a] = e.hash))
     }
     Object.values(newItems).forEach(addToNextsIndex)
@@ -388,6 +385,7 @@ class Log extends GSet {
         let padding = new Array(Math.max(len - 1, 0))
         padding = len > 1 ? padding.fill('  ') : padding
         padding = len > 0 ? padding.concat(['└─']) : padding
+        /* istanbul ignore next */
         return padding.join('') + (payloadMapper ? payloadMapper(e.payload) : e.payload)
       })
       .join('\n')
