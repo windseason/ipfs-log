@@ -10,16 +10,12 @@
     <pre><i>
     const testKeyPath = '../test/fixtures/keys'
     const keystore = Keystore.create(testKeyPath)
-    const identitySignerFn = (id, data) => {
-      const key = keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
     const access = new AccessController()
-    const identity1 = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
-    const identit2y = await IdentityProvider.createIdentity(keystore, 'userB', identitySignerFn)
+    const identity1 = await Identities.createIdentity({ id: 'userA', keystore })
+    const identity2 = await Identities.createIdentity({ id: 'userA', keystore })
 
-    log1 = new Log(ipfs, access, identity1, 'browser-benchmark-join-signed-A')
-    log2 = new Log(ipfs, access, identity2, 'browser-benchmark-join-signed-B')
+    log1 = new Log(ipfs, access, identity1, 'browser-benchmark-join-signed')
+    log2 = new Log(ipfs, access, identity2, 'browser-benchmark-join-signed')
 
     const add1 = await log1.append("a" + loopCount)
     const add2 = await log2.append("b" + loopCount)
@@ -34,6 +30,7 @@
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/orbit-db-identity-provider/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
@@ -46,7 +43,7 @@
       let lastTenSeconds = 0
       let log1, log2
 
-      const { AccessController, IdentityProvider } = Log
+      const { AccessController } = Log
       const queryLoop = () => {
         const add1 = log1.append("a" + totalQueries)
         const add2 = log2.append("b" + totalQueries)
@@ -65,7 +62,7 @@
 
       let run = (() => {
         ipfs = new Ipfs({
-          repo: './ipfs-log/examples/browser/benchmark-join/new/0.27.0',
+          repo: './ipfs-log/examples/browser/benchmark-join/new/0.33.1',
           start: false,
           EXPERIMENTAL: {
             pubsub: false,
@@ -94,15 +91,11 @@
 
           const testKeyPath = '../test/fixtures/keys'
           const keystore = Keystore.create(testKeyPath)
-          const identitySignerFn = (id, data) => {
-            const key = keystore.getKey(id)
-            return keystore.sign(key, data)
-          }
           const access = new AccessController()
-          const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+          const identity = await Identities.createIdentity({ id: 'userA', keystore })
 
-          log1 = new Log(ipfs, access, identity, 'browser-benchmark-join-signed-A')
-          log2 = new Log(ipfs, access, identity, 'browser-benchmark-join-signed-B')
+          log1 = new Log(ipfs, access, identity, 'browser-benchmark-join-signed')
+          log2 = new Log(ipfs, access, identity, 'browser-benchmark-join-signed')
           queryLoop()
         })
 
