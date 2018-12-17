@@ -40,9 +40,10 @@ class Log extends GSet {
    * @param  {Array<Entry>}   [entries]       An Array of Entries from which to create the log
    * @param  {Array<Entry>}   [heads]         Set the heads of the log
    * @param  {Clock}          [clock]         Set the clock of the log
+   * @param  {Function}       [sortFn]        The sort function - by default LastWriteWins
    * @return {Log}                            Log
    */
-  constructor (ipfs, access, identity, logId, entries, heads, clock) {
+  constructor (ipfs, access, identity, logId, entries, heads, clock, sortFn) {
     if (!isDefined(ipfs)) {
       throw LogError.IPFSNotDefinedError()
     }
@@ -63,7 +64,13 @@ class Log extends GSet {
       throw new Error(`'heads' argument must be an array`)
     }
 
+    if (!isDefined(sortFn)) {
+      sortFn = LastWriteWins
+    }
+
     super()
+
+    this.sortFn = sortFn
 
     this._storage = ipfs
     this._id = logId || randomId()
@@ -134,7 +141,7 @@ class Log extends GSet {
    * @returns {Array<string>}
    */
   get heads () {
-    return Object.values(this._headsIndex).sort(LastWriteWins).reverse()
+    return Object.values(this._headsIndex).sort(this.sortFn).reverse()
   }
 
   /**
@@ -170,7 +177,7 @@ class Log extends GSet {
 
   traverse (rootEntries, amount = -1) {
     // Sort the given given root entries and use as the starting stack
-    let stack = rootEntries.sort(LastWriteWins).reverse()
+    let stack = rootEntries.sort(this.sortFn).reverse()
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
@@ -190,7 +197,7 @@ class Log extends GSet {
 
       // Add the entry in front of the stack and sort
       stack = [entry, ...stack]
-        .sort(LastWriteWins)
+        .sort(this.sortFn)
         .reverse()
 
       // Add to the cache of processed entries
@@ -346,7 +353,7 @@ class Log extends GSet {
     return {
       id: this.id,
       heads: this.heads
-        .sort(LastWriteWins) // default sorting
+        .sort(this.sortFn) // default sorting
         .reverse() // we want the latest as the first element
         .map(getHash) // return only the head hashes
     }
