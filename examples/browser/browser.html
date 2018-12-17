@@ -8,6 +8,7 @@
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/orbit-db-identity-provider/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
@@ -23,14 +24,14 @@
       ipfs.on('error', (e) => console.error(e))
 
       ipfs.on('ready', async () => {
-        const { AccessController, IdentityProvider } = Log
+        const { AccessController } = Log
         const keystore = Keystore.create(dataPath + '/keystore')
         const identitySignerFn = (id, data) => {
           const key = keystore.getKey(id)
           return keystore.sign(key, data)
         }
         const access = new AccessController()
-        const identity = await IdentityProvider.createIdentity(keystore, 'exampleUser', identitySignerFn)
+        const identity = await Identities.createIdentity({ id: 'exampleUser', keystore })
         const outputElm = document.getElementById('output')
 
         // When IPFS is ready, add some log entries
