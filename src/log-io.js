@@ -4,6 +4,7 @@ const Entry = require('./entry')
 const EntryIO = require('./entry-io')
 const Clock = require('./lamport-clock')
 const LogError = require('./log-errors')
+const CID = require('cids')
 const { isDefined, findUniques, difference } = require('./utils')
 
 const last = (arr, n) => arr.slice(arr.length - n, arr.length)
@@ -13,8 +14,8 @@ class LogIO {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
-    const dagNode = await ipfs.object.put(log.toBuffer())
-    return dagNode.toJSON().multihash
+    const dagNode = await ipfs.dag.put(log.toBuffer())
+    return dagNode.toBaseEncodedString()
   }
 
   /**
@@ -29,8 +30,8 @@ class LogIO {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
-    const dagNode = await ipfs.object.get(hash, { enc: 'base58' })
-    const logData = JSON.parse(dagNode.toJSON().data)
+    const dagNode = await ipfs.dag.get(hash)
+    const logData = JSON.parse(dagNode.value)
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
 
     const entries = await EntryIO.fetchAll(ipfs, logData.heads, length, exclude, null, onProgressCallback)

@@ -2,7 +2,6 @@
 
 const Clock = require('./lamport-clock')
 const { isDefined } = require('./utils')
-
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
 
 class Entry {
@@ -104,8 +103,8 @@ class Entry {
     if (entry.sig) Object.assign(e, { sig: entry.sig })
 
     const data = Entry.toBuffer(e)
-    const object = await ipfs.object.put(data)
-    return object.toJSON().multihash
+    const object = await ipfs.dag.put(data)
+    return object.toBaseEncodedString()
   }
 
   /**
@@ -122,9 +121,8 @@ class Entry {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!hash) throw new Error(`Invalid hash: ${hash}`)
 
-    const obj = await ipfs.object.get(hash, { enc: 'base58' })
-
-    const data = JSON.parse(obj.toJSON().data)
+    const obj = await ipfs.dag.get(hash)
+    const data = JSON.parse(obj.value)
     let entry = {
       hash: hash,
       id: data.id,
