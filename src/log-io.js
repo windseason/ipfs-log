@@ -4,7 +4,6 @@ const Entry = require('./entry')
 const EntryIO = require('./entry-io')
 const Clock = require('./lamport-clock')
 const LogError = require('./log-errors')
-const CID = require('cids')
 const { isDefined, findUniques, difference } = require('./utils')
 
 const last = (arr, n) => arr.slice(arr.length - n, arr.length)
