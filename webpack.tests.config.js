@@ -8,7 +8,7 @@ module.exports = {
   // TODO: put all tests in a .js file that webpack can use as entry point
   entry: glob.sync('./test/*.spec.js', { 'ignore': ['./test/replicate.spec.js'] }),
   output: {
-    filename: './test/browser/bundle.js'
+    filename: '../test/browser/bundle.js'
   },
   target: 'web',
   devtool: 'source-map',
@@ -45,8 +45,17 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.json$/,
-        loader: 'json-loader'
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', { modules: false }]
+            ],
+            plugins: ['@babel/syntax-object-rest-spread', '@babel/transform-runtime', '@babel/plugin-transform-modules-commonjs']
+          }
+        }
       },
       // For inlining the fixture keys in browsers tests
       {
