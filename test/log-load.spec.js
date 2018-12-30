@@ -11,10 +11,7 @@ const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
-const FirstWriteWins = (a, b) => {
-  console.log(a, b)
-  return LastWriteWins(a, b) * -1
-}
+const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
 const BadComparatorReturnsZero = (a, b) => 0
 
 // Test utils
