@@ -506,7 +506,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           'entryA10', 'entryB1', 'entryB2', 'entryB3',
           'entryB4', 'entryB5', 'entryA1', 'entryA2',
           'entryA3', 'entryA4', 'entryA5', 'entryC0'
-        ];
+        ]
 
         let firstWriteWinsLog =
           new Log(ipfs, testACL, identities[0], 'X', null, null, null, FirstWriteWins)
@@ -519,7 +519,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let firstWriteWinsLog =
           new Log(ipfs, testACL, identities[0], 'X', null, null, null, BadComparatorReturnsZero)
         await firstWriteWinsLog.join(testLog.log)
-        assert.throws(() => firstWriteWinsLog.values, Error, "Error Thrown")
+        assert.throws(() => firstWriteWinsLog.values, Error, 'Error Thrown')
       })
 
       it('retrieves partially joined log deterministically - single next pointer', async () => {

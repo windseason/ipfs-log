@@ -58,13 +58,13 @@ function SortByClockId (a, b, resolveConflict) {
  * @returns {function(a, b)} 1 if a is greater, -1 if b is greater
  * @throws {Error} if func ever returns 0
  */
-function NoZeroes(func) {
+function NoZeroes (func) {
   const msg = `Your log's tiebreaker function, ${func.name}, has returned zero and therefore cannot be`
 
   const comparator = (a, b) => {
     // Validate by calling the function
-    const result = func(a,b)
-    if(result === 0) { throw Error(msg) }
+    const result = func(a, b)
+    if (result === 0) { throw Error(msg) }
     return result
   }
 
