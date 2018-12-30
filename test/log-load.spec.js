@@ -3,7 +3,7 @@
 const assert = require('assert')
 const rmrf = require('rimraf')
 const LogCreator = require('./utils/log-creator')
-const { LastWriteWins } = require('../src/log-sorting')
+// const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
@@ -500,7 +500,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('sorts entries according to custom tiebreaker function', async () => {
         let testLog = await LogCreator.createLogWithTwoHundredEntries(ipfs, testACL, identities)
         let firstWriteWinsLog =
-          new Log(ipfs,testACL, identities[0], 'X', null, null, null, FirstWins)
+          new Log(ipfs, testACL, identities[0], 'X', null, null, null, FirstWins)
         await firstWriteWinsLog.join(testLog.log)
         assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload), testLog.expectedData)
       })
