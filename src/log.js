@@ -70,7 +70,7 @@ class Log extends GSet {
 
     super()
 
-    this.sortFn = sortFn
+    this._sortFn = sortFn
 
     this._storage = ipfs
     this._id = logId || randomId()
@@ -141,7 +141,7 @@ class Log extends GSet {
    * @returns {Array<string>}
    */
   get heads () {
-    return Object.values(this._headsIndex).sort(this.sortFn).reverse()
+    return Object.values(this._headsIndex).sort(this._sortFn).reverse()
   }
 
   /**
@@ -177,7 +177,7 @@ class Log extends GSet {
 
   traverse (rootEntries, amount = -1) {
     // Sort the given given root entries and use as the starting stack
-    let stack = rootEntries.sort(this.sortFn).reverse()
+    let stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
@@ -197,7 +197,7 @@ class Log extends GSet {
 
       // Add the entry in front of the stack and sort
       stack = [entry, ...stack]
-        .sort(this.sortFn)
+        .sort(this._sortFn)
         .reverse()
 
       // Add to the cache of processed entries
@@ -353,7 +353,7 @@ class Log extends GSet {
     return {
       id: this.id,
       heads: this.heads
-        .sort(this.sortFn) // default sorting
+        .sort(this._sortFn) // default sorting
         .reverse() // we want the latest as the first element
         .map(getHash) // return only the head hashes
     }
