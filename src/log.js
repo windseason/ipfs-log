@@ -6,7 +6,7 @@ const Entry = require('./entry')
 const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
-const { LastWriteWins } = require('./log-sorting')
+const { LastWriteWins, NoZeroes } = require('./log-sorting')
 const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
 
@@ -70,7 +70,7 @@ class Log extends GSet {
 
     super()
 
-    this._sortFn = sortFn
+    this._sortFn = NoZeroes(sortFn)
 
     this._storage = ipfs
     this._id = logId || randomId()
@@ -177,7 +177,7 @@ class Log extends GSet {
 
   traverse (rootEntries, amount = -1) {
     // Sort the given given root entries and use as the starting stack
-    let stack = rootEntries.sort(this._sortFn).reverse()
+    var stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result

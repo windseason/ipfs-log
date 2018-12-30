@@ -52,6 +52,26 @@ function SortByClockId (a, b, resolveConflict) {
     : a.clock.id < b.clock.id ? -1 : 1
 }
 
+/**
+ * A wrapper function to throw an error if the results of a passed function return zero
+ * @param {function(a, b)} [tiebreaker] The tiebreaker function to validate.
+ * @returns {function(a, b)} 1 if a is greater, -1 if b is greater
+ * @throws {Error} if func ever returns 0
+ */
+function NoZeroes(func) {
+  const msg = `Your log's tiebreaker function, ${func.name}, has returned zero and therefore cannot be`
+
+  const comparator = (a, b) => {
+    // Validate by calling the function
+    const result = func(a,b)
+    if(result === 0) { throw Error(msg) }
+    return result
+  }
+
+  return comparator
+}
+
 exports.SortByClocks = SortByClocks
 exports.SortByClockId = SortByClockId
 exports.LastWriteWins = LastWriteWins
+exports.NoZeroes = NoZeroes
