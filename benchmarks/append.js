@@ -1,34 +1,18 @@
-const Keystore = require('orbit-db-keystore')
-
 const startIPFS = require('./utils/start-ipfs')
 const releaseRepo = require('./utils/release-repo')
-const Log = require('../src/log')
+const createLog = require('./utils/create-log')
 
 const base = {
   prepare: async function () {
     const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/ipfs')
-    this._repo = repo
-    const log = new Log(ipfs, 'A')
-    return log
+    const { log } = await createLog(ipfs, 'A')
+    return { log, ipfs, repo }
   },
-  cycle: async function (log) {
+  cycle: async function ({ log }) {
     await log.append('Hello')
   },
-  teardown: async function() {
-    await releaseRepo(this._repo)
-  }
-}
-
-const signed = {
-  prepare: async function () {
-    const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/ipfs')
-    const keystore = Keystore.create('./test-keys')
-    const key = keystore.createKey('benchmark-append-signed')
-    ipfs.keystore = keystore
-
-    this._repo = repo
-    const log = new Log(ipfs, 'A', null, null, null, key, key.getPublic('hex'))
-    return log
+  teardown: async function({ repo }) {
+    await releaseRepo(repo)
   }
 }
 
@@ -47,6 +31,4 @@ const stress = {
 module.exports = [
   { name: 'append-baseline', ...base, ...baseline},
   { name: 'append-stress', ...base, ...stress},
-  { name: 'append-signed-baseline', ...base, ...signed, ...baseline},
-  { name: 'append-signed-stress', ...base, ...signed, ...stress}
 ]

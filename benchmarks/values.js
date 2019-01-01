@@ -1,12 +1,12 @@
 const startIPFS = require('./utils/start-ipfs')
 const releaseRepo = require('./utils/release-repo')
+const createLog = require('./utils/create-log')
 const Log = require('../src/log')
 
 const base = {
   prepare: async function () {
     const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/ipfs')
-    this._repo = repo
-    const log = new Log(ipfs, 'A')
+    const { log } = await createLog(ipfs, 'A')
 
     process.stdout.clearLine()
     for (let i = 1; i<this.count + 1; i++) {
@@ -14,13 +14,13 @@ const base = {
       await log.append(`Hello World: ${i}`)
     }
 
-    return log
+    return { log, repo }
   },
-  cycle: async function (log) {
+  cycle: async function ({ log }) {
     return log.values
   },
-  teardown: async function () {
-    await releaseRepo(this._repo)
+  teardown: async function ({ repo }) {
+    await releaseRepo(repo)
   }
 }
 

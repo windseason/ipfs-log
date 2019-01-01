@@ -16,7 +16,7 @@ const startIpfs = (repoPath) => {
       repo: repo,
       start: false,
       EXPERIMENTAL: {
-        pubsub: false,
+        pubsub: true,
         sharding: false,
         dht: false
       }

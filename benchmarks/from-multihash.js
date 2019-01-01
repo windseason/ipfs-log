@@ -1,14 +1,12 @@
 const startIPFS = require('./utils/start-ipfs')
 const releaseRepo = require('./utils/release-repo')
+const createLog = require('./utils/create-log')
 const Log = require('../src/log')
 
 const base = {
   prepare: async function () {
     const { ipfs, repo } = await startIPFS('./ipfs-log-benchmarks/fromMultihash/ipfs')
-    this._ipfs = ipfs
-    this._repo = repo
-
-    const log = new Log(this._ipfs, 'A')
+    const { log, access, identity } = await createLog(ipfs, 'A')
     const refCount = 64
     process.stdout.clearLine()
     for (let i = 1; i < this.count + 1; i ++) {
@@ -16,14 +14,14 @@ const base = {
       await log.append('hello' + i, refCount)
     }
 
-    this.multihash = await log.toMultihash()
-    return log
+    const multihash = await log.toMultihash()
+    return { ipfs, repo, access, identity, log, multihash }
   },
-  cycle: async function (log) {
-    await Log.fromMultihash(this._ipfs, this.multihash)
+  cycle: async function ({ log, access, identity, ipfs, multihash }) {
+    await Log.fromMultihash(ipfs, access, identity, multihash)
   },
-  teardown: async function() {
-    await releaseRepo(this._repo)
+  teardown: async function({ repo }) {
+    await releaseRepo(repo)
   }
 }
 

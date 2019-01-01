@@ -23,13 +23,13 @@ const runOne = async (benchmark) => {
   }
 
   process.stdout.write(`\r${benchmark.name} / Preparing`)
-  const log = await benchmark.prepare()
+  const params = await benchmark.prepare()
 
   process.stdout.clearLine()
   const startTime = process.hrtime() // eventually convert to hrtime.bigint
   while (benchmark.while(stats, startTime)) {
     process.stdout.write(`\r${benchmark.name} / Cycles: ${stats.count}`)
-    await benchmark.cycle(log)
+    await benchmark.cycle(params)
     stats.count++
   }
 
@@ -37,7 +37,7 @@ const runOne = async (benchmark) => {
   memory.after = process.memoryUsage()
 
   process.stdout.write(`\r${benchmark.name} / Finishing`)
-  await benchmark.teardown()
+  await benchmark.teardown(params)
   process.stdout.clearLine()
 
   return {
