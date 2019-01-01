@@ -1,4 +1,4 @@
-const Log = require('../src/log')
+const Log = require('../../../src/log')
 const startIPFS = require('./utils/start-ipfs')
 const createLog = require('./utils/create-log')
 const releaseRepo = require('./utils/release-repo')
