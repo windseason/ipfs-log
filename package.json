@@ -78,6 +78,8 @@
     "build:examples": "webpack --config webpack.example.config.js --sort-modules-by size --mode production",
     "build:dist": "webpack --config webpack.config.js --display-modules --sort-modules-by size --mode production",
     "build:es5": "babel src --out-dir ./lib/es5/ --presets @babel/preset-env --plugins @babel/plugin-transform-runtime",
-    "lint": "standard"
+    "lint": "standard",
+    "benchmark": "node benchmarks/runner/index.js -r --grep baseline",
+    "benchmark:stress": "node benchmarks/runner/index.js -r --grep stress"
   }
 }
