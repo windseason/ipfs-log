@@ -1,4 +1,5 @@
 const append = require('./append.js')
+const findHeads = require('./find-heads.js')
 const fromEntry = require('./from-entry.js')
 const fromEntryHash = require('./from-entry-hash.js')
 const fromMultihash = require('./from-multihash.js')
@@ -15,6 +16,7 @@ const values = require('./values.js')
 
 module.exports = [
   ...append,
+  ...findHeads,
   ...fromEntry,
   ...fromEntryHash,
   ...fromMultihash,
