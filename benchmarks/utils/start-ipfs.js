@@ -12,7 +12,7 @@ const startIpfs = (repoPath) => {
 
     const repo = new IPFSRepo(repoPath, repoConf)
 
-    ipfs = new IPFS({
+    const ipfs = new IPFS({
       repo: repo,
       start: false,
       EXPERIMENTAL: {

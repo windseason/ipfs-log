@@ -4,7 +4,6 @@ const IdentityProvider = require('orbit-db-identity-provider')
 const Log = require('../../src/log')
 const AccessController = Log.AccessController
 
-
 const createLog = async (ipfs, logId) => {
   const access = new AccessController()
   const keysPath = './ipfs-log-benchmarks/keys'

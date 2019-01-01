@@ -10,7 +10,7 @@ const base = {
     const { log, access, identity } = await createLog(ipfs, 'A')
     const refCount = 64
     process.stdout.clearLine()
-    for (let i = 1; i < this.count + 1; i ++) {
+    for (let i = 1; i < this.count + 1; i++) {
       process.stdout.write(`\r${this.name} / Preparing / Writing: ${i}/${this.count}`)
       await log.append('hello' + i, refCount)
     }
@@ -27,7 +27,7 @@ const base = {
       []
     )
   },
-  teardown: async function({ repo }) {
+  teardown: async function ({ repo }) {
     await releaseRepo(repo)
   }
 }

@@ -1,5 +1,5 @@
 const repeatStr = (str, len) => {
-  return Array.apply(null, {length: len + 1}).join(str).slice(0, len)
+  return Array.apply(null, { length: len + 1 }).join(str).slice(0, len)
 }
 
 const padStr = (str, max) => {

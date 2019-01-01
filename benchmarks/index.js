@@ -33,7 +33,7 @@ const runOne = async (benchmark) => {
     stats.count++
   }
 
-  elapsed = getElapsed(process.hrtime(startTime))
+  const elapsed = getElapsed(process.hrtime(startTime))
   memory.after = process.memoryUsage()
 
   process.stdout.write(`\r${benchmark.name} / Finishing`)
@@ -83,7 +83,7 @@ const start = async () => {
     console.log(e)
   }
 
-  //TODO: compare/delta to cached version
+  // TODO: compare/delta to cached version
 }
 
 start()

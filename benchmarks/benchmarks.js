@@ -1,6 +1,3 @@
-const startIPFS = require('./utils/start-ipfs')
-const Log = require('../src/log')
-
 const append = require('./append.js')
 const fromEntry = require('./from-entry.js')
 const fromEntryHash = require('./from-entry-hash.js')

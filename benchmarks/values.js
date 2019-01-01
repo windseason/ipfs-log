@@ -1,7 +1,6 @@
 const startIPFS = require('./utils/start-ipfs')
 const releaseRepo = require('./utils/release-repo')
 const createLog = require('./utils/create-log')
-const Log = require('../src/log')
 
 const base = {
   prepare: async function () {
@@ -9,7 +8,7 @@ const base = {
     const { log } = await createLog(ipfs, 'A')
 
     process.stdout.clearLine()
-    for (let i = 1; i<this.count + 1; i++) {
+    for (let i = 1; i < this.count + 1; i++) {
       process.stdout.write(`\r${this.name} - Preparing - Writing: ${i}/${this.count}`)
       await log.append(`Hello World: ${i}`)
     }

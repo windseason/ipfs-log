@@ -1,7 +1,6 @@
 const startIPFS = require('./utils/start-ipfs')
 const releaseRepo = require('./utils/release-repo')
 const createLog = require('./utils/create-log')
-const Log = require('../src/log')
 
 const base = {
   prepare: async function () {
@@ -18,7 +17,7 @@ const base = {
     logA.join(logB)
     logB.join(logA)
   },
-  teardown: async function({ repo }) {
+  teardown: async function ({ repo }) {
     await releaseRepo(repo)
   }
 }
@@ -36,6 +35,6 @@ const stress = {
 }
 
 module.exports = [
-  { name: 'join-baseline', ...base, ...baseline},
-  { name: 'join-stress', ...base, ...stress}
+  { name: 'join-baseline', ...base, ...baseline },
+  { name: 'join-stress', ...base, ...stress }
 ]

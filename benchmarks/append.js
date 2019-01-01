@@ -11,7 +11,7 @@ const base = {
   cycle: async function ({ log }) {
     await log.append('Hello')
   },
-  teardown: async function({ repo }) {
+  teardown: async function ({ repo }) {
     await releaseRepo(repo)
   }
 }
@@ -29,6 +29,6 @@ const stress = {
 }
 
 module.exports = [
-  { name: 'append-baseline', ...base, ...baseline},
-  { name: 'append-stress', ...base, ...stress},
+  { name: 'append-baseline', ...base, ...baseline },
+  { name: 'append-stress', ...base, ...stress }
 ]
