@@ -15,8 +15,17 @@ const cidToMultihash = (cid) => {
   return cid.toBaseEncodedString()
 }
 
+const transformDAGNode = (dagNode) => {
+  const entry = JSON.parse(dagNode.data)
+  if (entry.v !== 0) {
+    throw new Error('This transformation is only for entries with version 0.')
+  }
+  return entry
+}
+
 const fromIpldNode = (dagNode, props) => {
-  const obj = Object.assign({}, dagNode)
+
+  const obj = dagNode.data ? Object.assign({}, transformDAGNode(dagNode) ) : Object.assign({}, dagNode)
 
   props.forEach((prop) => {
     obj[prop] = cidToMultihash(obj[prop])

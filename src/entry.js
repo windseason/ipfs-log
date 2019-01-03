@@ -33,7 +33,7 @@ class Entry {
       id: logId, // For determining a unique chain
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of Multihashes
-      v: 0, // For future data structure updates, should currently always be 0
+      v: 1, // For future data structure updates, entries with identity should currently always be 1
       clock: clock || new Clock(identity.publicKey)
     }
 
