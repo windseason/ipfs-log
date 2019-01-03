@@ -162,11 +162,13 @@ TEST=go mocha
 
 ## Build
 
-The build script will build the distribution file for browsers.
+Run the following command before you commit. 
 
 ```
-npm run build
+npm run rebuild
 ```
+
+This will ensure that dependencies and built files are all based on the current code base.
 
 ## Benchmarks
 
