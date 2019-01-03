@@ -63,7 +63,7 @@ It was originally created for, and currently used in, [orbit-db](https://github.
 
 ## Requirements
 
-- Node.js v8.0.0 or newer
+- Node.js v8.6.0 or newer (uses `...` spread syntax)
 
 ## Install
 
@@ -162,11 +162,13 @@ TEST=go mocha
 
 ## Build
 
-The build script will build the distribution file for browsers.
+Run the following command before you commit. 
 
 ```
-npm run build
+make rebuild
 ```
+
+This will ensure that dependencies and built files are all based on the current code base.
 
 ## Benchmarks
 
