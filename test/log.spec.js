@@ -188,7 +188,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns an Entry', () => {
         const entry = log.get(log.values[0].hash)
-        assert.deepStrictEqual(entry.hash, 'QmXmmR8f9zYbAQouvLJYhvoffb7c31FC7DV6nSfkv5iJKG')
+        assert.deepStrictEqual(entry.hash, 'zdpuAofK3cCc4nwQLecSXB2NjNGmbtSmGRvemJ15uUM9E3AFn')
       })
 
       it('returns undefined when Entry is not in the log', () => {
@@ -202,7 +202,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       before(async () => {
         expectedData = {
-          hash: 'QmXmmR8f9zYbAQouvLJYhvoffb7c31FC7DV6nSfkv5iJKG',
+          hash: 'zdpuAofK3cCc4nwQLecSXB2NjNGmbtSmGRvemJ15uUM9E3AFn',
           id: 'AAA',
           payload: 'one',
           next: [],
@@ -236,7 +236,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log//, testIdentity2, testIdentity3, testIdentity4
       const expectedData = {
         id: 'AAA',
-        heads: ['QmRk7Cborp5kyvAr6ty8Qhxs9PtvdBojG9uWUopqUN3c4z']
+        heads: ['zdpuAmrBTLxaG6ttxVfj9b8ZCu4ZdctoQ99xsFv3aiC86vAet']
       }
 
       beforeEach(async () => {
@@ -255,11 +255,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
       describe('toSnapshot', () => {
         const expectedData = {
           id: 'AAA',
-          heads: ['QmRk7Cborp5kyvAr6ty8Qhxs9PtvdBojG9uWUopqUN3c4z'],
+          heads: ['zdpuAmrBTLxaG6ttxVfj9b8ZCu4ZdctoQ99xsFv3aiC86vAet'],
           values: [
-            'QmXmmR8f9zYbAQouvLJYhvoffb7c31FC7DV6nSfkv5iJKG',
-            'QmbxyqTACVkkGkkBryEsUP7ff2trezXy4eK67izyxjmu4X',
-            'QmRk7Cborp5kyvAr6ty8Qhxs9PtvdBojG9uWUopqUN3c4z'
+            'zdpuAofK3cCc4nwQLecSXB2NjNGmbtSmGRvemJ15uUM9E3AFn',
+            'zdpuAuHj61v3tksiAvJjLF8a3QSa8QL88Y9oHwpNY9vpZ8ZJH',
+            'zdpuAmrBTLxaG6ttxVfj9b8ZCu4ZdctoQ99xsFv3aiC86vAet'
           ]
         }
 
@@ -283,7 +283,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       describe('toMultihash', async () => {
         it('returns the log as ipfs hash', async () => {
-          const expectedHash = 'QmbxZPQsFdj3qA3gvtHV7fJvb48ZoScNWb2zJpKyR3A5BF'
+          const expectedHash = 'zdpuAw7VBGVHuBfbkBUGcXHZZZNVL9F9UCze8KhdhCXnPMkFX'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
@@ -293,16 +293,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         it('log serialized to ipfs contains the correct data', async () => {
           const expectedData = {
             id: 'A',
-            heads: ['QmNPsBXD1ieznbsMEgPZdSgxB25vCC6vRge9XfynaFtgxs']
+            heads: ['zdpuB1vg2orvLe5Pm4ADkBtWH5Cz7Q5BwHzdqofCZviMMtr6v']
           }
-          const expectedHash = 'QmbxZPQsFdj3qA3gvtHV7fJvb48ZoScNWb2zJpKyR3A5BF'
+          const expectedHash = 'zdpuAw7VBGVHuBfbkBUGcXHZZZNVL9F9UCze8KhdhCXnPMkFX'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
           const hash = await log.toMultihash()
           assert.strictEqual(hash, expectedHash)
-          const result = await ipfs.object.get(hash)
-          const res = JSON.parse(result.toJSON().data.toString())
-          assert.deepStrictEqual(res.heads, expectedData.heads)
+          const result = await ipfs.dag.get(hash)
+          const heads = result.value.heads.map(head => head.toBaseEncodedString())
+          assert.deepStrictEqual(heads, expectedData.heads)
         })
 
         it('throws an error if log items is empty', async () => {
@@ -322,7 +322,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         it('creates a log from ipfs hash - one entry', async () => {
           const expectedData = {
             id: 'X',
-            heads: ['QmRRGWJ8PzhHTp3zgdx2fS4adXF1q4HVGZ9MtbLgZ8QFfL']
+            heads: ['zdpuAx39DF5prdrTEe7ZveHdEsuFzb3iKjeiCRwpxvaHvbx6E']
           }
           let log = new Log(ipfs, testACL, testIdentity, 'X')
           await log.append('one')
@@ -421,10 +421,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error when data from hash is not instance of Log', async () => {
-          const res = await ipfs.object.put(Buffer.from('{}'))
+          const cid = await ipfs.dag.put({})
           let err
           try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, res.toJSON().multihash)
+            await Log.fromMultihash(ipfs, testACL, testIdentity, cid)
           } catch (e) {
             err = e
           }
@@ -432,14 +432,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error if data from hash is not valid JSON', async () => {
-          const res = await ipfs.object.put(Buffer.from('hello'))
+          const cid = await ipfs.dag.put(Buffer.from('hello'))
           let err
           try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, res.toJSON().multihash)
+            await Log.fromMultihash(ipfs, testACL, testIdentity, cid)
           } catch (e) {
             err = e
           }
-          assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
+          assert.strictEqual(err.message, 'Given argument is not an instance of Log')
         })
 
         it('onProgress callback is fired for each entry', async () => {

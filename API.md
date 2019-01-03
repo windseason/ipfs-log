@@ -78,28 +78,28 @@ log.append({ some: 'data' })
   .then(log => log.append('text'))
   .then(log => console.log(log.values))
 
-// [ 
-//   { 
+// [
+//   {
 //     hash: 'QmV1KFxZnaguPFp57PMXz5Dd1tf6z9U8csJQoy4xWDzzts',
 //     id: 'A',
 //     payload: { some: 'data' },
 //     next: [],
 //     v: 0,
-//     clock: LamportClock { id: 'A', time: 0 } 
+//     clock: LamportClock { id: 'A', time: 0 }
 //   },
 //   { hash: 'QmSxe4Shd7jt4ExyoBjtvgi1UabNKrZfRJKptwUmSa843u',
 //     id: 'A',
 //     payload: 'text',
 //     next: [ 'QmV1KFxZnaguPFp57PMXz5Dd1tf6z9U8csJQoy4xWDzzts' ],
 //     v: 0,
-//     clock: LamportClock { id: 'A', time: 1 } 
-//   } 
+//     clock: LamportClock { id: 'A', time: 1 }
+//   }
 // ]
 ```
 
 #### join(log, [length], [id])
 
-Join the log with another log. Returns a Promise that resolves to a `Log` instance. The size of the joined log can be specified by giving `length` argument. 
+Join the log with another log. Returns a Promise that resolves to a `Log` instance. The size of the joined log can be specified by giving `length` argument.
 
 ```javascript
 // log1.values ==> ['A', 'B', 'C']
@@ -120,6 +120,8 @@ log1.toMultihash()
 
 // QmSUrxz12UDsuuQMjzBQ4NDGyYprhFJbQefgeRiomQ5j6T
 ```
+
+You can take the hash and inspect the DAG in [explore.ipld.io](https://explore.ipld.io/).
 
 ### toBuffer()
 
@@ -164,6 +166,8 @@ Creating a log from an entry will retrieve entries from IPFS, thus causing side 
 Returns the multihash of the log.
 
 Converting the log to a multihash will persist the log to IPFS, thus causing side effects.
+
+You can take the hash and inspect the DAG in [explore.ipld.io](https://explore.ipld.io/).
 
 #### Log.fromMultihash(ipfs, multihash, [length=-1])
 
