@@ -165,7 +165,7 @@ TEST=go mocha
 Run the following command before you commit. 
 
 ```
-npm run rebuild
+make rebuild
 ```
 
 This will ensure that dependencies and built files are all based on the current code base.
