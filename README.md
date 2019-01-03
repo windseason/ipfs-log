@@ -63,7 +63,7 @@ It was originally created for, and currently used in, [orbit-db](https://github.
 
 ## Requirements
 
-- Node.js v8.0.0 or newer
+- Node.js v8.6.0 or newer (uses `...` spread syntax)
 
 ## Install
 
