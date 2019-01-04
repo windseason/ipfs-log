@@ -3,11 +3,16 @@
 const assert = require('assert')
 const rmrf = require('rimraf')
 const LogCreator = require('./utils/log-creator')
+const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
+
+// Alternate tiebreaker. Always does the opposite of LastWriteWins
+const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
+const BadComparatorReturnsZero = (a, b) => 0
 
 // Test utils
 const {
@@ -488,6 +493,30 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log = testLog.log
         const expectedData = testLog.expectedData
         assert.deepStrictEqual(log.values.map(e => e.payload), expectedData)
+      })
+
+      it('sorts entries according to custom tiebreaker function', async () => {
+        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+
+        const expectedData = [
+          'entryA6', 'entryA7', 'entryA8', 'entryA9',
+          'entryA10', 'entryB1', 'entryB2', 'entryB3',
+          'entryB4', 'entryB5', 'entryA1', 'entryA2',
+          'entryA3', 'entryA4', 'entryA5', 'entryC0'
+        ]
+
+        let firstWriteWinsLog =
+          new Log(ipfs, testACL, identities[0], 'X', null, null, null, FirstWriteWins)
+        await firstWriteWinsLog.join(testLog.log)
+        assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload), expectedData)
+      })
+
+      it('throws an error if the tiebreaker returns zero', async () => {
+        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let firstWriteWinsLog =
+          new Log(ipfs, testACL, identities[0], 'X', null, null, null, BadComparatorReturnsZero)
+        await firstWriteWinsLog.join(testLog.log)
+        assert.throws(() => firstWriteWinsLog.values, Error, 'Error Thrown')
       })
 
       it('retrieves partially joined log deterministically - single next pointer', async () => {
