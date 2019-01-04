@@ -64,6 +64,7 @@ It was originally created for, and currently used in, [orbit-db](https://github.
 ## Requirements
 
 - Node.js v8.6.0 or newer (uses `...` spread syntax)
+- Preferably you should use an LTS version of node.js (even numbered 8, 10, etc)
 
 ## Install
 
