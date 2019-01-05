@@ -46,8 +46,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     it('log with one entry', async () => {
       let log = new Log(ipfs, testACL, testIdentity, 'X')
       await log.append('one')
-      const hash = log.values[0].hash
-      const res = await EntryIO.fetchAll(ipfs, hash, 1)
+      const cid = log.values[0].cid
+      const res = await EntryIO.fetchAll(ipfs, cid, 1)
       assert.strictEqual(res.length, 1)
     })
 
@@ -55,8 +55,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log = new Log(ipfs, testACL, testIdentity, 'X')
       await log.append('one')
       await log.append('two')
-      const hash = last(log.values).hash
-      const res = await EntryIO.fetchAll(ipfs, hash, 2)
+      const cid = last(log.values).cid
+      const res = await EntryIO.fetchAll(ipfs, cid, 2)
       assert.strictEqual(res.length, 2)
     })
 
@@ -64,8 +64,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log = new Log(ipfs, testACL, testIdentity, 'X')
       await log.append('one')
       await log.append('two')
-      const hash = last(log.values).hash
-      const res = await EntryIO.fetchAll(ipfs, hash, 1)
+      const cid = last(log.values).cid
+      const res = await EntryIO.fetchAll(ipfs, cid, 1)
       assert.strictEqual(res.length, 1)
     })
 
@@ -76,8 +76,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log.append('hello' + i)
       }
 
-      const hash = await log.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+      const cid = await log.toCID()
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
       assert.strictEqual(result.length, count)
     })
 
@@ -93,8 +93,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
       }
 
-      const hash = await log.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, 42)
+      const cid = await log.toCID()
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 42)
       assert.strictEqual(result.length, 42)
     })
 
@@ -111,8 +111,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
       }
 
-      const hash = await log2.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, 99)
+      const cid = await log2.toCID()
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 99)
       assert.strictEqual(result.length, 99)
     })
 
@@ -135,8 +135,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       await log3.join(log2)
-      const hash = await log3.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, 10)
+      const cid = await log3.toCID()
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 10)
       assert.strictEqual(result.length, 10)
     })
 

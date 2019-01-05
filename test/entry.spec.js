@@ -4,8 +4,10 @@ const assert = require('assert')
 const rmrf = require('rimraf')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
+const { dagNode } = require('../src/utils')
 const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
+const v0Entries = require('./fixtures/v0-entries.fixture')
 
 // Test utils
 const {
@@ -40,9 +42,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedHash = 'zdpuAo2GbSzyzGqskVpWjhdWbJeMYx4zVNYkXBf4a3Y6wZArD'
+        const expectedCid = 'zdpuAnVZkmiNbtgwCguuphDe2qojCGN4EztkSGNyiJxwizudY'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
-        assert.strictEqual(entry.hash, expectedHash)
+        assert.strictEqual(entry.cid, expectedCid)
         assert.strictEqual(entry.id, 'A')
         assert.strictEqual(entry.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry.clock.time, 0)
@@ -52,7 +54,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a entry with payload', async () => {
-        const expectedHash = 'zdpuApumWqUZbcxYuhpRTy43xsBP1gdT1BTin2mVKVjW9gZVQ'
+        const expectedCid = 'zdpuAwxcFXg67SFPvm3rpDV7WKz7oBeZ6wGfisMycCUVxWnFk'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, testIdentity, 'A', payload, [])
         assert.strictEqual(entry.payload, payload)
@@ -61,11 +63,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(entry.clock.time, 0)
         assert.strictEqual(entry.v, 1)
         assert.strictEqual(entry.next.length, 0)
-        assert.strictEqual(entry.hash, expectedHash)
+        assert.strictEqual(entry.cid, expectedCid)
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedHash = 'zdpuB2WUk9WVrfNi2BiULMejhqx15P4ENmoAV8TrgPZc9bgzr'
+        const expectedCid = 'zdpuAmTCUPk1qDWH6zYiScRPUGt7wpaoq2jRXm1j7bd5sdUu6'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -73,14 +75,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1], entry1.clock)
         assert.strictEqual(entry2.payload, payload2)
         assert.strictEqual(entry2.next.length, 1)
-        assert.strictEqual(entry2.hash, expectedHash)
+        assert.strictEqual(entry2.cid, expectedCid)
         assert.strictEqual(entry2.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry2.clock.time, 1)
       })
 
       it('`next` parameter can be an array of strings', async () => {
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', 'hello1', [])
-        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1.hash])
+        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1.cid])
         assert.strictEqual(typeof entry2.next[0] === 'string', true)
       })
 
@@ -147,13 +149,59 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
-    describe('toMultihash', () => {
-      it('returns an ipfs hash', async () => {
-        const expectedHash = 'zdpuAo2GbSzyzGqskVpWjhdWbJeMYx4zVNYkXBf4a3Y6wZArD'
+    describe('toCID', () => {
+      it('returns an ipfs CID', async () => {
+        const expectedCid = 'zdpuAnVZkmiNbtgwCguuphDe2qojCGN4EztkSGNyiJxwizudY'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
-        const hash = await Entry.toMultihash(ipfs, entry)
-        assert.strictEqual(entry.hash, expectedHash)
-        assert.strictEqual(hash, expectedHash)
+        const cid = await Entry.toCID(ipfs, entry)
+        assert.strictEqual(entry.cid, expectedCid)
+        assert.strictEqual(cid, expectedCid)
+      })
+
+      it('throws an error if ipfs is not defined', async () => {
+        let err
+        try {
+          await Entry.toCID()
+        } catch (e) {
+          err = e
+        }
+        assert.strictEqual(err.message, 'Ipfs instance not defined')
+      })
+
+      it('throws an error if the object being passed is invalid', async () => {
+        let err1, err2
+        try {
+          await Entry.toCID(ipfs, testACL, testIdentity, { cid: 'deadbeef' })
+        } catch (e) {
+          err1 = e
+        }
+
+        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry CID')
+
+        try {
+          const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
+          delete entry.clock
+          await Entry.toCID(ipfs, entry)
+        } catch (e) {
+          err2 = e
+        }
+        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry CID')
+      })
+    })
+
+    describe('toMultihash', () => {
+      it('returns an ipfs multihash', async () => {
+        const expectedMultihash = 'QmW2b1VncVEHNNjNEanKEznqDmY5nDBkQangWj6B3FBj3U'
+        const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
+        const multihash = await Entry.toMultihash(ipfs, entry)
+        assert.strictEqual(multihash, expectedMultihash)
+      })
+
+      it('returns the correct ipfs multihash for a v0 entry', async () => {
+        const expectedMultihash = 'QmV5NpvViHHouBfo7CSnfX2iB4t5PVWNJG8doKt5cwwnxY'
+        const entry = v0Entries.hello
+        const multihash = await Entry.toMultihash(ipfs, entry)
+        assert.strictEqual(multihash, expectedMultihash)
       })
 
       it('throws an error if ipfs is not defined', async () => {
@@ -169,7 +217,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if the object being passed is invalid', async () => {
         let err1, err2
         try {
-          await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
+          await Entry.toMultihash(ipfs, testACL, testIdentity, { cid: 'deadbeef' })
         } catch (e) {
           err1 = e
         }
@@ -187,21 +235,109 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
-    describe('fromMultihash', () => {
-      it('creates a entry from ipfs hash', async () => {
-        const expectedHash = 'zdpuApQ7g8DVTSuE67eThbaRQn6Xw8qg4ggkwrCuvJ9x1N62B'
+    describe('fromCID', () => {
+      it('creates a entry from ipfs CID', async () => {
+        const expectedCid = 'zdpuAqFSTCgEMky7YfyHUFGxuwHjpM5AjKG9JFTyXiYQqRPmP'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
-        const final = await Entry.fromMultihash(ipfs, entry2.hash)
+        const final = await Entry.fromCID(ipfs, entry2.cid)
 
         assert.deepStrictEqual(entry2, final)
         assert.strictEqual(final.id, 'A')
         assert.strictEqual(final.payload, payload2)
         assert.strictEqual(final.next.length, 1)
-        assert.strictEqual(final.next[0], entry1.hash)
-        assert.strictEqual(final.hash, expectedHash)
+        assert.strictEqual(final.next[0], entry1.cid)
+        assert.strictEqual(final.cid, expectedCid)
+      })
+
+      it('creates a entry from ipfs multihash', async () => {
+        const expectedCid = 'QmRyrbupohhmSoXxQ56XthEiK6YEqK5ZN8SysJdo8GGdHq'
+        const payload1 = 'hello world'
+        const payload2 = 'hello again'
+        const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
+        const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
+        const entry2Multihash = await Entry.toMultihash(ipfs, entry2)
+        const final = await Entry.fromCID(ipfs, entry2Multihash)
+
+        assert.strictEqual(final.id, 'A')
+        assert.strictEqual(final.payload, payload2)
+        assert.strictEqual(final.next.length, 1)
+        assert.strictEqual(final.next[0], entry1.cid)
+        assert.strictEqual(final.v, 0)
+        assert.strictEqual(final.cid, expectedCid)
+      })
+
+      it('creates a entry from ipfs multihash of v0 entries', async () => {
+        const expectedCid = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
+        const entry1Cid = await dagNode.write(ipfs, 'dag-pb', v0Entries.helloWorld)
+        const entry2Cid = await dagNode.write(ipfs, 'dag-pb', v0Entries.helloAgain)
+        const final = await Entry.fromCID(ipfs, entry2Cid)
+
+        assert.strictEqual(final.id, 'A')
+        assert.strictEqual(final.payload, v0Entries.helloAgain.payload)
+        assert.strictEqual(final.next.length, 1)
+        assert.strictEqual(final.next[0], v0Entries.helloAgain.next[0])
+        assert.strictEqual(final.next[0], entry1Cid)
+        assert.strictEqual(final.v, 0)
+        assert.strictEqual(final.cid, entry2Cid)
+        assert.strictEqual(final.cid, expectedCid)
+      })
+
+      it('throws an error if ipfs is not present', async () => {
+        let err
+        try {
+          await Entry.fromCID()
+        } catch (e) {
+          err = e
+        }
+        assert.strictEqual(err.message, 'Ipfs instance not defined')
+      })
+
+      it('throws an error if CID is undefined', async () => {
+        let err
+        try {
+          await Entry.fromCID(ipfs)
+        } catch (e) {
+          err = e
+        }
+        assert.strictEqual(err.message, 'Invalid CID: undefined')
+      })
+    })
+
+    describe('fromMultihash', () => {
+      it('creates a entry from ipfs multihash', async () => {
+        const expectedMultihash = 'QmRyrbupohhmSoXxQ56XthEiK6YEqK5ZN8SysJdo8GGdHq'
+        const payload1 = 'hello world'
+        const payload2 = 'hello again'
+        const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
+        const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
+        const entry2Multihash = await Entry.toMultihash(ipfs, entry2)
+        const final = await Entry.fromMultihash(ipfs, entry2Multihash)
+
+        assert.strictEqual(final.id, 'A')
+        assert.strictEqual(final.payload, payload2)
+        assert.strictEqual(final.next.length, 1)
+        assert.strictEqual(final.next[0], entry1.cid)
+        assert.strictEqual(final.v, 0)
+        assert.strictEqual(final.cid, expectedMultihash)
+      })
+
+      it('creates a entry from ipfs multihash of v0 entries', async () => {
+        const expectedCid = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
+        const entry1Cid = await dagNode.write(ipfs, 'dag-pb', v0Entries.helloWorld)
+        const entry2Cid = await dagNode.write(ipfs, 'dag-pb', v0Entries.helloAgain)
+        const final = await Entry.fromMultihash(ipfs, entry2Cid)
+
+        assert.strictEqual(final.id, 'A')
+        assert.strictEqual(final.payload, v0Entries.helloAgain.payload)
+        assert.strictEqual(final.next.length, 1)
+        assert.strictEqual(final.next[0], v0Entries.helloAgain.next[0])
+        assert.strictEqual(final.next[0], entry1Cid)
+        assert.strictEqual(final.v, 0)
+        assert.strictEqual(final.cid, entry2Cid)
+        assert.strictEqual(final.cid, expectedCid)
       })
 
       it('throws an error if ipfs is not present', async () => {
@@ -214,14 +350,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(err.message, 'Ipfs instance not defined')
       })
 
-      it('throws an error if hash is undefined', async () => {
+      it('throws an error if CID is undefined', async () => {
         let err
         try {
           await Entry.fromMultihash(ipfs)
         } catch (e) {
           err = e
         }
-        assert.strictEqual(err.message, 'Invalid hash: undefined')
+        assert.strictEqual(err.message, 'Invalid multihash: undefined')
       })
     })
 
@@ -269,28 +405,37 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(Entry.isEntry(entry), true)
       })
 
+      it('is an Entry (v0)', async () => {
+        assert.strictEqual(Entry.isEntry(v0Entries.hello), true)
+      })
+
       it('is not an Entry - no id', async () => {
-        const fakeEntry = { next: [], hash: 'Foo', payload: 123, seq: 0 }
+        const fakeEntry = { next: [], v: 1, cid: 'Foo', payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
       it('is not an Entry - no seq', async () => {
-        const fakeEntry = { next: [], hash: 'Foo', payload: 123 }
+        const fakeEntry = { next: [], v: 1, cid: 'Foo', payload: 123 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
       it('is not an Entry - no next', async () => {
-        const fakeEntry = { id: 'A', hash: 'Foo', payload: 123, seq: 0 }
+        const fakeEntry = { id: 'A', v: 1, cid: 'Foo', payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
-      it('is not an Entry - no hash', async () => {
+      it('is not an Entry - no version', async () => {
         const fakeEntry = { id: 'A', next: [], payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
+      it('is not an Entry - no cid', async () => {
+        const fakeEntry = { id: 'A', v: 1, next: [], payload: 123, seq: 0 }
+        assert.strictEqual(Entry.isEntry(fakeEntry), false)
+      })
+
       it('is not an Entry - no payload', async () => {
-        const fakeEntry = { id: 'A', next: [], hash: 'Foo', seq: 0 }
+        const fakeEntry = { id: 'A', v: 1, next: [], cid: 'Foo', seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
     })

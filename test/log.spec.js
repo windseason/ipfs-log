@@ -2,11 +2,15 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const dagPB = require('ipld-dag-pb')
+const pify = require('pify')
 const Clock = require('../src/lamport-clock')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
+
+const createPbDagNode = pify(dagPB.DAGNode.create)
 
 // Test utils
 const {
@@ -52,7 +56,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.notStrictEqual(log.values, null)
         assert.notStrictEqual(log.heads, null)
         assert.notStrictEqual(log.tails, null)
-        assert.notStrictEqual(log.tailHashes, null)
+        assert.notStrictEqual(log.tailCids, null)
         assert.deepStrictEqual(log.values, [])
         assert.deepStrictEqual(log.heads, [])
         assert.deepStrictEqual(log.tails, [])
@@ -101,7 +105,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
         const log = new Log(ipfs, testACL, testIdentity, 'B', [one, two, three], [three])
         assert.strictEqual(log.heads.length, 1)
-        assert.strictEqual(log.heads[0].hash, three.hash)
+        assert.strictEqual(log.heads[0].cid, three.cid)
       })
 
       it('finds heads if heads not given as params', async () => {
@@ -110,9 +114,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
         const log = new Log(ipfs, testACL, testIdentity, 'A', [one, two, three])
         assert.strictEqual(log.heads.length, 3)
-        assert.strictEqual(log.heads[2].hash, one.hash)
-        assert.strictEqual(log.heads[1].hash, two.hash)
-        assert.strictEqual(log.heads[0].hash, three.hash)
+        assert.strictEqual(log.heads[2].cid, one.cid)
+        assert.strictEqual(log.heads[1].cid, two.cid)
+        assert.strictEqual(log.heads[0].cid, three.cid)
       })
 
       it('throws an error if entries is not an array', () => {
@@ -187,8 +191,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns an Entry', () => {
-        const entry = log.get(log.values[0].hash)
-        assert.deepStrictEqual(entry.hash, 'zdpuB2F2JjP1rbBRQbvSic3zMx6h1Lpi2xAgSfFmTyK3uc7BS')
+        const entry = log.get(log.values[0].cid)
+        assert.deepStrictEqual(entry.cid, 'zdpuB2kFv5s6UjDaCWkjE3mNnDVgYHLBrFamYonJZ5xtvtg4v')
       })
 
       it('returns undefined when Entry is not in the log', () => {
@@ -202,7 +206,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       before(async () => {
         expectedData = {
-          hash: 'zdpuB2F2JjP1rbBRQbvSic3zMx6h1Lpi2xAgSfFmTyK3uc7BS',
+          cid: 'zdpuB2kFv5s6UjDaCWkjE3mNnDVgYHLBrFamYonJZ5xtvtg4v',
           id: 'AAA',
           payload: 'one',
           next: [],
@@ -223,12 +227,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log.has(expectedData), true)
       })
 
-      it('returns true if it has an Entry, hash lookup', () => {
-        assert.strictEqual(log.has(expectedData.hash), true)
+      it('returns true if it has an Entry, CID lookup', () => {
+        assert.strictEqual(log.has(expectedData.cid), true)
       })
 
       it('returns false if it doesn\'t have the Entry', () => {
-        assert.strictEqual(log.has('QmFoo'), false)
+        assert.strictEqual(log.has('zdFoo'), false)
       })
     })
 
@@ -236,7 +240,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log//, testIdentity2, testIdentity3, testIdentity4
       const expectedData = {
         id: 'AAA',
-        heads: ['zdpuAsspW9uQ5KN8o598sLxh7fdbFFCJcrf64S8Rbj8TU7UrV']
+        heads: ['zdpuAw6yxK132nAvHtZiWSsEgDd55AgCpjc44jFizqSscwAKR']
       }
 
       beforeEach(async () => {
@@ -255,11 +259,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
       describe('toSnapshot', () => {
         const expectedData = {
           id: 'AAA',
-          heads: ['zdpuAsspW9uQ5KN8o598sLxh7fdbFFCJcrf64S8Rbj8TU7UrV'],
+          heads: ['zdpuAw6yxK132nAvHtZiWSsEgDd55AgCpjc44jFizqSscwAKR'],
           values: [
-            'zdpuB2F2JjP1rbBRQbvSic3zMx6h1Lpi2xAgSfFmTyK3uc7BS',
-            'zdpuArtVvt2g9g1xe7qcPYGeSpfF8dc3p27Uow6X6f2CuQmkD',
-            'zdpuAsspW9uQ5KN8o598sLxh7fdbFFCJcrf64S8Rbj8TU7UrV'
+            'zdpuB2kFv5s6UjDaCWkjE3mNnDVgYHLBrFamYonJZ5xtvtg4v',
+            'zdpuApQir9nBg7SAts4gx5naAh77qLzP3Xtmda3RHj9msPatg',
+            'zdpuAw6yxK132nAvHtZiWSsEgDd55AgCpjc44jFizqSscwAKR'
           ]
         }
 
@@ -267,11 +271,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
           const snapshot = log.toSnapshot()
           assert.strictEqual(snapshot.id, expectedData.id)
           assert.strictEqual(snapshot.heads.length, expectedData.heads.length)
-          assert.strictEqual(snapshot.heads[0].hash, expectedData.heads[0])
+          assert.strictEqual(snapshot.heads[0].cid, expectedData.heads[0])
           assert.strictEqual(snapshot.values.length, expectedData.values.length)
-          assert.strictEqual(snapshot.values[0].hash, expectedData.values[0])
-          assert.strictEqual(snapshot.values[1].hash, expectedData.values[1])
-          assert.strictEqual(snapshot.values[2].hash, expectedData.values[2])
+          assert.strictEqual(snapshot.values[0].cid, expectedData.values[0])
+          assert.strictEqual(snapshot.values[1].cid, expectedData.values[1])
+          assert.strictEqual(snapshot.values[2].cid, expectedData.values[2])
         })
       })
 
@@ -281,28 +285,65 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
       })
 
-      describe('toMultihash', async () => {
-        it('returns the log as ipfs hash', async () => {
-          const expectedHash = 'zdpuB3U3wetrMAaLBW7XYJqxqjm6MrcSehKqAMydkAeNuthbx'
+      describe('toCID', async () => {
+        it('returns the log as ipfs CID', async () => {
+          const expectedCid = 'zdpuArva1LTmn5zFYyAfpbxmXRwge2gwiWdJogSHfaJiBWSU9'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
-          const hash = await log.toMultihash()
-          assert.strictEqual(hash, expectedHash)
+          const cid = await log.toCID()
+          assert.strictEqual(cid, expectedCid)
         })
 
         it('log serialized to ipfs contains the correct data', async () => {
           const expectedData = {
             id: 'A',
-            heads: ['zdpuB1Fw15iDvk6wJgnoZXTSNt4gENLuvYxgyiohtNVh78JZz']
+            heads: ['zdpuAojkSxbS84ai4FxpLzxohXiquwzNSXMozr7syKfC7sKi7']
           }
-          const expectedHash = 'zdpuB3U3wetrMAaLBW7XYJqxqjm6MrcSehKqAMydkAeNuthbx'
+          const expectedCid = 'zdpuArva1LTmn5zFYyAfpbxmXRwge2gwiWdJogSHfaJiBWSU9'
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           await log.append('one')
-          const hash = await log.toMultihash()
-          assert.strictEqual(hash, expectedHash)
-          const result = await ipfs.dag.get(hash)
+          const cid = await log.toCID()
+          assert.strictEqual(cid, expectedCid)
+          const result = await ipfs.dag.get(cid)
           const heads = result.value.heads.map(head => head.toBaseEncodedString())
           assert.deepStrictEqual(heads, expectedData.heads)
+        })
+
+        it('throws an error if log items is empty', async () => {
+          const emptyLog = new Log(ipfs, testACL, testIdentity)
+          let err
+          try {
+            await emptyLog.toCID()
+          } catch (e) {
+            err = e
+          }
+          assert.notStrictEqual(err, null)
+          assert.strictEqual(err.message, 'Can\'t serialize an empty log')
+        })
+      })
+
+      describe('toMultihash', async () => {
+        it('returns the log as ipfs multihash', async () => {
+          const expectedMultihash = 'Qmavo9Z6hJcVhDcsc2t7Stg2EpHyPeArCeNmucCjmUP55C'
+          let log = new Log(ipfs, testACL, testIdentity, 'A')
+          await log.append('one')
+          const multihash = await log.toMultihash()
+          assert.strictEqual(multihash, expectedMultihash)
+        })
+
+        it('log serialized to ipfs contains the correct data', async () => {
+          const expectedData = {
+            id: 'A',
+            heads: ['zdpuAojkSxbS84ai4FxpLzxohXiquwzNSXMozr7syKfC7sKi7']
+          }
+          const expectedMultihash = 'Qmavo9Z6hJcVhDcsc2t7Stg2EpHyPeArCeNmucCjmUP55C'
+          let log = new Log(ipfs, testACL, testIdentity, 'A')
+          await log.append('one')
+          const multihash = await log.toMultihash()
+          assert.strictEqual(multihash, expectedMultihash)
+          const result = await ipfs.object.get(multihash)
+          const res = JSON.parse(result.toJSON().data.toString())
+          assert.deepStrictEqual(res.heads, expectedData.heads)
         })
 
         it('throws an error if log items is empty', async () => {
@@ -318,16 +359,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
       })
 
-      describe('fromMultihash', async () => {
-        it('creates a log from ipfs hash - one entry', async () => {
+      describe('fromCID', async () => {
+        it('creates a log from ipfs CID - one entry', async () => {
           const expectedData = {
             id: 'X',
-            heads: ['zdpuAwu8fa7VEGTb4kjkL2FqgUucLe5QFdwLfTj8XjsAeJDb7']
+            heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
           }
           let log = new Log(ipfs, testACL, testIdentity, 'X')
           await log.append('one')
-          const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+          const cid = await log.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
           assert.strictEqual(res.length, 1)
           assert.strictEqual(res.values[0].payload, 'one')
@@ -335,9 +376,184 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(res.values[0].clock.time, 1)
         })
 
-        it('creates a log from ipfs hash - three entries', async () => {
-          const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+        it('creates a log from ipfs CID - three entries', async () => {
+          const cid = await log.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          assert.strictEqual(res.length, 3)
+          assert.strictEqual(res.values[0].payload, 'one')
+          assert.strictEqual(res.values[0].clock.time, 1)
+          assert.strictEqual(res.values[1].payload, 'two')
+          assert.strictEqual(res.values[1].clock.time, 2)
+          assert.strictEqual(res.values[2].payload, 'three')
+          assert.strictEqual(res.values[2].clock.time, 3)
+        })
+
+        it('creates a log from ipfs multihash (backwards compat)', async () => {
+          const expectedData = {
+            id: 'X',
+            heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
+          }
+          let log = new Log(ipfs, testACL, testIdentity, 'X')
+          await log.append('one')
+          const multihash = await log.toMultihash()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, multihash, -1)
+          assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
+          assert.strictEqual(res.length, 1)
+          assert.strictEqual(res.values[0].payload, 'one')
+          assert.strictEqual(res.values[0].clock.id, testIdentity.publicKey)
+          assert.strictEqual(res.values[0].clock.time, 1)
+        })
+
+        it('has the right sequence number after creation and appending', async () => {
+          const cid = await log.toCID()
+          let res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          assert.strictEqual(res.length, 3)
+          await res.append('four')
+          assert.strictEqual(res.length, 4)
+          assert.strictEqual(res.values[3].payload, 'four')
+          assert.strictEqual(res.values[3].clock.time, 4)
+        })
+
+        it('creates a log from ipfs CID that has three heads', async () => {
+          let log1 = new Log(ipfs, testACL, testIdentity, 'A')
+          let log2 = new Log(ipfs, testACL, testIdentity2, 'A')
+          let log3 = new Log(ipfs, testACL, testIdentity3, 'A')
+          await log1.append('one') // order is determined by the identity's publicKey
+          await log3.append('two')
+          await log2.append('three')
+          await log1.join(log2)
+          await log1.join(log3)
+          const cid = await log1.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          assert.strictEqual(res.length, 3)
+          assert.strictEqual(res.heads.length, 3)
+          assert.strictEqual(res.heads[0].payload, 'three')
+          assert.strictEqual(res.heads[1].payload, 'two') // order is determined by the identity's publicKey
+          assert.strictEqual(res.heads[2].payload, 'one')
+        })
+
+        it('creates a log from ipfs CID up to a size limit', async () => {
+          const amount = 100
+          const size = amount / 2
+          let log = new Log(ipfs, testACL, testIdentity, 'A')
+          for (let i = 0; i < amount; i++) {
+            await log.append(i.toString())
+          }
+          const cid = await log.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, size)
+          assert.strictEqual(res.length, size)
+        })
+
+        it('creates a log from ipfs CID up without size limit', async () => {
+          const amount = 100
+          let log = new Log(ipfs, testACL, testIdentity, 'A')
+          for (let i = 0; i < amount; i++) {
+            await log.append(i.toString())
+          }
+          const cid = await log.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          assert.strictEqual(res.length, amount)
+        })
+
+        it('throws an error if ipfs is not defined', async () => {
+          let err
+          try {
+            await Log.fromCID()
+          } catch (e) {
+            err = e
+          }
+          assert.notStrictEqual(err, null)
+          assert.strictEqual(err.message, 'IPFS instance not defined')
+        })
+
+        it('throws an error if CID is not defined', async () => {
+          let err
+          try {
+            await Log.fromCID(ipfs)
+          } catch (e) {
+            err = e
+          }
+          assert.notStrictEqual(err, null)
+          assert.strictEqual(err.message, 'Invalid CID: undefined')
+        })
+
+        it('throws an error if data from CID is not valid JSON', async () => {
+          const dagNode = await createPbDagNode(Buffer.from('hello'))
+          let cid = await ipfs.dag.put(dagNode, {
+            hashAlg: 'sha2-256',
+            format: 'dag-pb'
+          })
+          let err
+          try {
+            await Log.fromCID(ipfs, testACL, testIdentity, cid.toBaseEncodedString())
+          } catch (e) {
+            err = e
+          }
+          assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
+        })
+
+        it('throws an error when data from CID is not instance of Log', async () => {
+          const cid = await ipfs.dag.put({})
+          let err
+          try {
+            await Log.fromCID(ipfs, testACL, testIdentity, cid)
+          } catch (e) {
+            err = e
+          }
+          assert.strictEqual(err.message, 'Given argument is not an instance of Log')
+        })
+
+        it('onProgress callback is fired for each entry', async () => {
+          const amount = 100
+          let log = new Log(ipfs, testACL, testIdentity, 'A')
+          for (let i = 0; i < amount; i++) {
+            await log.append(i.toString())
+          }
+
+          const items = log.values
+          let i = 0
+          const loadProgressCallback = (cid, entry, depth) => {
+            assert.notStrictEqual(entry, null)
+            assert.strictEqual(cid, items[items.length - i - 1].cid)
+            assert.strictEqual(entry.cid, items[items.length - i - 1].cid)
+            assert.strictEqual(entry.payload, items[items.length - i - 1].payload)
+            assert.strictEqual(depth - 1, i)
+            i++
+          }
+
+          const cid = await log.toCID()
+          const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1, [], loadProgressCallback)
+
+          // Make sure the onProgress callback was called for each entry
+          assert.strictEqual(i, amount)
+          // Make sure the log entries are correct ones
+          assert.strictEqual(result.values[0].clock.time, 1)
+          assert.strictEqual(result.values[0].payload, '0')
+          assert.strictEqual(result.values[result.length - 1].clock.time, 100)
+          assert.strictEqual(result.values[result.length - 1].payload, '99')
+        })
+      })
+
+      describe('fromMultihash', async () => {
+        it('creates a log from ipfs multihash - one entry', async () => {
+          const expectedData = {
+            id: 'X',
+            heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
+          }
+          let log = new Log(ipfs, testACL, testIdentity, 'X')
+          await log.append('one')
+          const multihash = await log.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
+          assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
+          assert.strictEqual(res.length, 1)
+          assert.strictEqual(res.values[0].payload, 'one')
+          assert.strictEqual(res.values[0].clock.id, testIdentity.publicKey)
+          assert.strictEqual(res.values[0].clock.time, 1)
+        })
+
+        it('creates a log from ipfs multihash - three entries', async () => {
+          const multihash = await log.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.values[0].payload, 'one')
           assert.strictEqual(res.values[0].clock.time, 1)
@@ -348,8 +564,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('has the right sequence number after creation and appending', async () => {
-          const hash = await log.toMultihash()
-          let res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+          const multihash = await log.toMultihash()
+          let res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
           assert.strictEqual(res.length, 3)
           await res.append('four')
           assert.strictEqual(res.length, 4)
@@ -357,7 +573,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(res.values[3].clock.time, 4)
         })
 
-        it('creates a log from ipfs hash that has three heads', async () => {
+        it('creates a log from ipfs multihash that has three heads', async () => {
           let log1 = new Log(ipfs, testACL, testIdentity, 'A')
           let log2 = new Log(ipfs, testACL, testIdentity2, 'A')
           let log3 = new Log(ipfs, testACL, testIdentity3, 'A')
@@ -366,8 +582,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log2.append('three')
           await log1.join(log2)
           await log1.join(log3)
-          const hash = await log1.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+          const multihash = await log1.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
           assert.strictEqual(res.heads[0].payload, 'three')
@@ -375,26 +591,26 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(res.heads[2].payload, 'one')
         })
 
-        it('creates a log from ipfs hash up to a size limit', async () => {
+        it('creates a log from ipfs multihash up to a size limit', async () => {
           const amount = 100
           const size = amount / 2
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
-          const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, size)
+          const multihash = await log.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, size)
           assert.strictEqual(res.length, size)
         })
 
-        it('creates a log from ipfs hash up without size limit', async () => {
+        it('creates a log from ipfs multihash up without size limit', async () => {
           const amount = 100
           let log = new Log(ipfs, testACL, testIdentity, 'A')
           for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
-          const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1)
+          const multihash = await log.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
           assert.strictEqual(res.length, amount)
         })
 
@@ -409,7 +625,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(err.message, 'IPFS instance not defined')
         })
 
-        it('throws an error if hash is not defined', async () => {
+        it('throws an error if multihash is not defined', async () => {
           let err
           try {
             await Log.fromMultihash(ipfs)
@@ -417,33 +633,37 @@ Object.keys(testAPIs).forEach((IPFS) => {
             err = e
           }
           assert.notStrictEqual(err, null)
-          assert.strictEqual(err.message, 'Invalid hash: undefined')
+          assert.strictEqual(err.message, 'Invalid multihash: undefined')
         })
 
-        it('throws an error when data from hash is not instance of Log', async () => {
-          const cid = await ipfs.dag.put({})
+        it('throws an error when data from multihash is not instance of Log', async () => {
+          const dagNode = await createPbDagNode(Buffer.from('{}'))
+          const cid = await ipfs.dag.put(dagNode, {
+            format: 'dag-pb',
+            hashAlg: 'sha2-256'
+          })
           let err
           try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, cid)
+            await Log.fromMultihash(ipfs, testACL, testIdentity, cid.toV0().toBaseEncodedString())
           } catch (e) {
             err = e
           }
           assert.strictEqual(err.message, 'Given argument is not an instance of Log')
         })
 
-        it('throws an error if data from hash is not valid JSON', async () => {
-          const cid = await ipfs.dag.put(Buffer.from('hello'), {
+        it('throws an error if data from multihash is not valid JSON', async () => {
+          const dagNode = await createPbDagNode(Buffer.from('hello'))
+          let cid = await ipfs.dag.put(dagNode, {
             hashAlg: 'sha2-256',
             format: 'dag-pb'
           })
-
           let err
           try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, cid)
+            await Log.fromMultihash(ipfs, testACL, testIdentity, cid.toV0().toBaseEncodedString())
           } catch (e) {
             err = e
           }
-          assert.strictEqual(err.message, 'Unexpected end of JSON input')
+          assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
         })
 
         it('onProgress callback is fired for each entry', async () => {
@@ -455,17 +675,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
           const items = log.values
           let i = 0
-          const loadProgressCallback = (hash, entry, depth) => {
+          const loadProgressCallback = (cid, entry, depth) => {
             assert.notStrictEqual(entry, null)
-            assert.strictEqual(hash, items[items.length - i - 1].hash)
-            assert.strictEqual(entry.hash, items[items.length - i - 1].hash)
+            assert.strictEqual(cid, items[items.length - i - 1].cid)
+            assert.strictEqual(entry.cid, items[items.length - i - 1].cid)
             assert.strictEqual(entry.payload, items[items.length - i - 1].payload)
             assert.strictEqual(depth - 1, i)
             i++
           }
 
-          const hash = await log.toMultihash()
-          const result = await Log.fromMultihash(ipfs, testACL, testIdentity, hash, -1, [], loadProgressCallback)
+          const multihash = await log.toMultihash()
+          const result = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1, [], loadProgressCallback)
 
           // Make sure the onProgress callback was called for each entry
           assert.strictEqual(i, amount)

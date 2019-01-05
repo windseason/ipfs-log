@@ -1,44 +1,27 @@
 'use strict'
 
 const multihashing = require('multihashing-async')
-const mh = require('multihashes')
+const CID = require('cids')
+const pify = require('pify')
 
-const defaultHashAlg = 'sha2-256'
+const createMultihash = pify(multihashing)
 
-const createMultihash = (data, hashAlg) => {
-  return new Promise((resolve, reject) => {
-    const buffer = Buffer.from(JSON.stringify(data))
-
-    multihashing(buffer, hashAlg || defaultHashAlg, (err, multihash) => {
-      if (err) {
-        return reject(err)
-      }
-
-      resolve(mh.toB58String(multihash))
-    })
-  })
-}
-
-const transformLinksIntoCids = (data) => {
+const transformCborLinksIntoCids = (data) => {
   if (!data) {
     return data
   }
 
   if (data['/']) {
-    const hash = data['/']
-
-    return {
-      toBaseEncodedString: () => hash
-    }
+    return new CID(data['/'])
   }
 
   if (Array.isArray(data)) {
-    return data.map(transformLinksIntoCids)
+    return data.map(transformCborLinksIntoCids)
   }
 
   if (typeof data === 'object') {
     return Object.keys(data).reduce((obj, key) => {
-      obj[key] = transformLinksIntoCids(data[key])
+      obj[key] = transformCborLinksIntoCids(data[key])
 
       return obj
     }, {})
@@ -54,21 +37,25 @@ class MemStore {
   }
 
   async put (value) {
-    const data = value
-    const hash = await createMultihash(data)
+    const buffer = Buffer.from(JSON.stringify(value))
+    const multihash = await createMultihash(buffer, 'sha2-256')
+    const cid = new CID(1, 'dag-cbor', multihash)
+    const key = cid.toBaseEncodedString()
 
-    this._store.set(hash, data)
+    this._store.set(key, value)
 
-    return {
-      toBaseEncodedString: () => hash
-    }
+    return cid
   }
 
-  async get (key) {
-    const data = this._store.get(key)
+  async get (cid) {
+    if (CID.isCID(cid)) {
+      cid = cid.toBaseEncodedString()
+    }
+
+    const data = this._store.get(cid)
 
     return {
-      value: transformLinksIntoCids(data)
+      value: transformCborLinksIntoCids(data)
     }
   }
 }

@@ -13,6 +13,7 @@
     "node": ">=8.0.0"
   },
   "dependencies": {
+    "cids": "^0.5.7",
     "ipld-dag-pb": "^0.15.2",
     "orbit-db-identity-provider": "github:orbitdb/orbit-db-identity-provider",
     "p-map": "^1.1.1",

@@ -63,7 +63,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log1 = new Log(ipfs, testACL, testIdentity, 'A')
         await log1.append('helloA1')
         await log1.append('helloA2')
-        assert.deepStrictEqual(log1.get(log1.heads[0].hash), log1.heads[0])
+        assert.deepStrictEqual(log1.get(log1.heads[0].cid), log1.heads[0])
       })
 
       it('finds head after a join and append', async () => {
@@ -79,7 +79,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const expectedHead = last(log2.values)
 
         assert.strictEqual(log2.heads.length, 1)
-        assert.deepStrictEqual(log2.heads[0].hash, expectedHead.hash)
+        assert.deepStrictEqual(log2.heads[0].cid, expectedHead.cid)
       })
 
       it('finds two heads after a join', async () => {
@@ -98,8 +98,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const heads = log1.heads
         assert.strictEqual(heads.length, 2)
-        assert.strictEqual(heads[0].hash, expectedHead2.hash)
-        assert.strictEqual(heads[1].hash, expectedHead1.hash)
+        assert.strictEqual(heads[0].cid, expectedHead2.cid)
+        assert.strictEqual(heads[1].cid, expectedHead1.cid)
       })
 
       it('finds two heads after two joins', async () => {
@@ -125,8 +125,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const heads = log1.heads
         assert.strictEqual(heads.length, 2)
-        assert.strictEqual(heads[0].hash, expectedHead1.hash)
-        assert.strictEqual(heads[1].hash, expectedHead2.hash)
+        assert.strictEqual(heads[0].cid, expectedHead1.cid)
+        assert.strictEqual(heads[1].cid, expectedHead2.cid)
       })
 
       it('finds two heads after three joins', async () => {
@@ -151,8 +151,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const heads = log1.heads
         assert.strictEqual(heads.length, 2)
-        assert.strictEqual(heads[0].hash, expectedHead1.hash)
-        assert.strictEqual(heads[1].hash, expectedHead2.hash)
+        assert.strictEqual(heads[0].cid, expectedHead1.cid)
+        assert.strictEqual(heads[1].cid, expectedHead2.cid)
       })
 
       it('finds three heads after three joins', async () => {
@@ -178,9 +178,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const heads = log1.heads
         assert.strictEqual(heads.length, 3)
-        assert.deepStrictEqual(heads[0].hash, expectedHead1.hash)
-        assert.deepStrictEqual(heads[1].hash, expectedHead2.hash)
-        assert.deepStrictEqual(heads[2].hash, expectedHead3.hash)
+        assert.deepStrictEqual(heads[0].cid, expectedHead1.cid)
+        assert.deepStrictEqual(heads[1].cid, expectedHead2.cid)
+        assert.deepStrictEqual(heads[2].cid, expectedHead3.cid)
       })
     })
 
@@ -208,7 +208,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(Entry.isEntry(log1.tails[1]), true)
       })
 
-      it('returns tail hashes', async () => {
+      it('returns tail cids', async () => {
         let log1 = new Log(ipfs, testACL, testIdentity, 'A')
         let log2 = new Log(ipfs, testACL, testIdentity, 'A')
         await log1.append('helloA1')
@@ -216,16 +216,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log1.join(log2, 2)
-        assert.strictEqual(log1.tailHashes.length, 2)
+        assert.strictEqual(log1.tailCids.length, 2)
       })
 
-      it('returns no tail hashes if all entries point to empty nexts', async () => {
+      it('returns no tail cids if all entries point to empty nexts', async () => {
         let log1 = new Log(ipfs, testACL, testIdentity, 'A')
         let log2 = new Log(ipfs, testACL, testIdentity, 'A')
         await log1.append('helloA1')
         await log2.append('helloB1')
         await log1.join(log2)
-        assert.strictEqual(log1.tailHashes.length, 0)
+        assert.strictEqual(log1.tailCids.length, 0)
       })
 
       it('returns tails after loading a partial log', async () => {
@@ -239,8 +239,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const log4 = await Log.fromEntry(ipfs, testACL, testIdentity, log1.heads, 2)
         assert.strictEqual(log4.length, 2)
         assert.strictEqual(log4.tails.length, 2)
-        assert.strictEqual(log4.tails[0].hash, log4.values[0].hash)
-        assert.strictEqual(log4.tails[1].hash, log4.values[1].hash)
+        assert.strictEqual(log4.tails[0].cid, log4.values[0].cid)
+        assert.strictEqual(log4.tails[1].cid, log4.values[1].cid)
       })
 
       it('returns tails sorted by id', async () => {

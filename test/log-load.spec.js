@@ -114,10 +114,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
 
         let i = 0
-        const callback = (hash, entry, depth) => {
+        const callback = (cid, entry, depth) => {
           assert.notStrictEqual(entry, null)
-          assert.strictEqual(hash, items1[items1.length - i - 1].hash)
-          assert.strictEqual(entry.hash, items1[items1.length - i - 1].hash)
+          assert.strictEqual(cid, items1[items1.length - i - 1].cid)
+          assert.strictEqual(entry.cid, items1[items1.length - i - 1].cid)
           assert.strictEqual(entry.payload, items1[items1.length - i - 1].payload)
           assert.strictEqual(depth - 1, i)
 
@@ -127,7 +127,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [], callback)
       })
 
-      it('retrieves partial log from an entry hash', async () => {
+      it('retrieves partial log from an entry CID', async () => {
         const log1 = new Log(ipfs, testACL, testIdentity, 'X')
         const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
         const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
@@ -156,7 +156,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(b.length, 42)
       })
 
-      it('throws an error if trying to create a log from a hash of an entry', async () => {
+      it('throws an error if trying to create a log from a CID of an entry', async () => {
         let items1 = []
         const amount = 5
         for (let i = 1; i <= amount; i++) {
@@ -167,14 +167,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         let err
         try {
-          await Log.fromEntry(ipfs, testACL, testIdentity, last(items1).hash, 1)
+          await Log.fromEntry(ipfs, testACL, testIdentity, last(items1).cid, 1)
         } catch (e) {
           err = e
         }
         assert.strictEqual(err.message, `'sourceEntries' argument must be an array of Entry instances or a single Entry`)
       })
 
-      it('retrieves full log from an entry hash', async () => {
+      it('retrieves full log from an entry CID', async () => {
         const log1 = new Log(ipfs, testACL, testIdentity, 'X')
         const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
         const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
@@ -204,7 +204,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(c.length, amount * 3)
       })
 
-      it('retrieves full log from an entry hash 2', async () => {
+      it('retrieves full log from an entry CID 2', async () => {
         const log1 = new Log(ipfs, testACL, testIdentity, 'X')
         const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
         const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
@@ -234,7 +234,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(c.length, amount * 3)
       })
 
-      it('retrieves full log from an entry hash 3', async () => {
+      it('retrieves full log from an entry CID 3', async () => {
         const log1 = new Log(ipfs, testACL, testIdentity, 'X')
         const log2 = new Log(ipfs, testACL, testIdentity3, 'X')
         const log3 = new Log(ipfs, testACL, testIdentity4, 'X')
@@ -455,8 +455,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let reverseOrder = log.values.slice().reverse().sort(Entry.compare)
         assert.deepStrictEqual(fetchOrder, reverseOrder)
 
-        let hashOrder = log.values.slice().sort((a, b) => a.hash > b.hash).sort(Entry.compare)
-        assert.deepStrictEqual(fetchOrder, hashOrder)
+        let cidOrder = log.values.slice().sort((a, b) => a.cid > b.cid).sort(Entry.compare)
+        assert.deepStrictEqual(fetchOrder, cidOrder)
 
         let randomOrder2 = log.values.slice().sort((a, b) => 0.5 - Math.random()).sort(Entry.compare)
         assert.deepStrictEqual(fetchOrder, randomOrder2)
@@ -547,10 +547,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         await log.join(logA)
 
-        const mh = await log.toMultihash()
+        const cid = await log.toCID()
 
         // First 5
-        let res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 5)
+        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 5)
 
         const first5 = [
           'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10'
@@ -559,7 +559,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
 
         // First 11
-        res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 11)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 11)
 
         const first11 = [
           'entryA3', 'entryB3', 'entryA4', 'entryB4',
@@ -571,7 +571,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
 
         // All but one
-        res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 16 - 1)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 16 - 1)
 
         const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
@@ -611,10 +611,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         await log.join(logA)
 
-        const mh = await log.toMultihash()
+        const cid = await log.toCID()
 
         // First 5
-        let res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 5)
+        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 5)
 
         const first5 = [
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
@@ -623,7 +623,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
 
         // First 11
-        res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 11)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 11)
 
         const first11 = [
           'entryA1', 'entryA2', 'entryA3', 'entryA4',
@@ -635,7 +635,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
 
         // All but one
-        res = await Log.fromMultihash(ipfs, testACL, testIdentity2, mh, 16 - 1)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 16 - 1)
 
         const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
@@ -698,19 +698,19 @@ Object.keys(testAPIs).forEach((IPFS) => {
         it('returns all entries - no excluded entries', async () => {
           const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1)
           assert.strictEqual(a.length, amount)
-          assert.strictEqual(a.values[0].hash, items1[0].hash)
+          assert.strictEqual(a.values[0].cid, items1[0].cid)
         })
 
         it('returns all entries - including excluded entries', async () => {
           // One entry
           const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [items1[0]])
           assert.strictEqual(a.length, amount)
-          assert.strictEqual(a.values[0].hash, items1[0].hash)
+          assert.strictEqual(a.values[0].cid, items1[0].cid)
 
           // All entries
           const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, items1)
           assert.strictEqual(b.length, amount)
-          assert.strictEqual(b.values[0].hash, items1[0].hash)
+          assert.strictEqual(b.values[0].cid, items1[0].cid)
         })
       })
     })
