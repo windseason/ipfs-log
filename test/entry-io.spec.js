@@ -60,7 +60,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       assert.strictEqual(res.length, 2)
     })
 
-    it('loads max 1 entriy from a log of 2 entry', async () => {
+    it('loads max 1 entry from a log of 2 entry', async () => {
       let log = new Log(ipfs, testACL, testIdentity, 'X')
       await log.append('one')
       await log.append('two')

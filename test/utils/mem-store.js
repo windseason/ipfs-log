@@ -7,7 +7,9 @@ const defaultHashAlg = 'sha2-256'
 
 const createMultihash = (data, hashAlg) => {
   return new Promise((resolve, reject) => {
-    multihashing(data, hashAlg || defaultHashAlg, (err, multihash) => {
+    const buffer = Buffer.from(JSON.stringify(data))
+
+    multihashing(buffer, hashAlg || defaultHashAlg, (err, multihash) => {
       if (err) {
         return reject(err)
       }
@@ -17,44 +19,56 @@ const createMultihash = (data, hashAlg) => {
   })
 }
 
-// const LRU = require('lru')
-// const ImmutableDB = require('./immutabledb-interface')
-// const createMultihash = require('./create-multihash')
+const transformLinksIntoCids = (data) => {
+  if (!data) {
+    return data
+  }
+
+  if (data['/']) {
+    const hash = data['/']
+
+    return {
+      toBaseEncodedString: () => hash
+    }
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(transformLinksIntoCids)
+  }
+
+  if (typeof data === 'object') {
+    return Object.keys(data).reduce((obj, key) => {
+      obj[key] = transformLinksIntoCids(data[key])
+
+      return obj
+    }, {})
+  }
+
+  return data
+}
 
 /* Memory store using an LRU cache */
 class MemStore {
   constructor () {
-    this._store = {}// new LRU(1000)
+    this._store = new Map()
   }
 
   async put (value) {
-    const data = value// new Buffer(JSON.stringify(value))
+    const data = value
     const hash = await createMultihash(data)
-    // console.log(this._store)
-    // this._store.set(hash, data)
-    if (!this._store) this._store = {}
-    // console.log(this._store)
-    // console.log(hash, data)
-    this._store[hash] = data
-    // return hash
+
+    this._store.set(hash, data)
+
     return {
-      toJSON: () => {
-        return {
-          data: value,
-          multihash: hash
-        }
-      }
+      toBaseEncodedString: () => hash
     }
   }
 
   async get (key) {
+    const data = this._store.get(key)
+
     return {
-      toJSON: () => {
-        return {
-          data: this._store[key],
-          multihash: key
-        }
-      }
+      value: transformLinksIntoCids(data)
     }
   }
 }

@@ -46,10 +46,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       // Use mem-store for faster testing (no disk IO)
       const memstore = new MemStore()
-      ipfs1.object.put = memstore.put.bind(memstore)
-      ipfs1.object.get = memstore.get.bind(memstore)
-      ipfs2.object.put = memstore.put.bind(memstore)
-      ipfs2.object.get = memstore.get.bind(memstore)
+      ipfs1.dag.put = memstore.put.bind(memstore)
+      ipfs1.dag.get = memstore.get.bind(memstore)
+      ipfs2.dag.put = memstore.put.bind(memstore)
+      ipfs2.dag.get = memstore.get.bind(memstore)
 
       // Create an identity for each peers
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })

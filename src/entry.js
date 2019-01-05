@@ -1,8 +1,9 @@
 'use strict'
 
 const Clock = require('./lamport-clock')
-const { isDefined } = require('./utils')
+const { isDefined, toIpldNode, fromIpldNode } = require('./utils')
 
+const IPLD_LINKS = ['next']
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
 
 class Entry {
@@ -32,7 +33,7 @@ class Entry {
       id: logId, // For determining a unique chain
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of Multihashes
-      v: 0, // For future data structure updates, should currently always be 0
+      v: 1, // To tag the version of this data structure
       clock: clock || new Clock(identity.publicKey)
     }
 
@@ -103,9 +104,9 @@ class Entry {
     if (entry.identity) Object.assign(e, { identity: entry.identity })
     if (entry.sig) Object.assign(e, { sig: entry.sig })
 
-    const data = Entry.toBuffer(e)
-    const object = await ipfs.object.put(data)
-    return object.toJSON().multihash
+    const dagNode = await toIpldNode(e, IPLD_LINKS)
+    const cid = await ipfs.dag.put(dagNode)
+    return cid.toBaseEncodedString()
   }
 
   /**
@@ -122,21 +123,21 @@ class Entry {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!hash) throw new Error(`Invalid hash: ${hash}`)
 
-    const obj = await ipfs.object.get(hash, { enc: 'base58' })
+    const result = await ipfs.dag.get(hash)
+    const e = fromIpldNode(result.value, IPLD_LINKS)
 
-    const data = JSON.parse(obj.toJSON().data)
     let entry = {
       hash: hash,
-      id: data.id,
-      payload: data.payload,
-      next: data.next,
-      v: data.v,
-      clock: new Clock(data.clock.id, data.clock.time)
+      id: e.id,
+      payload: e.payload,
+      next: e.next,
+      v: e.v,
+      clock: new Clock(e.clock.id, e.clock.time)
     }
 
-    if (data.key) Object.assign(entry, { key: data.key })
-    if (data.identity) Object.assign(entry, { identity: data.identity })
-    if (data.sig) Object.assign(entry, { sig: data.sig })
+    if (e.key) Object.assign(entry, { key: e.key })
+    if (e.identity) Object.assign(entry, { identity: e.identity })
+    if (e.sig) Object.assign(entry, { sig: e.sig })
 
     return entry
   }
