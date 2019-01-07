@@ -112,11 +112,10 @@ class LogIO {
     length = length > -1 ? Math.max(length, sourceEntries.length) : length
 
     // Make sure we pass hashes instead of objects to the fetcher function
-    const excludeHashes = exclude ? exclude.map(e => e.hash ? e.hash : e) : exclude
     const hashes = sourceEntries.map(e => e.hash)
 
     // Fetch the entries
-    const entries = await EntryIO.fetchParallel(ipfs, hashes, length, excludeHashes, null, null, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, hashes, length, exclude, null, null, onProgressCallback)
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)
