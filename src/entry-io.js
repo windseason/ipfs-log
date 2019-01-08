@@ -39,7 +39,12 @@ class EntryIO {
 
     // Add entries that we don't need to fetch to the "cache"
     exclude = exclude && Array.isArray(exclude) ? exclude : []
-    var addToExcludeCache = e => (cache[e.hash] = e)
+    var addToExcludeCache = e => {
+      if (Entry.isEntry(e)) {
+        result.push(e)
+        cache[e.hash] = e
+      }
+    }
     exclude.forEach(addToExcludeCache)
 
     const shouldFetchMore = () => {
