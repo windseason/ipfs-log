@@ -11,6 +11,20 @@ const last = (arr, n) => arr.slice(arr.length - n, arr.length)
 
 class LogIO {
   /**
+   * Get the CID of a Log.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {Log} log Log to get a CID for
+   * @returns {Promise<string>}
+   */
+  static async toCID (ipfs, log) {
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
+    if (!isDefined(log)) throw LogError.LogNotDefinedError()
+    if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
+
+    return dagNode.write(ipfs, 'dag-cbor', log.toJSON(), IPLD_LINKS)
+  }
+
+  /**
    * Get the multihash of a Log.
    * @param {IPFS} ipfs An IPFS instance
    * @param {Log} log Log to get a multihash for
@@ -23,20 +37,6 @@ class LogIO {
     if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
 
     return dagNode.write(ipfs, 'dag-pb', log.toJSON(), IPLD_LINKS)
-  }
-
-  /**
-   * Get the CID of a Log.
-   * @param {IPFS} ipfs An IPFS instance
-   * @param {Log} log Log to get a CID for
-   * @returns {Promise<string>}
-   */
-  static async toCID (ipfs, log) {
-    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
-    if (!isDefined(log)) throw LogError.LogNotDefinedError()
-    if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
-
-    return dagNode.write(ipfs, 'dag-cbor', log.toJSON(), IPLD_LINKS)
   }
 
   /**
@@ -76,19 +76,16 @@ class LogIO {
   }
 
   /**
-     * Create a log from a multihash.
-     * @param {IPFS} ipfs An IPFS instance
-     * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-     * @param {number} [length=-1] How many items to include in the log
-     * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
-     * @param {function(cid, entry, parent, depth)} onProgressCallback
-     * @returns {Promise<Log>}
-     * @deprecated
-     */
+   * Create a log from a multihash.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
+   * @param {number} [length=-1] How many items to include in the log
+   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} onProgressCallback
+   * @returns {Promise<Log>}
+   * @deprecated
+   */
   static async fromMultihash (ipfs, multihash, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
-    if (!isDefined(multihash)) throw new Error(`Invalid multihash: ${multihash}`)
-
     return LogIO.fromCID(ipfs, multihash, length, exclude, onProgressCallback)
   }
 
@@ -113,6 +110,7 @@ class LogIO {
 
   static async fromJSON (ipfs, json, length = -1, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
+    json.heads.forEach(Entry.ensureInterop)
     const headCids = json.heads.map(e => e.cid)
     const entries = await EntryIO.fetchParallel(ipfs, headCids, length, [], 16, timeout, onProgressCallback)
     const finalEntries = entries.slice().sort(Entry.compare)
@@ -144,6 +142,7 @@ class LogIO {
     if (!Array.isArray(sourceEntries)) {
       sourceEntries = [sourceEntries]
     }
+    sourceEntries.forEach(Entry.ensureInterop)
 
     // Fetch given length, return size at least the given input entries
     length = length > -1 ? Math.max(length, sourceEntries.length) : length

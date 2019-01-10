@@ -416,15 +416,6 @@ class Log extends GSet {
   }
 
   /**
-   * Get the log's multihash.
-   * @returns {Promise<string>} Multihash of the Log as Base58 encoded string
-   * @deprecated
-   */
-  toMultihash () {
-    return LogIO.toMultihash(this._storage, this)
-  }
-
-  /**
    * Get the log's CID.
    * @returns {Promise<string>} The Log CID
    */
@@ -433,21 +424,12 @@ class Log extends GSet {
   }
 
   /**
-    * Create a log from a multihash.
-    * @param {IPFS} ipfs An IPFS instance
-    * @param {AccessController} access The access controller instance
-    * @param {Identity} identity The identity instance
-    * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-    * @param {number} [length=-1] How many items to include in the log
-    * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
-    * @param {function(cid, entry, parent, depth)} onProgressCallback
-    * @returns {Promise<Log>}
-    * @deprecated
-    */
-  static async fromMultihash (ipfs, access, identity, multihash, length = -1, exclude, onProgressCallback) {
-    // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromMultihash(ipfs, multihash, length, exclude, onProgressCallback)
-    return new Log(ipfs, access, identity, data.id, data.values, data.heads, data.clock)
+   * Get the log's multihash.
+   * @returns {Promise<string>} Multihash of the Log as Base58 encoded string
+   * @deprecated
+   */
+  toMultihash () {
+    return LogIO.toMultihash(this._storage, this)
   }
 
   /**
@@ -469,6 +451,22 @@ class Log extends GSet {
   }
 
   /**
+    * Create a log from a multihash.
+    * @param {IPFS} ipfs An IPFS instance
+    * @param {AccessController} access The access controller instance
+    * @param {Identity} identity The identity instance
+    * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
+    * @param {number} [length=-1] How many items to include in the log
+    * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
+    * @param {function(cid, entry, parent, depth)} onProgressCallback
+    * @returns {Promise<Log>}
+    * @deprecated
+    */
+  static async fromMultihash (ipfs, access, identity, multihash, length = -1, exclude, onProgressCallback) {
+    return Log.fromCID(ipfs, access, identity, multihash, length, exclude, onProgressCallback)
+  }
+
+  /**
    * Create a log from a single entry's CID.
    * @param {IPFS} ipfs An IPFS instance
    * @param {AccessController} access The access controller instance
@@ -477,12 +475,28 @@ class Log extends GSet {
    * @param {string} [logId] The ID of the log
    * @param {number} [length=-1] How many entries to include in the log
    * @param {function(cid, entry, parent, depth)} onProgressCallback
-   * @return {Promise<Log>}      New Log
+   * @return {Promise<Log>} New Log
    */
   static async fromEntryCid (ipfs, access, identity, cid, logId, length = -1, exclude, onProgressCallback) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntryCid(ipfs, cid, length, exclude, onProgressCallback)
     return new Log(ipfs, access, identity, logId, data.values)
+  }
+
+  /**
+   * Create a log from a single entry's multihash.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {AccessController} access The access controller instance
+   * @param {Identity} identity The identity instance
+   * @param {string} multihash The entry's multihash
+   * @param {string} [logId] The ID of the log
+   * @param {number} [length=-1] How many entries to include in the log
+   * @param {function(cid, entry, parent, depth)} onProgressCallback
+   * @return {Promise<Log>} New Log
+   * @deprecated
+   */
+  static async fromEntryHash (ipfs, access, identity, multihash, logId, length = -1, exclude, onProgressCallback) {
+    return Log.fromEntryCid(ipfs, access, identity, multihash, logId, length, exclude, onProgressCallback)
   }
 
   /**

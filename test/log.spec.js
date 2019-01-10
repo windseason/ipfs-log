@@ -1,6 +1,7 @@
 'use strict'
 
 const assert = require('assert')
+const sinon = require('sinon')
 const rmrf = require('rimraf')
 const dagPB = require('ipld-dag-pb')
 const pify = require('pify')
@@ -535,7 +536,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       describe('fromMultihash', async () => {
-        it('creates a log from ipfs multihash - one entry', async () => {
+        afterEach(() => {
+          if (Log.fromCID.restore) {
+            Log.fromCID.restore()
+          }
+        })
+
+        it('calls fromCID', async () => {
+          const spy = sinon.spy(Log, 'fromCID')
           const expectedData = {
             id: 'X',
             heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
@@ -544,156 +552,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log.append('one')
           const multihash = await log.toMultihash()
           const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
+          assert(spy.calledOnceWith(ipfs, testACL, testIdentity, multihash, -1))
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
-          assert.strictEqual(res.length, 1)
-          assert.strictEqual(res.values[0].payload, 'one')
-          assert.strictEqual(res.values[0].clock.id, testIdentity.publicKey)
-          assert.strictEqual(res.values[0].clock.time, 1)
-        })
-
-        it('creates a log from ipfs multihash - three entries', async () => {
-          const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
-          assert.strictEqual(res.length, 3)
-          assert.strictEqual(res.values[0].payload, 'one')
-          assert.strictEqual(res.values[0].clock.time, 1)
-          assert.strictEqual(res.values[1].payload, 'two')
-          assert.strictEqual(res.values[1].clock.time, 2)
-          assert.strictEqual(res.values[2].payload, 'three')
-          assert.strictEqual(res.values[2].clock.time, 3)
-        })
-
-        it('has the right sequence number after creation and appending', async () => {
-          const multihash = await log.toMultihash()
-          let res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
-          assert.strictEqual(res.length, 3)
-          await res.append('four')
-          assert.strictEqual(res.length, 4)
-          assert.strictEqual(res.values[3].payload, 'four')
-          assert.strictEqual(res.values[3].clock.time, 4)
-        })
-
-        it('creates a log from ipfs multihash that has three heads', async () => {
-          let log1 = new Log(ipfs, testACL, testIdentity, 'A')
-          let log2 = new Log(ipfs, testACL, testIdentity2, 'A')
-          let log3 = new Log(ipfs, testACL, testIdentity3, 'A')
-          await log1.append('one') // order is determined by the identity's publicKey
-          await log3.append('two')
-          await log2.append('three')
-          await log1.join(log2)
-          await log1.join(log3)
-          const multihash = await log1.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
-          assert.strictEqual(res.length, 3)
-          assert.strictEqual(res.heads.length, 3)
-          assert.strictEqual(res.heads[0].payload, 'three')
-          assert.strictEqual(res.heads[1].payload, 'two') // order is determined by the identity's publicKey
-          assert.strictEqual(res.heads[2].payload, 'one')
-        })
-
-        it('creates a log from ipfs multihash up to a size limit', async () => {
-          const amount = 100
-          const size = amount / 2
-          let log = new Log(ipfs, testACL, testIdentity, 'A')
-          for (let i = 0; i < amount; i++) {
-            await log.append(i.toString())
-          }
-          const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, size)
-          assert.strictEqual(res.length, size)
-        })
-
-        it('creates a log from ipfs multihash up without size limit', async () => {
-          const amount = 100
-          let log = new Log(ipfs, testACL, testIdentity, 'A')
-          for (let i = 0; i < amount; i++) {
-            await log.append(i.toString())
-          }
-          const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1)
-          assert.strictEqual(res.length, amount)
-        })
-
-        it('throws an error if ipfs is not defined', async () => {
-          let err
-          try {
-            await Log.fromMultihash()
-          } catch (e) {
-            err = e
-          }
-          assert.notStrictEqual(err, null)
-          assert.strictEqual(err.message, 'IPFS instance not defined')
-        })
-
-        it('throws an error if multihash is not defined', async () => {
-          let err
-          try {
-            await Log.fromMultihash(ipfs)
-          } catch (e) {
-            err = e
-          }
-          assert.notStrictEqual(err, null)
-          assert.strictEqual(err.message, 'Invalid multihash: undefined')
-        })
-
-        it('throws an error when data from multihash is not instance of Log', async () => {
-          const dagNode = await createPbDagNode(Buffer.from('{}'))
-          const cid = await ipfs.dag.put(dagNode, {
-            format: 'dag-pb',
-            hashAlg: 'sha2-256'
-          })
-          let err
-          try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, cid.toV0().toBaseEncodedString())
-          } catch (e) {
-            err = e
-          }
-          assert.strictEqual(err.message, 'Given argument is not an instance of Log')
-        })
-
-        it('throws an error if data from multihash is not valid JSON', async () => {
-          const dagNode = await createPbDagNode(Buffer.from('hello'))
-          let cid = await ipfs.dag.put(dagNode, {
-            hashAlg: 'sha2-256',
-            format: 'dag-pb'
-          })
-          let err
-          try {
-            await Log.fromMultihash(ipfs, testACL, testIdentity, cid.toV0().toBaseEncodedString())
-          } catch (e) {
-            err = e
-          }
-          assert.strictEqual(err.message, 'Unexpected token h in JSON at position 0')
-        })
-
-        it('onProgress callback is fired for each entry', async () => {
-          const amount = 100
-          let log = new Log(ipfs, testACL, testIdentity, 'A')
-          for (let i = 0; i < amount; i++) {
-            await log.append(i.toString())
-          }
-
-          const items = log.values
-          let i = 0
-          const loadProgressCallback = (cid, entry, depth) => {
-            assert.notStrictEqual(entry, null)
-            assert.strictEqual(cid, items[items.length - i - 1].cid)
-            assert.strictEqual(entry.cid, items[items.length - i - 1].cid)
-            assert.strictEqual(entry.payload, items[items.length - i - 1].payload)
-            assert.strictEqual(depth - 1, i)
-            i++
-          }
-
-          const multihash = await log.toMultihash()
-          const result = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, -1, [], loadProgressCallback)
-
-          // Make sure the onProgress callback was called for each entry
-          assert.strictEqual(i, amount)
-          // Make sure the log entries are correct ones
-          assert.strictEqual(result.values[0].clock.time, 1)
-          assert.strictEqual(result.values[0].payload, '0')
-          assert.strictEqual(result.values[result.length - 1].clock.time, 100)
-          assert.strictEqual(result.values[result.length - 1].payload, '99')
         })
       })
     })

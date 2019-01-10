@@ -48,7 +48,8 @@ class Entry {
     entry.identity = identity.toJSON()
     entry.sig = signature
     entry.cid = await Entry.toCID(ipfs, entry)
-    return entry
+
+    return Entry.ensureInterop(entry)
   }
 
   /**
@@ -129,7 +130,7 @@ class Entry {
    */
   static async toMultihash (ipfs, entry) {
     if (!ipfs) throw IpfsNotDefinedError()
-    if (!Entry.isEntry(entry)) throw new Error('Invalid object format, cannot generate entry multihash')
+    if (!Entry.isEntry(entry)) throw new Error('Invalid object format, cannot generate entry CID')
 
     // Ensure `entry` follows the correct format
     const e = {
@@ -165,7 +166,7 @@ class Entry {
     const e = await dagNode.read(ipfs, cid, IPLD_LINKS)
 
     let entry = {
-      cid,
+      [getCidProp(e)]: cid,
       id: e.id,
       payload: e.payload,
       next: e.next,
@@ -177,7 +178,7 @@ class Entry {
     if (e.identity) Object.assign(entry, { identity: e.identity })
     if (e.sig) Object.assign(entry, { sig: e.sig })
 
-    return entry
+    return Entry.ensureInterop(entry)
   }
 
   /**
@@ -192,9 +193,6 @@ class Entry {
    * @deprecated
    */
   static async fromMultihash (ipfs, multihash) {
-    if (!ipfs) throw IpfsNotDefinedError()
-    if (!multihash) throw new Error(`Invalid multihash: ${multihash}`)
-
     return Entry.fromCID(ipfs, multihash)
   }
 
@@ -210,6 +208,32 @@ class Entry {
       obj.v !== undefined &&
       obj[getCidProp(obj)] !== undefined &&
       obj.clock !== undefined
+  }
+
+  /**
+   * Ensures that this entry is interoperable between earlier versions
+   * and the most recent one (and vice-versa).
+   * @param {Entry} entry The entry to ensure interoperability
+   * @return {Entry} entry The same entry but with backwards and forward interoperability
+   */
+  static ensureInterop (entry) {
+    if (entry.cid && entry.hash) {
+      return entry
+    }
+
+    const prop = getCidProp(entry)
+    const accessorProp = prop === 'hash' ? 'cid' : 'hash'
+
+    Object.defineProperty(entry, accessorProp, {
+      get () {
+        return this[prop]
+      },
+      set (value) {
+        this[prop] = value
+      }
+    })
+
+    return entry
   }
 
   /**
