@@ -46,10 +46,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       // Use mem-store for faster testing (no disk IO)
       const memstore = new MemStore()
-      ipfs1.object.put = memstore.put.bind(memstore)
-      ipfs1.object.get = memstore.get.bind(memstore)
-      ipfs2.object.put = memstore.put.bind(memstore)
-      ipfs2.object.get = memstore.get.bind(memstore)
+      ipfs1.dag.put = memstore.put.bind(memstore)
+      ipfs1.dag.get = memstore.get.bind(memstore)
+      ipfs2.dag.put = memstore.put.bind(memstore)
+      ipfs2.dag.get = memstore.get.bind(memstore)
 
       // Create an identity for each peers
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
@@ -81,7 +81,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs1, testACL, testIdentity, message.data.toString(), -1)
+        const log = await Log.fromCID(ipfs1, testACL, testIdentity, message.data.toString(), -1)
         await log1.join(log)
         processing--
       }
@@ -94,7 +94,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs2, testACL, testIdentity2, message.data.toString(), -1, null)
+        const log = await Log.fromCID(ipfs2, testACL, testIdentity2, message.data.toString(), -1, null)
         await log2.join(log)
         processing--
       }
@@ -114,10 +114,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         for (let i = 1; i <= amount; i++) {
           await input1.append('A' + i)
           await input2.append('B' + i)
-          const mh1 = await input1.toMultihash()
-          const mh2 = await input2.toMultihash()
-          await ipfs1.pubsub.publish(channel, Buffer.from(mh1))
-          await ipfs2.pubsub.publish(channel, Buffer.from(mh2))
+          const cid1 = await input1.toCID()
+          const cid2 = await input2.toCID()
+          await ipfs1.pubsub.publish(channel, Buffer.from(cid1))
+          await ipfs2.pubsub.publish(channel, Buffer.from(cid2))
         }
 
         console.log('\nAll messages sent')

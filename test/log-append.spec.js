@@ -64,7 +64,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('has the correct heads', async () => {
           log.heads.forEach((head) => {
-            assert.strictEqual(head.hash, log.values[0].hash)
+            assert.strictEqual(head.cid, log.values[0].cid)
           })
         })
 
@@ -89,7 +89,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             // Make sure the log has the right heads after each append
             const values = log.values
             assert.strictEqual(log.heads.length, 1)
-            assert.strictEqual(log.heads[0].hash, values[values.length - 1].hash)
+            assert.strictEqual(log.heads[0].cid, values[values.length - 1].cid)
           }
         })
 

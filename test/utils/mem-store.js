@@ -1,60 +1,61 @@
 'use strict'
 
 const multihashing = require('multihashing-async')
-const mh = require('multihashes')
+const CID = require('cids')
+const pify = require('pify')
 
-const defaultHashAlg = 'sha2-256'
+const createMultihash = pify(multihashing)
 
-const createMultihash = (data, hashAlg) => {
-  return new Promise((resolve, reject) => {
-    multihashing(data, hashAlg || defaultHashAlg, (err, multihash) => {
-      if (err) {
-        return reject(err)
-      }
+const transformCborLinksIntoCids = (data) => {
+  if (!data) {
+    return data
+  }
 
-      resolve(mh.toB58String(multihash))
-    })
-  })
+  if (data['/']) {
+    return new CID(data['/'])
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(transformCborLinksIntoCids)
+  }
+
+  if (typeof data === 'object') {
+    return Object.keys(data).reduce((obj, key) => {
+      obj[key] = transformCborLinksIntoCids(data[key])
+
+      return obj
+    }, {})
+  }
+
+  return data
 }
-
-// const LRU = require('lru')
-// const ImmutableDB = require('./immutabledb-interface')
-// const createMultihash = require('./create-multihash')
 
 /* Memory store using an LRU cache */
 class MemStore {
   constructor () {
-    this._store = {}// new LRU(1000)
+    this._store = new Map()
   }
 
   async put (value) {
-    const data = value// new Buffer(JSON.stringify(value))
-    const hash = await createMultihash(data)
-    // console.log(this._store)
-    // this._store.set(hash, data)
-    if (!this._store) this._store = {}
-    // console.log(this._store)
-    // console.log(hash, data)
-    this._store[hash] = data
-    // return hash
-    return {
-      toJSON: () => {
-        return {
-          data: value,
-          multihash: hash
-        }
-      }
-    }
+    const buffer = Buffer.from(JSON.stringify(value))
+    const multihash = await createMultihash(buffer, 'sha2-256')
+    const cid = new CID(1, 'dag-cbor', multihash)
+    const key = cid.toBaseEncodedString()
+
+    this._store.set(key, value)
+
+    return cid
   }
 
-  async get (key) {
+  async get (cid) {
+    if (CID.isCID(cid)) {
+      cid = cid.toBaseEncodedString()
+    }
+
+    const data = this._store.get(cid)
+
     return {
-      toJSON: () => {
-        return {
-          data: this._store[key],
-          multihash: key
-        }
-      }
+      value: transformCborLinksIntoCids(data)
     }
   }
 }

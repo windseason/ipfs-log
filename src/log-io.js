@@ -4,33 +4,55 @@ const Entry = require('./entry')
 const EntryIO = require('./entry-io')
 const Clock = require('./lamport-clock')
 const LogError = require('./log-errors')
-const { isDefined, findUniques, difference } = require('./utils')
+const { isDefined, findUniques, difference, dagNode } = require('./utils')
 
+const IPLD_LINKS = ['heads']
 const last = (arr, n) => arr.slice(arr.length - n, arr.length)
 
 class LogIO {
+  /**
+   * Get the CID of a Log.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {Log} log Log to get a CID for
+   * @returns {Promise<string>}
+   */
+  static async toCID (ipfs, log) {
+    if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
+    if (!isDefined(log)) throw LogError.LogNotDefinedError()
+    if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
+
+    return dagNode.write(ipfs, 'dag-cbor', log.toJSON(), IPLD_LINKS)
+  }
+
+  /**
+   * Get the multihash of a Log.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {Log} log Log to get a multihash for
+   * @returns {Promise<string>}
+   * @deprecated
+   */
   static async toMultihash (ipfs, log) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
-    const dagNode = await ipfs.object.put(log.toBuffer())
-    return dagNode.toJSON().multihash
+
+    return dagNode.write(ipfs, 'dag-pb', log.toJSON(), IPLD_LINKS)
   }
 
   /**
-   * Create a log from multihash
-   * @param {IPFS} ipfs - An IPFS instance
-   * @param {string} hash - Multihash (as a Base58 encoded string) to create the log from
-   * @param {Number} [length=-1] - How many items to include in the log
-   * @param {function(hash, entry, parent, depth)} onProgressCallback
+   * Create a log from a CID.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {string} cid The CID of the log
+   * @param {number} [length=-1] How many items to include in the log
+   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Log>}
    */
-  static async fromMultihash (ipfs, hash, length = -1, exclude, onProgressCallback) {
+  static async fromCID (ipfs, cid, length = -1, exclude, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
-    if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
+    if (!isDefined(cid)) throw new Error(`Invalid CID: ${cid}`)
 
-    const dagNode = await ipfs.object.get(hash, { enc: 'base58' })
-    const logData = JSON.parse(dagNode.toJSON().data)
+    const logData = await dagNode.read(ipfs, cid, IPLD_LINKS)
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
 
     const entries = await EntryIO.fetchAll(ipfs, logData.heads, length, exclude, null, onProgressCallback)
@@ -44,7 +66,7 @@ class LogIO {
     }, new Clock(logData.id))
 
     const finalEntries = entries.slice().sort(Entry.compare)
-    const heads = finalEntries.filter(e => logData.heads.includes(e.hash))
+    const heads = finalEntries.filter(e => logData.heads.includes(e.cid))
     return {
       id: logData.id,
       values: finalEntries,
@@ -53,19 +75,31 @@ class LogIO {
     }
   }
 
-  static async fromEntryHash (ipfs, entryHash, id, length = -1, exclude, onProgressCallback) {
-    if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
-    if (!isDefined(entryHash)) throw new Error("'entryHash' must be defined")
+  /**
+   * Create a log from a multihash.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
+   * @param {number} [length=-1] How many items to include in the log
+   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} onProgressCallback
+   * @returns {Promise<Log>}
+   * @deprecated
+   */
+  static async fromMultihash (ipfs, multihash, length = -1, exclude, onProgressCallback) {
+    return LogIO.fromCID(ipfs, multihash, length, exclude, onProgressCallback)
+  }
 
-    // Convert input hash(es) to an array
-    const entryHashes = Array.isArray(entryHash) ? entryHash : [entryHash]
+  static async fromEntryCid (ipfs, entryCid, length = -1, exclude, onProgressCallback) {
+    if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
+    if (!isDefined(entryCid)) throw new Error("'entryCid' must be defined")
+
+    // Convert input cid(s) to an array
+    const entryCids = Array.isArray(entryCid) ? entryCid : [entryCid]
 
     // Fetch given length, return size at least the given input entries
     length = length > -1 ? Math.max(length, 1) : length
 
-    // Make sure we pass hashes instead of objects to the fetcher function
-    const excludeHashes = exclude// ? exclude.map(e => e.hash ? e.hash : e) : exclude
-    const entries = await EntryIO.fetchParallel(ipfs, entryHashes, length, excludeHashes, null, null, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, entryCids, length, exclude, null, null, onProgressCallback)
     // Cap the result at the right size by taking the last n entries,
     // or if given length is -1, then take all
     const sliced = length > -1 ? last(entries, length) : entries
@@ -76,8 +110,9 @@ class LogIO {
 
   static async fromJSON (ipfs, json, length = -1, timeout, onProgressCallback) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
-    const headHashes = json.heads.map(e => e.hash)
-    const entries = await EntryIO.fetchParallel(ipfs, headHashes, length, [], 16, timeout, onProgressCallback)
+    json.heads.forEach(Entry.ensureInterop)
+    const headCids = json.heads.map(e => e.cid)
+    const entries = await EntryIO.fetchParallel(ipfs, headCids, length, [], 16, timeout, onProgressCallback)
     const finalEntries = entries.slice().sort(Entry.compare)
     return {
       id: json.id,
@@ -87,12 +122,12 @@ class LogIO {
   }
 
   /**
-   * Create a new log starting from an entry
+   * Create a new log starting from an entry.
    * @param {IPFS} ipfs An IPFS instance
-   * @param {Array<Entry>} entries An entry or an array of entries to fetch a log from
-   * @param {Number} [length=-1] How many entries to include. Default: infinite.
-   * @param {Array<Entry|string>} [exclude] Entries to not fetch (cached)
-   * @param {function(hash, entry, parent, depth)} [onProgressCallback]
+   * @param {Entry|Array<Entry>} sourceEntries An entry or an array of entries to fetch a log from
+   * @param {number} [length=-1] How many entries to include
+   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} [onProgressCallback]
    * @returns {Promise<Log>}
    */
   static async fromEntry (ipfs, sourceEntries, length = -1, exclude, onProgressCallback) {
@@ -107,26 +142,27 @@ class LogIO {
     if (!Array.isArray(sourceEntries)) {
       sourceEntries = [sourceEntries]
     }
+    sourceEntries.forEach(Entry.ensureInterop)
 
     // Fetch given length, return size at least the given input entries
     length = length > -1 ? Math.max(length, sourceEntries.length) : length
 
-    // Make sure we pass hashes instead of objects to the fetcher function
-    const hashes = sourceEntries.map(e => e.hash)
+    // Make sure we pass cids instead of objects to the fetcher function
+    const hashes = sourceEntries.map(e => e.cid)
 
     // Fetch the entries
     const entries = await EntryIO.fetchParallel(ipfs, hashes, length, exclude, null, null, onProgressCallback)
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)
-    const uniques = findUniques(combined, 'hash').sort(Entry.compare)
+    const uniques = findUniques(combined, 'cid').sort(Entry.compare)
 
     // Cap the result at the right size by taking the last n entries
     const sliced = uniques.slice(length > -1 ? -length : -uniques.length)
 
     // Make sure that the given input entries are present in the result
     // in order to not lose references
-    const missingSourceEntries = difference(sliced, sourceEntries, 'hash')
+    const missingSourceEntries = difference(sliced, sourceEntries, 'cid')
 
     const replaceInFront = (a, withEntries) => {
       var sliced = a.slice(withEntries.length, a.length)

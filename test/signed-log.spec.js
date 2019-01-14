@@ -158,7 +158,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       const entry = log2.values[0]
-      assert.strictEqual(err, `Error: Could not validate signature "${entry.sig}" for entry "${entry.hash}" and key "${entry.key}"`)
+      assert.strictEqual(err, `Error: Could not validate signature "${entry.sig}" for entry "${entry.cid}" and key "${entry.key}"`)
       assert.strictEqual(log1.values.length, 1)
       assert.strictEqual(log1.values[0].payload, 'one')
     })

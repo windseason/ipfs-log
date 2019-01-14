@@ -3,12 +3,14 @@
 const Clock = require('./lamport-clock')
 
 /**
- * Sort two entries as Last-Write-Wins (LWW)
- * @description  Last Write Wins is a conflict resolution strategy for sorting elements
- *               where the element with a greater clock (latest) is chosen as the winner
- * @param {Entry} [a] First entry
- * @param {Entry} [b] Second entry
- * @returns {int} 1 if a is latest, -1 if b is latest
+ * Sort two entries as Last-Write-Wins (LWW).
+ *
+ * Last Write Wins is a conflict resolution strategy for sorting elements
+ * where the element with a greater clock (latest) is chosen as the winner.
+ *
+ * @param {Entry} a First entry
+ * @param {Entry} b Second entry
+ * @returns {number} 1 if a is latest, -1 if b is latest
  */
 function LastWriteWins (a, b) {
   // Ultimate conflict resolution (take the first/left arg)
@@ -23,11 +25,11 @@ function LastWriteWins (a, b) {
 }
 
 /**
- * Sort two entries by their clock time
- * @param {Entry} [a] First entry to compare
- * @param {Entry} [b] Second entry to compare
- * @param {function(a, b)} [resolveConflict] A function to call if entries are concurrent (happened at the same time). The function should take in two entries and return 1 if the first entry should be chosen and -1 if the second entry should be chosen.
- * @returns {int} 1 if a is greater, -1 if b is greater
+ * Sort two entries by their clock time.
+ * @param {Entry} a First entry to compare
+ * @param {Entry} b Second entry to compare
+ * @param {function(a, b)} resolveConflict A function to call if entries are concurrent (happened at the same time). The function should take in two entries and return 1 if the first entry should be chosen and -1 if the second entry should be chosen.
+ * @returns {number} 1 if a is greater, -1 if b is greater
  */
 function SortByClocks (a, b, resolveConflict) {
   // Compare the clocks
@@ -38,11 +40,11 @@ function SortByClocks (a, b, resolveConflict) {
 }
 
 /**
- * Sort two entries by their clock id
- * @param {Entry} [a] First entry to compare
- * @param {Entry} [b] Second entry to compare
- * @param {function(a, b)} [resolveConflict] A function to call if the clocks ids are the same. The function should take in two entries and return 1 if the first entry should be chosen and -1 if the second entry should be chosen.
- * @returns {int} 1 if a is greater, -1 if b is greater
+ * Sort two entries by their clock id.
+ * @param {Entry} a First entry to compare
+ * @param {Entry} b Second entry to compare
+ * @param {function(a, b)} resolveConflict A function to call if the clocks ids are the same. The function should take in two entries and return 1 if the first entry should be chosen and -1 if the second entry should be chosen.
+ * @returns {number} 1 if a is greater, -1 if b is greater
  */
 function SortByClockId (a, b, resolveConflict) {
   // Sort by ID if clocks are concurrent,
