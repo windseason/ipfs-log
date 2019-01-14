@@ -463,9 +463,9 @@ class Log extends GSet {
     * @returns {Promise<Log>}
     * @deprecated
     */
-  static async fromMultihash (ipfs, access, identity, multihash, length = -1, exclude, onProgressCallback) {
-    return Log.fromCID(ipfs, access, identity, multihash, length, exclude, onProgressCallback)
-  }
+    static async fromMultihash (ipfs, access, identity, multihash, { length = -1, exclude, onProgressCallback, sortFn } = {}) {
+      return Log.fromCID(ipfs, access, identity, multihash, { length, exclude, onProgressCallback, sortFn } = {})
+    }
 
   /**
    * Create a log from a single entry's CID.
