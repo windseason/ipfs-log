@@ -444,7 +444,7 @@ class Log extends GSet {
    * @returns {Promise<Log>}
    * @deprecated
    */
-  static async fromCID (ipfs, access, identity, cid, length = -1, exclude, onProgressCallback) {
+  static async fromCID (ipfs, access, identity, cid, { length = -1, exclude, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromCID(ipfs, cid, length, exclude, onProgressCallback)
     return new Log(ipfs, access, identity, data.id, data.values, data.heads, data.clock)
@@ -463,7 +463,7 @@ class Log extends GSet {
     * @deprecated
     */
   static async fromMultihash (ipfs, access, identity, multihash, length = -1, exclude, onProgressCallback) {
-    return Log.fromCID(ipfs, access, identity, multihash, length, exclude, onProgressCallback)
+    return await Log.fromCID(ipfs, access, identity, multihash, length, exclude, onProgressCallback)
   }
 
   /**
