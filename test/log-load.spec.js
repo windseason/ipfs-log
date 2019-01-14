@@ -550,7 +550,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const cid = await log.toCID()
 
         // First 5
-        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 5)
+        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 5 })
 
         const first5 = [
           'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10'
@@ -559,7 +559,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
 
         // First 11
-        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 11)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 11 })
 
         const first11 = [
           'entryA3', 'entryB3', 'entryA4', 'entryB4',
@@ -571,7 +571,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
 
         // All but one
-        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 16 - 1)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 16 - 1 })
 
         const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
@@ -614,7 +614,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const cid = await log.toCID()
 
         // First 5
-        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 5)
+        let res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 5 })
 
         const first5 = [
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
@@ -623,7 +623,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
 
         // First 11
-        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 11)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 11 })
 
         const first11 = [
           'entryA1', 'entryA2', 'entryA3', 'entryA4',
@@ -635,7 +635,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
 
         // All but one
-        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, 16 - 1)
+        res = await Log.fromCID(ipfs, testACL, testIdentity2, cid, { length: 16 - 1 })
 
         const all = [
           'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',

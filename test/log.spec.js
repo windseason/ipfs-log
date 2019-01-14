@@ -441,7 +441,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             await log.append(i.toString())
           }
           const cid = await log.toCID()
-          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, size)
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: size })
           assert.strictEqual(res.length, size)
         })
 
@@ -452,7 +452,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             await log.append(i.toString())
           }
           const cid = await log.toCID()
-          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: -1 })
           assert.strictEqual(res.length, amount)
         })
 
@@ -523,7 +523,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           }
 
           const cid = await log.toCID()
-          const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1, [], loadProgressCallback)
+          const result = await Log.fromCID(ipfs, testACL, testIdentity, cid,
+            { length: -1, exclude: [], onProgressCallback: loadProgressCallback })
 
           // Make sure the onProgress callback was called for each entry
           assert.strictEqual(i, amount)

@@ -94,7 +94,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       const cid = await log.toCID()
-      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 42)
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: 42 })
       assert.strictEqual(result.length, 42)
     })
 
@@ -112,7 +112,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       const cid = await log2.toCID()
-      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 99)
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: 99 })
       assert.strictEqual(result.length, 99)
     })
 
@@ -136,7 +136,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       await log3.join(log2)
       const cid = await log3.toCID()
-      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, 10)
+      const result = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: 10 })
       assert.strictEqual(result.length, 10)
     })
 
