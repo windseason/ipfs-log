@@ -48,7 +48,7 @@ class LogIO {
    * @param {function(cid, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Log>}
    */
-  static async fromCID (ipfs, cid, length = -1, exclude, onProgressCallback) {
+  static async fromCID (ipfs, cid, { length = -1, exclude, onProgressCallback } = {}) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(cid)) throw new Error(`Invalid CID: ${cid}`)
 
