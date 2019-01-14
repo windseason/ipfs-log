@@ -463,9 +463,11 @@ class Log extends GSet {
     * @returns {Promise<Log>}
     * @deprecated
     */
-    static async fromMultihash (ipfs, access, identity, multihash, { length = -1, exclude, onProgressCallback, sortFn } = {}) {
-      return Log.fromCID(ipfs, access, identity, multihash, { length, exclude, onProgressCallback, sortFn } = {})
-    }
+  static async fromMultihash (ipfs, access, identity, multihash,
+    { length = -1, exclude, onProgressCallback, sortFn } = {}) {
+    return Log.fromCID(ipfs, access, identity, multihash,
+      { length, exclude, onProgressCallback, sortFn } = {})
+  }
 
   /**
    * Create a log from a single entry's CID.
@@ -478,10 +480,11 @@ class Log extends GSet {
    * @param {function(cid, entry, parent, depth)} onProgressCallback
    * @return {Promise<Log>} New Log
    */
-  static async fromEntryCid (ipfs, access, identity, cid, logId, length = -1, exclude, onProgressCallback) {
+  static async fromEntryCid (ipfs, access, identity, cid, logId,
+    { length = -1, exclude, onProgressCallback, sortFn }) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntryCid(ipfs, cid, length, exclude, onProgressCallback)
-    return new Log(ipfs, access, identity, logId, data.values)
+    const data = await LogIO.fromEntryCid(ipfs, cid, { length, exclude, onProgressCallback })
+    return new Log(ipfs, access, identity, logId, data.values, null, null, sortFn)
   }
 
   /**
@@ -496,8 +499,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    * @deprecated
    */
-  static async fromEntryHash (ipfs, access, identity, multihash, logId, length = -1, exclude, onProgressCallback) {
-    return Log.fromEntryCid(ipfs, access, identity, multihash, logId, length, exclude, onProgressCallback)
+  static async fromEntryHash (ipfs, access, identity, multihash, logId,
+    { length = -1, exclude, onProgressCallback, sortFn }) {
+    return Log.fromEntryCid(ipfs, access, identity, multihash, logId,
+      { length, exclude, onProgressCallback, sortFn } = {})
   }
 
   /**
