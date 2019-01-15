@@ -553,7 +553,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log.append('one')
           const multihash = await log.toMultihash()
           const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash, { length: -1 })
-          assert(spy.calledOnceWith(ipfs, testACL, testIdentity, multihash, {}))
+          assert(spy.calledOnceWith(ipfs, testACL, testIdentity, multihash,
+            { length: -1, exclude: undefined, onProgressCallback: undefined, sortFn: undefined }))
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
       })
