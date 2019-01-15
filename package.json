@@ -47,6 +47,21 @@
     "env": "mocha",
     "ignore": "lib/es5/**/*.js"
   },
+  "contributors": [
+    "haadcode",
+    "aphelionz",
+    "shamb0t",
+    "thiagodelgado111",
+    "mistakia",
+    "satazor",
+    "RichardLitt",
+    "greenkeeperio-bot",
+    "chrisdostert",
+    "zachferland",
+    "kaibakker",
+    "dignifiedquire",
+    "adam-palazzo"
+  ],
   "scripts": {
     "test": "TEST=all mocha",
     "test:coverage": "istanbul cover -x src/g-set.js _mocha",
