@@ -466,7 +466,7 @@ class Log extends GSet {
   static async fromMultihash (ipfs, access, identity, multihash,
     { length = -1, exclude, onProgressCallback, sortFn } = {}) {
     return Log.fromCID(ipfs, access, identity, multihash,
-      { length, exclude, onProgressCallback, sortFn } = {})
+      { length, exclude, onProgressCallback, sortFn })
   }
 
   /**
@@ -502,7 +502,7 @@ class Log extends GSet {
   static async fromEntryHash (ipfs, access, identity, multihash, logId,
     { length = -1, exclude, onProgressCallback, sortFn }) {
     return Log.fromEntryCid(ipfs, access, identity, multihash, logId,
-      { length, exclude, onProgressCallback, sortFn } = {})
+      { length, exclude, onProgressCallback, sortFn })
   }
 
   /**
