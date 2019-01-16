@@ -128,9 +128,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves partial log from an entry CID', async () => {
-        const log1 = new Log(ipfs, testACL, testIdentity, 'X')
-        const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
-        const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
+        const log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        const log2 = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
+        const log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
         let items1 = []
         let items2 = []
         let items3 = []
@@ -175,9 +175,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves full log from an entry CID', async () => {
-        const log1 = new Log(ipfs, testACL, testIdentity, 'X')
-        const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
-        const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
+        const log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        const log2 = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
+        const log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
         let items1 = []
         let items2 = []
         let items3 = []
@@ -205,9 +205,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves full log from an entry CID 2', async () => {
-        const log1 = new Log(ipfs, testACL, testIdentity, 'X')
-        const log2 = new Log(ipfs, testACL, testIdentity2, 'X')
-        const log3 = new Log(ipfs, testACL, testIdentity3, 'X')
+        const log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        const log2 = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
+        const log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
         let items1 = []
         let items2 = []
         let items3 = []
@@ -235,9 +235,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves full log from an entry CID 3', async () => {
-        const log1 = new Log(ipfs, testACL, testIdentity, 'X')
-        const log2 = new Log(ipfs, testACL, testIdentity3, 'X')
-        const log3 = new Log(ipfs, testACL, testIdentity4, 'X')
+        const log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        const log2 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
+        const log3 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
         let items1 = []
         let items2 = []
         let items3 = []
@@ -332,7 +332,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
         assert.deepStrictEqual(c.values.map(e => e.payload), tmp)
 
-        let logX = new Log(ipfs, testACL, testIdentity2, 'X') // make sure logX comes after A, B and C
+        // make sure logX comes after A, B and C
+        let logX = new Log(ipfs, testACL, testIdentity2, { logId: 'X'} )
         await logX.append('1')
         await logX.append('2')
         await logX.append('3')
@@ -351,9 +352,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves full log of randomly joined log', async () => {
-        let log1 = new Log(ipfs, testACL, testIdentity, 'X')
-        let log2 = new Log(ipfs, testACL, testIdentity3, 'X')
-        let log3 = new Log(ipfs, testACL, testIdentity4, 'X')
+        let log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        let log2 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
+        let log3 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
 
         for (let i = 1; i <= 5; i++) {
           await log1.append('entryA' + i)
@@ -388,10 +389,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves randomly joined log deterministically', async () => {
-        let logA = new Log(ipfs, testACL, testIdentity, 'X')
-        let logB = new Log(ipfs, testACL, testIdentity3, 'X')
-        let log3 = new Log(ipfs, testACL, testIdentity4, 'X')
-        let log = new Log(ipfs, testACL, testIdentity2, 'X')
+        let logA = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        let logB = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
+        let log3 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
+        let log = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
 
         for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i)
@@ -506,7 +507,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
 
         let firstWriteWinsLog =
-          new Log(ipfs, testACL, identities[0], 'X', null, null, null, FirstWriteWins)
+          new Log(ipfs, testACL, identities[0], { logId: 'X', sortFn: FirstWriteWins })
         await firstWriteWinsLog.join(testLog.log)
         assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload), expectedData)
       })
@@ -514,7 +515,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if the tiebreaker returns zero', async () => {
         let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
         let firstWriteWinsLog =
-          new Log(ipfs, testACL, identities[0], 'X', null, null, null, BadComparatorReturnsZero)
+          new Log(ipfs, testACL, identities[0], { logId: 'X', sortFn: BadComparatorReturnsZero })
         await firstWriteWinsLog.join(testLog.log)
         assert.throws(() => firstWriteWinsLog.values, Error, 'Error Thrown')
       })
@@ -522,10 +523,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('retrieves partially joined log deterministically - single next pointer', async () => {
         const nextPointerAmount = 1
 
-        let logA = new Log(ipfs, testACL, testIdentity, 'X')
-        let logB = new Log(ipfs, testACL, testIdentity3, 'X')
-        let log3 = new Log(ipfs, testACL, testIdentity4, 'X')
-        let log = new Log(ipfs, testACL, testIdentity2, 'X')
+        let logA = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        let logB = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
+        let log3 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
+        let log = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
 
         for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i, nextPointerAmount)
@@ -586,10 +587,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('retrieves partially joined log deterministically - multiple next pointers', async () => {
         const nextPointersAmount = 64
 
-        let logA = new Log(ipfs, testACL, testIdentity, 'X')
-        let logB = new Log(ipfs, testACL, testIdentity3, 'X')
-        let log3 = new Log(ipfs, testACL, testIdentity4, 'X')
-        let log = new Log(ipfs, testACL, testIdentity2, 'X')
+        let logA = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        let logB = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
+        let log3 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
+        let log = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
 
         for (let i = 1; i <= 5; i++) {
           await logA.append('entryA' + i, nextPointersAmount)
@@ -667,9 +668,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         beforeEach(async () => {
           const ts = new Date().getTime()
-          log1 = new Log(ipfs, testACL, testIdentity, 'X')
-          log2 = new Log(ipfs, testACL, testIdentity2, 'X')
-          log3 = new Log(ipfs, testACL, testIdentity3, 'X')
+          log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+          log2 = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
+          log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
           items1 = []
           items2 = []
           items3 = []
