@@ -108,7 +108,7 @@ class LogIO {
     }
   }
 
-  static async fromJSON (ipfs, json, length = -1, timeout, onProgressCallback) {
+  static async fromJSON (ipfs, json, { length = -1, timeout, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     json.heads.forEach(Entry.ensureInterop)
     const headCids = json.heads.map(e => e.cid)
