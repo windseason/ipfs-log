@@ -130,7 +130,7 @@ class LogIO {
    * @param {function(cid, entry, parent, depth)} [onProgressCallback]
    * @returns {Promise<Log>}
    */
-  static async fromEntry (ipfs, sourceEntries, length = -1, exclude, onProgressCallback) {
+  static async fromEntry (ipfs, sourceEntries, { length = -1, exclude, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 

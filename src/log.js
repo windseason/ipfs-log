@@ -540,7 +540,8 @@ class Log extends GSet {
   static async fromEntry (ipfs, access, identity, sourceEntries,
     { length = -1, exclude, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntry(ipfs, sourceEntries, length, exclude, onProgressCallback)
+    const data = await LogIO.fromEntry(ipfs, sourceEntries,
+      { length, exclude, onProgressCallback })
     return new Log(ipfs, access, identity, { logId: data.id, entries: data.values })
   }
 
