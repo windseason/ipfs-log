@@ -9,11 +9,12 @@ class EntryIO {
    * Fetch log entries in parallel.
    * @param {IPFS} ipfs An IPFS instance
    * @param {string|Array<string>} cids CIDs of the entries to fetch
-   * @param {number} [length=-1] How many entries to fetch
-   * @param {Array<Entry>} [exclude] Entries to not fetch
-   * @param {number} [concurrency=] Max concurrent fetch operations
-   * @param {number} [timeout] Maximum time to wait for each fetch operation, in ms
-   * @param {function(cid, entry, parent, depth)} onProgressCallback
+   * @param {Object} options
+   * @param {number} options.length How many entries to fetch
+   * @param {Array<Entry>} options.exclude Entries to not fetch
+   * @param {number} options.concurrency Max concurrent fetch operations
+   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchParallel (ipfs, cids,
@@ -31,11 +32,12 @@ class EntryIO {
    * Fetch log entries sequentially.
    * @param {IPFS} ipfs An IPFS instance
    * @param {string|Array<string>} cids CIDs of the entries to fetch
-   * @param {number} [length=-1] How many entries to fetch
-   * @param {Array<Entry>} [exclude] Entries to not fetch
-   * @param {number} [concurrency] Max concurrent fetch operations
-   * @param {number} [timeout] Maximum time to wait for each fetch operation, in ms
-   * @param {function(cid, entry, parent, depth)} onProgressCallback
+   * @param {Object} options
+   * @param {number} options.length How many entries to fetch
+   * @param {Array<Entry>} options.exclude Entries to not fetch
+   * @param {number} options.concurrency Max concurrent fetch operations
+   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchAll (ipfs, cids,

@@ -43,10 +43,10 @@ class LogIO {
    * Create a log from a CID.
    * @param {IPFS} ipfs An IPFS instance
    * @param {string} cid The CID of the log
-   * @param {number} [length=-1] How many items to include in the log
-   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} onProgressCallback
-   * @returns {Promise<Log>}
+   * @param {Object} options
+   * @param {number} options.length How many items to include in the log
+   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
    */
   static async fromCID (ipfs, cid, { length = -1, exclude, onProgressCallback } = {}) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
@@ -76,6 +76,15 @@ class LogIO {
     }
   }
 
+  /**
+   * Create a log from an entry CID.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {string} entryCid The CID of the entry
+   * @param {Object} options
+   * @param {number} options.length How many items to include in the log
+   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
+   */
   static async fromEntryCid (ipfs, entryCid, { length = -1, exclude, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
     if (!isDefined(entryCid)) throw new Error("'entryCid' must be defined")
@@ -96,6 +105,16 @@ class LogIO {
     }
   }
 
+  /**
+   * Creates a log data from a JSON object, to be passed to a Log constructor
+   *
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {json} json A json object containing valid log data
+   * @param {Object} options
+   * @param {number} options.length How many entries to include
+   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
+   **/
   static async fromJSON (ipfs, json, { length = -1, timeout, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     json.heads.forEach(Entry.ensureInterop)
@@ -114,10 +133,10 @@ class LogIO {
    * Create a new log starting from an entry.
    * @param {IPFS} ipfs An IPFS instance
    * @param {Entry|Array<Entry>} sourceEntries An entry or an array of entries to fetch a log from
-   * @param {number} [length=-1] How many entries to include
-   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} [onProgressCallback]
-   * @returns {Promise<Log>}
+   * @param {Object} options
+   * @param {number} options.length How many entries to include
+   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
    */
   static async fromEntry (ipfs, sourceEntries, { length = -1, exclude, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
