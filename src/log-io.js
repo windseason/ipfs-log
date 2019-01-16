@@ -75,20 +75,6 @@ class LogIO {
     }
   }
 
-  /**
-   * Create a log from a multihash.
-   * @param {IPFS} ipfs An IPFS instance
-   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-   * @param {number} [length=-1] How many items to include in the log
-   * @param {Array<Entry>} [exclude] Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} onProgressCallback
-   * @returns {Promise<Log>}
-   * @deprecated
-   */
-  static async fromMultihash (ipfs, multihash, { length = -1, exclude, onProgressCallback }) {
-    return LogIO.fromCID(ipfs, multihash, { length, exclude, onProgressCallback })
-  }
-
   static async fromEntryCid (ipfs, entryCid, { length = -1, exclude, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
     if (!isDefined(entryCid)) throw new Error("'entryCid' must be defined")
