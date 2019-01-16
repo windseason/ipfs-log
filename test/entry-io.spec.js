@@ -89,7 +89,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log.append('hello' + i)
         if (i % 10 === 0) {
           log2 = new Log(ipfs, testACL, testIdentity,
-            { logId: log2.id, entries: log2.values, heads: log2.heads.concat(log.heads)})
+            { logId: log2.id, entries: log2.values, heads: log2.heads.concat(log.heads) })
           await log2.append('hi' + i)
         }
       }
@@ -125,7 +125,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
-          log2 = new Log(ipfs, testACL, testIdentity, 
+          log2 = new Log(ipfs, testACL, testIdentity,
             { logId: log2.id, entries: log2.values, heads: log2.heads })
           await log2.append('hi' + i)
           await log2.join(log)

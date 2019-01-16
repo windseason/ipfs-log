@@ -126,8 +126,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if entries is not an array', () => {
         let err
         try {
-          const log = new Log(ipfs, testACL, testIdentity,
-            { logId: 'A', entries: {} }) // eslint-disable-line no-unused-vars
+          let log = new Log(ipfs, testACL, testIdentity, { logId: 'A', entries: {} }) // eslint-disable-line no-unused-vars
         } catch (e) {
           err = e
         }
@@ -138,8 +137,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if heads is not an array', () => {
         let err
         try {
-          const log = new Log(ipfs, testACL, testIdentity,
-            { logId: 'A', entries: [], heads: {} }) // eslint-disable-line no-unused-vars
+          let log = new Log(ipfs, testACL, testIdentity, { logId: 'A', entries: [], heads: {} }) // eslint-disable-line no-unused-vars
         } catch (e) {
           err = e
         }

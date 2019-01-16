@@ -333,7 +333,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(c.values.map(e => e.payload), tmp)
 
         // make sure logX comes after A, B and C
-        let logX = new Log(ipfs, testACL, testIdentity2, { logId: 'X'} )
+        let logX = new Log(ipfs, testACL, testIdentity2, { logId: 'X' })
         await logX.append('1')
         await logX.append('2')
         await logX.append('3')
