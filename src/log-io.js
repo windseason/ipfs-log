@@ -85,11 +85,11 @@ class LogIO {
    * @returns {Promise<Log>}
    * @deprecated
    */
-  static async fromMultihash (ipfs, multihash, length = -1, exclude, onProgressCallback) {
-    return LogIO.fromCID(ipfs, multihash, length, exclude, onProgressCallback)
+  static async fromMultihash (ipfs, multihash, { length = -1, exclude, onProgressCallback }) {
+    return LogIO.fromCID(ipfs, multihash, { length, exclude, onProgressCallback })
   }
 
-  static async fromEntryCid (ipfs, entryCid, length = -1, exclude, onProgressCallback) {
+  static async fromEntryCid (ipfs, entryCid, { length = -1, exclude, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
     if (!isDefined(entryCid)) throw new Error("'entryCid' must be defined")
 
