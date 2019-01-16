@@ -522,7 +522,7 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromJSON (ipfs, access, identity, json,
-    { length = -1, timeout, onProgressCallback }) {
+    { length = -1, timeout, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromJSON(ipfs, json, { length, timeout, onProgressCallback })
     return new Log(ipfs, access, identity, { logId: data.id, entries: data.values })
@@ -537,7 +537,8 @@ class Log extends GSet {
    * @param {function(cid, entry, parent, depth)} [onProgressCallback]
    * @return {Promise<Log>} New Log
    */
-  static async fromEntry (ipfs, access, identity, sourceEntries, length = -1, exclude, onProgressCallback) {
+  static async fromEntry (ipfs, access, identity, sourceEntries,
+    { length = -1, exclude, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntry(ipfs, sourceEntries, length, exclude, onProgressCallback)
     return new Log(ipfs, access, identity, { logId: data.id, entries: data.values })

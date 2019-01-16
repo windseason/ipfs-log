@@ -236,7 +236,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log1.join(log2)
-        const log4 = await Log.fromEntry(ipfs, testACL, testIdentity, log1.heads, 2)
+        const log4 = await Log.fromEntry(ipfs, testACL, testIdentity, log1.heads, { length: 2 })
         assert.strictEqual(log4.length, 2)
         assert.strictEqual(log4.tails.length, 2)
         assert.strictEqual(log4.tails[0].cid, log4.values[0].cid)

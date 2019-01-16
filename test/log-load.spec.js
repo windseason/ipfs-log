@@ -78,13 +78,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
         let data = fixture.log
 
-        let log1 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, data.heads.length)
+        let log1 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads,
+          { length: data.heads.length })
         assert.strictEqual(log1.id, data.heads[0].id)
         assert.strictEqual(log1.length, data.heads.length)
         assert.strictEqual(log1.values[0].payload, 'entryC0')
         assert.strictEqual(log1.values[1].payload, 'entryA10')
 
-        let log2 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, 4)
+        let log2 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, { length: 4 })
         assert.strictEqual(log2.id, data.heads[0].id)
         assert.strictEqual(log2.length, 4)
         assert.strictEqual(log2.values[0].payload, 'entryC0')
@@ -92,7 +93,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log2.values[2].payload, 'entryA9')
         assert.strictEqual(log2.values[3].payload, 'entryA10')
 
-        let log3 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, 7)
+        let log3 = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, { length: 7 })
         assert.strictEqual(log3.id, data.heads[0].id)
         assert.strictEqual(log3.length, 7)
         assert.strictEqual(log3.values[0].payload, 'entryB5')
@@ -148,11 +149,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
 
         // limit to 10 entries
-        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), 10)
+        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), { length: 10 })
         assert.strictEqual(a.length, 10)
 
         // limit to 42 entries
-        const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), 42)
+        const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), { length: 42 })
         assert.strictEqual(b.length, 42)
       })
 
