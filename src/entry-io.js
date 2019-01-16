@@ -9,7 +9,7 @@ class EntryIO {
    * Fetch log entries in parallel.
    * @param {IPFS} ipfs An IPFS instance
    * @param {string|Array<string>} cids CIDs of the entries to fetch
-   * @param {number} [amount=-1] How many entries to fetch
+   * @param {number} [length=-1] How many entries to fetch
    * @param {Array<Entry>} [exclude] Entries to not fetch
    * @param {number} [concurrency=] Max concurrent fetch operations
    * @param {number} [timeout] Maximum time to wait for each fetch operation, in ms
@@ -17,7 +17,7 @@ class EntryIO {
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchParallel (ipfs, cids,
-    { amount = -1, exclude = [], concurrency = null, timeout, onProgressCallback} = {}) {
+    { length = -1, exclude = [], concurrency = null, timeout, onProgressCallback } = {}) {
     const fetchOne = (cid) => EntryIO.fetchAll(ipfs, cid,
       { length, exclude, timeout, onProgressCallback })
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
@@ -31,7 +31,7 @@ class EntryIO {
    * Fetch log entries sequentially.
    * @param {IPFS} ipfs An IPFS instance
    * @param {string|Array<string>} cids CIDs of the entries to fetch
-   * @param {number} [amount=-1] How many entries to fetch
+   * @param {number} [length=-1] How many entries to fetch
    * @param {Array<Entry>} [exclude] Entries to not fetch
    * @param {number} [concurrency] Max concurrent fetch operations
    * @param {number} [timeout] Maximum time to wait for each fetch operation, in ms
@@ -39,7 +39,7 @@ class EntryIO {
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchAll (ipfs, cids,
-    { amount = -1, exclude = [], timeout = null, onProgressCallback }) {
+    { length = -1, exclude = [], timeout = null, onProgressCallback }) {
     let result = []
     let cache = {}
     let loadingQueue = Array.isArray(cids)
@@ -61,7 +61,7 @@ class EntryIO {
 
     const shouldFetchMore = () => {
       return loadingQueue.length > 0 &&
-          (result.length < amount || amount < 0)
+          (result.length < length || length < 0)
     }
 
     const fetchEntry = () => {

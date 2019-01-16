@@ -65,7 +65,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       await log.append('one')
       await log.append('two')
       const cid = last(log.values).cid
-      const res = await EntryIO.fetchAll(ipfs, cid, 1)
+      const res = await EntryIO.fetchAll(ipfs, cid, { length: 1 })
       assert.strictEqual(res.length, 1)
     })
 
