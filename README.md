@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/ipfs-log.svg)](https://www.npmjs.com/package/ipfs-log)
 [![CircleCI Status](https://circleci.com/gh/orbitdb/ipfs-log.svg?style=shield)](https://circleci.com/gh/orbitdb/ipfs-log)
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/orbitdb/Lobby)
 
 > An append-only log on IPFS.
 
@@ -67,6 +68,8 @@ It was originally created for, and currently used in, [orbit-db](https://github.
 - Preferably you should use an LTS version of node.js (even numbered 8, 10, etc)
 
 ## Install
+
+This project uses [npm](http://npmjs.com/) and [nodejs](https://nodejs.org/).
 
 ```
 npm install ipfs-log
@@ -193,4 +196,5 @@ If you find a bug or something is broken, let us know! PRs and [issues](https://
 
 ## License
 
-[MIT](LICENSE) © 2016-2018 Protocol Labs Inc., Haja Networks Oy
+[MIT](LICENSE) © 2016-2018 Protocol Labs Inc.,
+2016-2019 Haja Networks Oy
