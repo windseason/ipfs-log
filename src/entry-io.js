@@ -18,7 +18,8 @@ class EntryIO {
    */
   static async fetchParallel (ipfs, cids,
     { amount = -1, exclude = [], concurrency = null, timeout, onProgressCallback} = {}) {
-    const fetchOne = (cid) => EntryIO.fetchAll(ipfs, cid, amount, exclude, timeout, onProgressCallback)
+    const fetchOne = (cid) => EntryIO.fetchAll(ipfs, cid,
+      { length, exclude, timeout, onProgressCallback })
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])
     concurrency = Math.max(concurrency || cids.length, 1)
@@ -37,7 +38,8 @@ class EntryIO {
    * @param {function(cid, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
-  static async fetchAll (ipfs, cids, amount = -1, exclude = [], timeout = null, onProgressCallback) {
+  static async fetchAll (ipfs, cids,
+    { amount = -1, exclude = [], timeout = null, onProgressCallback }) {
     let result = []
     let cache = {}
     let loadingQueue = Array.isArray(cids)

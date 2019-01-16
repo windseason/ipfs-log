@@ -55,7 +55,8 @@ class LogIO {
     const logData = await dagNode.read(ipfs, cid, IPLD_LINKS)
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
 
-    const entries = await EntryIO.fetchAll(ipfs, logData.heads, length, exclude, null, onProgressCallback)
+    const entries = await EntryIO.fetchAll(ipfs, logData.heads,
+      { length, exclude, onProgressCallback })
 
     // Find latest clock
     const clock = entries.reduce((clock, entry) => {
