@@ -16,7 +16,8 @@ class EntryIO {
    * @param {function(cid, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
-  static async fetchParallel (ipfs, cids, amount = -1, exclude = [], concurrency = null, timeout, onProgressCallback) {
+  static async fetchParallel (ipfs, cids,
+    { amount = -1, exclude = [], concurrency = null, timeout, onProgressCallback} = {}) {
     const fetchOne = (cid) => EntryIO.fetchAll(ipfs, cid, amount, exclude, timeout, onProgressCallback)
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])

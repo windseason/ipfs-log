@@ -85,7 +85,8 @@ class LogIO {
     // Fetch given length, return size at least the given input entries
     length = length > -1 ? Math.max(length, 1) : length
 
-    const entries = await EntryIO.fetchParallel(ipfs, entryCids, length, exclude, null, null, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, entryCids,
+      { length, exclude, onProgressCallback })
     // Cap the result at the right size by taking the last n entries,
     // or if given length is -1, then take all
     const sliced = length > -1 ? last(entries, length) : entries
@@ -98,7 +99,8 @@ class LogIO {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     json.heads.forEach(Entry.ensureInterop)
     const headCids = json.heads.map(e => e.cid)
-    const entries = await EntryIO.fetchParallel(ipfs, headCids, length, [], 16, timeout, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, headCids,
+      { length, exclude: [], concurrency: 16, timeout, onProgressCallback })
     const finalEntries = entries.slice().sort(Entry.compare)
     return {
       id: json.id,
@@ -137,7 +139,8 @@ class LogIO {
     const hashes = sourceEntries.map(e => e.cid)
 
     // Fetch the entries
-    const entries = await EntryIO.fetchParallel(ipfs, hashes, length, exclude, null, null, onProgressCallback)
+    const entries = await EntryIO.fetchParallel(ipfs, hashes,
+      { length, exclude, onProgressCallback })
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)
