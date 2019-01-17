@@ -583,6 +583,27 @@ Object.keys(testAPIs).forEach((IPFS) => {
             { length: -1, exclude: undefined, onProgressCallback: undefined, sortFn: undefined }))
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
+
+        it('calls fromCID with custom tiebreaker', async () => {
+          const spy = sinon.spy(Log, 'fromCID')
+          const expectedData = {
+            id: 'X',
+            heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
+          }
+          let log = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+          await log.append('one')
+          const multihash = await log.toMultihash()
+          const res = await Log.fromMultihash(ipfs, testACL, testIdentity, multihash,
+            { length: -1, sortFn: FirstWriteWins })
+          assert(spy.calledOnceWith(ipfs, testACL, testIdentity, multihash,
+            {
+              length: -1,
+              exclude: undefined,
+              onProgressCallback: undefined,
+              sortFn: FirstWriteWins
+            }))
+          assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
+        })
       })
     })
 
