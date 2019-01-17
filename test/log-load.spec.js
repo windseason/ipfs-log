@@ -60,6 +60,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
     describe('fromEntry', () => {
       let identities
 
+      let firstWriteExpectedData = [
+        'entryA6', 'entryA7', 'entryA8', 'entryA9',
+        'entryA10', 'entryB1', 'entryB2', 'entryB3',
+        'entryB4', 'entryB5', 'entryA1', 'entryA2',
+        'entryA3', 'entryA4', 'entryA5', 'entryC0'
+      ]
+
       before(async () => {
         identities = [testIdentity, testIdentity2, testIdentity3, testIdentity4]
       })
@@ -68,10 +75,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
         let data = fixture.log
 
-        let log = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, -1)
+        let log = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads, { length: -1 })
         assert.strictEqual(log.id, data.heads[0].id)
         assert.strictEqual(log.length, 16)
         assert.deepStrictEqual(log.values.map(e => e.payload), fixture.expectedData)
+      })
+
+      it('creates a log from an entry with custom tiebreaker', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let data = fixture.log
+
+        let log = await Log.fromEntry(ipfs, testACL, testIdentity, data.heads,
+          { length: -1, sortFn: FirstWriteWins })
+        assert.strictEqual(log.id, data.heads[0].id)
+        assert.strictEqual(log.length, 16)
+        assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
       })
 
       it('keeps the original heads', async () => {
@@ -499,13 +517,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('sorts entries according to custom tiebreaker function', async () => {
         let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
-
-        const expectedData = [
-          'entryA6', 'entryA7', 'entryA8', 'entryA9',
-          'entryA10', 'entryB1', 'entryB2', 'entryB3',
-          'entryB4', 'entryB5', 'entryA1', 'entryA2',
-          'entryA3', 'entryA4', 'entryA5', 'entryC0'
-        ]
 
         let firstWriteWinsLog =
           new Log(ipfs, testACL, identities[0], { logId: 'X', sortFn: FirstWriteWins })
