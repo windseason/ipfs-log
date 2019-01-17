@@ -13,6 +13,10 @@ const IdentityProvider = require('orbit-db-identity-provider')
 
 const createPbDagNode = pify(dagPB.DAGNode.create)
 
+// For tiebreaker testing
+const { LastWriteWins } = require('../src/log-sorting')
+const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
+
 // Test utils
 const {
   config,
@@ -428,12 +432,31 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log1.join(log2)
           await log1.join(log3)
           const cid = await log1.toCID()
-          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length:  -1 })
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
           assert.strictEqual(res.heads[0].payload, 'three')
           assert.strictEqual(res.heads[1].payload, 'two') // order is determined by the identity's publicKey
           assert.strictEqual(res.heads[2].payload, 'one')
+        })
+
+        it('creates a log from ipfs CID that has three heads w/ custom tiebreaker', async () => {
+          let log1 = new Log(ipfs, testACL, testIdentity, { logId: 'A' })
+          let log2 = new Log(ipfs, testACL, testIdentity2, { logId: 'A' })
+          let log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'A' })
+          await log1.append('one') // order is determined by the identity's publicKey
+          await log3.append('two')
+          await log2.append('three')
+          await log1.join(log2)
+          await log1.join(log3)
+          const cid = await log1.toCID()
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid,
+            { sortFn: FirstWriteWins })
+          assert.strictEqual(res.length, 3)
+          assert.strictEqual(res.heads.length, 3)
+          assert.strictEqual(res.heads[0].payload, 'one')
+          assert.strictEqual(res.heads[1].payload, 'two') // order is determined by the identity's publicKey
+          assert.strictEqual(res.heads[2].payload, 'three')
         })
 
         it('creates a log from ipfs CID up to a size limit', async () => {
