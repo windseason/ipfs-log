@@ -78,8 +78,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         json.heads = await Promise.all(json.heads.map(headCID => Entry.fromCID(ipfs, headCID)))
 
-        let log = await Log.fromJSON(ipfs, testACL, testIdentity, json,
-          { length: -1, logId: 'X' })
+        let log = await Log.fromJSON(ipfs, testACL, testIdentity, json, { logId: 'X' })
 
         assert.strictEqual(log.id, data.heads[0].id)
         assert.strictEqual(log.length, 16)
@@ -99,6 +98,48 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log.id, data.heads[0].id)
         assert.strictEqual(log.length, 16)
         assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
+      })
+    })
+
+    describe('fromEntryHash', () => {
+      let identities
+
+      before(async () => {
+        identities = [testIdentity, testIdentity2, testIdentity3, testIdentity4]
+      })
+
+      it('creates a log from an entry hash', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let data = fixture.log
+        let json = fixture.json
+
+        let log1 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[0],
+          { logId: 'X' })
+        let log2 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[1],
+          { logId: 'X' })
+
+        await log1.join(log2)
+
+        assert.strictEqual(log1.id, data.heads[0].id)
+        assert.strictEqual(log1.length, 16)
+        assert.deepStrictEqual(log1.values.map(e => e.payload), fixture.expectedData)
+      })
+
+      it('creates a log from an entry hash with custom tiebreaker', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let data = fixture.log
+        let json = fixture.json
+
+        let log1 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[0],
+          { logId: 'X', sortFn: FirstWriteWins })
+        let log2 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[1],
+          { logId: 'X', sortFn: FirstWriteWins })
+
+        await log1.join(log2)
+
+        assert.strictEqual(log1.id, data.heads[0].id)
+        assert.strictEqual(log1.length, 16)
+        assert.deepStrictEqual(log1.values.map(e => e.payload), firstWriteExpectedData)
       })
     })
 
