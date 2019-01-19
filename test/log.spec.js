@@ -432,7 +432,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log1.join(log2)
           await log1.join(log3)
           const cid = await log1.toCID()
-          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length:  -1 })
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: -1 })
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
           assert.strictEqual(res.heads[0].payload, 'three')

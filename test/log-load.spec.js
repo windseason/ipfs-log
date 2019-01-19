@@ -79,7 +79,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         json.heads = await Promise.all(json.heads.map(headCID => Entry.fromCID(ipfs, headCID)))
 
         let log = await Log.fromJSON(ipfs, testACL, testIdentity, json,
-          { length: -1, logId: "X" })
+          { length: -1, logId: 'X' })
 
         assert.strictEqual(log.id, data.heads[0].id)
         assert.strictEqual(log.length, 16)
@@ -94,7 +94,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         json.heads = await Promise.all(json.heads.map(headCID => Entry.fromCID(ipfs, headCID)))
 
         let log = await Log.fromJSON(ipfs, testACL, testIdentity, json,
-          { length: -1, logId: "X", sortFn: FirstWriteWins })
+          { length: -1, logId: 'X', sortFn: FirstWriteWins })
 
         assert.strictEqual(log.id, data.heads[0].id)
         assert.strictEqual(log.length, 16)
@@ -252,7 +252,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           items3.push(n3)
         }
 
-        const a = await Log.fromEntry(ipfs, testACL, testIdentity, [last(items1)], 
+        const a = await Log.fromEntry(ipfs, testACL, testIdentity, [last(items1)],
           { length: amount })
         assert.strictEqual(a.length, amount)
 

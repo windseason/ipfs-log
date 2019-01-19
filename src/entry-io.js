@@ -26,7 +26,7 @@ class EntryIO {
       // Add any new entries to arr1
       const hashes = arr1.map(getHashes)
       arr2.forEach(entry => {
-        if(hashes.indexOf(entry.hash) === -1) arr1.push(entry)
+        if (hashes.indexOf(entry.hash) === -1) arr1.push(entry)
       })
       return arr1
     }
