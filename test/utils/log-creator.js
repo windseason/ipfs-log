@@ -36,7 +36,7 @@ class LogCreator {
     ]
 
     const log = await create()
-    return { log: log, expectedData: expectedData }
+    return { log: log, expectedData: expectedData, json: log.toJSON() }
   }
 
   static async createLogWithTwoHundredEntries (ipfs, access, identities) {

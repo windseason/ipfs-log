@@ -3,6 +3,7 @@
 const pWhilst = require('p-whilst')
 const pMap = require('p-map')
 const Entry = require('./entry')
+const _ = require('lodash')
 
 class EntryIO {
   /**
@@ -25,7 +26,8 @@ class EntryIO {
     const flatten = (arr) => arr.reduce(concatArrays, [])
     concurrency = Math.max(concurrency || cids.length, 1)
     const entries = await pMap(cids, fetchOne, { concurrency: concurrency })
-    return flatten(entries) // Flatten the results
+    // Flatten the results and get unique vals
+    return _.uniqWith(flatten(entries), _.isEqual)
   }
 
   /**

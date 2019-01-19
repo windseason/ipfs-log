@@ -39,6 +39,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-log-load' + new Date().getTime()
     })
 
+    let firstWriteExpectedData = [
+      'entryA6', 'entryA7', 'entryA8', 'entryA9',
+      'entryA10', 'entryB1', 'entryB2', 'entryB3',
+      'entryB4', 'entryB5', 'entryA1', 'entryA2',
+      'entryA3', 'entryA4', 'entryA5', 'entryC0'
+    ]
+
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
@@ -57,15 +64,46 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(ipfsConfig.repo)
     })
 
-    describe('fromEntry', () => {
+    describe('fromJSON', () => {
       let identities
 
-      let firstWriteExpectedData = [
-        'entryA6', 'entryA7', 'entryA8', 'entryA9',
-        'entryA10', 'entryB1', 'entryB2', 'entryB3',
-        'entryB4', 'entryB5', 'entryA1', 'entryA2',
-        'entryA3', 'entryA4', 'entryA5', 'entryC0'
-      ]
+      before(async () => {
+        identities = [testIdentity, testIdentity2, testIdentity3, testIdentity4]
+      })
+
+      it('creates a log from an entry', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let data = fixture.log
+        let json = fixture.json
+
+        json.heads = await Promise.all(json.heads.map(headCID => Entry.fromCID(ipfs, headCID)))
+
+        let log = await Log.fromJSON(ipfs, testACL, testIdentity, json,
+          { length: -1, logId: "X" })
+
+        assert.strictEqual(log.id, data.heads[0].id)
+        assert.strictEqual(log.length, 16)
+        assert.deepStrictEqual(log.values.map(e => e.payload), fixture.expectedData)
+      })
+
+      it('creates a log from an entry with custom tiebreaker', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, testACL, identities)
+        let data = fixture.log
+        let json = fixture.json
+
+        json.heads = await Promise.all(json.heads.map(headCID => Entry.fromCID(ipfs, headCID)))
+
+        let log = await Log.fromJSON(ipfs, testACL, testIdentity, json,
+          { length: -1, logId: "X", sortFn: FirstWriteWins })
+
+        assert.strictEqual(log.id, data.heads[0].id)
+        assert.strictEqual(log.length, 16)
+        assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
+      })
+    })
+
+    describe('fromEntry', () => {
+      let identities
 
       before(async () => {
         identities = [testIdentity, testIdentity2, testIdentity3, testIdentity4]
@@ -143,7 +181,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           i++
         }
 
-        await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [], callback)
+        await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+          { length: -1, exclude: [], onProgressCallback: callback })
       })
 
       it('retrieves partial log from an entry CID', async () => {
@@ -186,7 +225,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         let err
         try {
-          await Log.fromEntry(ipfs, testACL, testIdentity, last(items1).cid, 1)
+          await Log.fromEntry(ipfs, testACL, testIdentity, last(items1).cid, { length: 1 })
         } catch (e) {
           err = e
         }
@@ -213,13 +252,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
           items3.push(n3)
         }
 
-        const a = await Log.fromEntry(ipfs, testACL, testIdentity, [last(items1)], amount)
+        const a = await Log.fromEntry(ipfs, testACL, testIdentity, [last(items1)], 
+          { length: amount })
         assert.strictEqual(a.length, amount)
 
-        const b = await Log.fromEntry(ipfs, testACL, testIdentity2, [last(items2)], amount * 2)
+        const b = await Log.fromEntry(ipfs, testACL, testIdentity2, [last(items2)],
+          { length: amount * 2 })
         assert.strictEqual(b.length, amount * 2)
 
-        const c = await Log.fromEntry(ipfs, testACL, testIdentity3, [last(items3)], amount * 3)
+        const c = await Log.fromEntry(ipfs, testACL, testIdentity3, [last(items3)],
+          { length: amount * 3 })
         assert.strictEqual(c.length, amount * 3)
       })
 
@@ -243,13 +285,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
           items3.push(n3)
         }
 
-        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), amount)
+        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+          { length: amount })
         assert.strictEqual(a.length, amount)
 
-        const b = await Log.fromEntry(ipfs, testACL, testIdentity2, last(items2), amount * 2)
+        const b = await Log.fromEntry(ipfs, testACL, testIdentity2, last(items2),
+          { length: amount * 2 })
         assert.strictEqual(b.length, amount * 2)
 
-        const c = await Log.fromEntry(ipfs, testACL, testIdentity3, last(items3), amount * 3)
+        const c = await Log.fromEntry(ipfs, testACL, testIdentity3, last(items3),
+          { length: amount * 3 })
         assert.strictEqual(c.length, amount * 3)
       })
 
@@ -282,7 +327,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
           items3.push(n3)
         }
 
-        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), amount)
+        const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+          { length: amount })
         assert.strictEqual(a.length, amount)
 
         const itemsInB = [
@@ -308,11 +354,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
           'entryB10'
         ]
 
-        const b = await Log.fromEntry(ipfs, testACL, testIdentity3, last(items2), amount * 2)
+        const b = await Log.fromEntry(ipfs, testACL, testIdentity3, last(items2),
+          { length: amount * 2 })
         assert.strictEqual(b.length, amount * 2)
         assert.deepStrictEqual(b.values.map((e) => e.payload), itemsInB)
 
-        let c = await Log.fromEntry(ipfs, testACL, testIdentity4, last(items3), amount * 3)
+        let c = await Log.fromEntry(ipfs, testACL, testIdentity4, last(items3),
+          { length: amount * 3 })
         await c.append('EOF')
         assert.strictEqual(c.length, amount * 3 + 1)
 
@@ -356,15 +404,18 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await logX.append('1')
         await logX.append('2')
         await logX.append('3')
-        const d = await Log.fromEntry(ipfs, testACL, testIdentity2, last(logX.values), -1)
+        const d = await Log.fromEntry(ipfs, testACL, testIdentity2, last(logX.values),
+          { length: -1 })
 
         await c.join(d)
         await d.join(c)
 
         await c.append('DONE')
         await d.append('DONE')
-        const f = await Log.fromEntry(ipfs, testACL, testIdentity2, last(c.values), -1, [])
-        const g = await Log.fromEntry(ipfs, testACL, testIdentity2, last(d.values), -1, [])
+        const f = await Log.fromEntry(ipfs, testACL, testIdentity2, last(c.values),
+          { amount: -1, exclude: [] })
+        const g = await Log.fromEntry(ipfs, testACL, testIdentity2, last(d.values),
+          { length: -1, exclude: [] })
 
         assert.strictEqual(f.toString(), bigLogString)
         assert.strictEqual(g.toString(), bigLogString)
@@ -521,7 +572,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let firstWriteWinsLog =
           new Log(ipfs, testACL, identities[0], { logId: 'X', sortFn: FirstWriteWins })
         await firstWriteWinsLog.join(testLog.log)
-        assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload), expectedData)
+        assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload),
+          firstWriteExpectedData)
       })
 
       it('throws an error if the tiebreaker returns zero', async () => {
@@ -709,19 +761,22 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('returns all entries - no excluded entries', async () => {
-          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1)
+          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+            { length: -1 })
           assert.strictEqual(a.length, amount)
           assert.strictEqual(a.values[0].cid, items1[0].cid)
         })
 
         it('returns all entries - including excluded entries', async () => {
           // One entry
-          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, [items1[0]])
+          const a = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+            { length: -1, exclude: [items1[0]] })
           assert.strictEqual(a.length, amount)
           assert.strictEqual(a.values[0].cid, items1[0].cid)
 
           // All entries
-          const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1), -1, items1)
+          const b = await Log.fromEntry(ipfs, testACL, testIdentity, last(items1),
+            { length: -1, exclude: items1 })
           assert.strictEqual(b.length, amount)
           assert.strictEqual(b.values[0].cid, items1[0].cid)
         })
