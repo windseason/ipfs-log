@@ -581,13 +581,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
             { logId: log.id, length: -1 })
           assert(spy.calledOnceWith(ipfs, testACL, testIdentity, expectedData.heads[0],
             {
-              logId: "X",
+              logId: 'X',
               length: -1,
               exclude: undefined,
               onProgressCallback: undefined,
               sortFn: undefined
             }))
-          debugger;
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
       })
