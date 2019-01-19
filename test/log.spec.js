@@ -562,6 +562,36 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
       })
 
+      describe('fromEntryHash', async () => {
+        afterEach(() => {
+          if (Log.fromCID.restore) {
+            Log.fromCID.restore()
+          }
+        })
+
+        it('calls fromEntryCID', async () => {
+          const spy = sinon.spy(Log, 'fromEntryCid')
+          const expectedData = {
+            id: 'X',
+            heads: ['zdpuB2NAQ7cSh9MAfY91QC6Va56pQMJBXBaLoS6uQ1qNxqija']
+          }
+          let log = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+          await log.append('one')
+          const res = await Log.fromEntryHash(ipfs, testACL, testIdentity, expectedData.heads[0],
+            { logId: log.id, length: -1 })
+          assert(spy.calledOnceWith(ipfs, testACL, testIdentity, expectedData.heads[0],
+            {
+              logId: "X",
+              length: -1,
+              exclude: undefined,
+              onProgressCallback: undefined,
+              sortFn: undefined
+            }))
+          debugger;
+          assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
+        })
+      })
+
       describe('fromMultihash', async () => {
         afterEach(() => {
           if (Log.fromCID.restore) {

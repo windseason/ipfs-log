@@ -101,7 +101,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
-    describe('fromEntryHash', () => {
+    describe('fromEntryCID', () => {
       let identities
 
       before(async () => {
@@ -113,9 +113,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let data = fixture.log
         let json = fixture.json
 
-        let log1 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[0],
+        let log1 = await Log.fromEntryCid(ipfs, testACL, testIdentity, json.heads[0],
           { logId: 'X' })
-        let log2 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[1],
+        let log2 = await Log.fromEntryCid(ipfs, testACL, testIdentity, json.heads[1],
           { logId: 'X' })
 
         await log1.join(log2)
@@ -130,9 +130,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let data = fixture.log
         let json = fixture.json
 
-        let log1 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[0],
+        let log1 = await Log.fromEntryCid(ipfs, testACL, testIdentity, json.heads[0],
           { logId: 'X', sortFn: FirstWriteWins })
-        let log2 = await Log.fromEntryHash(ipfs, testACL, testIdentity, json.heads[1],
+        let log2 = await Log.fromEntryCid(ipfs, testACL, testIdentity, json.heads[1],
           { logId: 'X', sortFn: FirstWriteWins })
 
         await log1.join(log2)
