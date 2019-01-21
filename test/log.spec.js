@@ -404,7 +404,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           let log = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
           await log.append('one')
           const multihash = await log.toMultihash()
-          const res = await Log.fromCID(ipfs, testACL, testIdentity, multihash, -1)
+          const res = await Log.fromCID(ipfs, testACL, testIdentity, multihash, { length: -1 })
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
           assert.strictEqual(res.length, 1)
           assert.strictEqual(res.values[0].payload, 'one')
@@ -414,7 +414,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('has the right sequence number after creation and appending', async () => {
           const cid = await log.toCID()
-          let res = await Log.fromCID(ipfs, testACL, testIdentity, cid, -1)
+          let res = await Log.fromCID(ipfs, testACL, testIdentity, cid, { length: -1 })
           assert.strictEqual(res.length, 3)
           await res.append('four')
           assert.strictEqual(res.length, 4)
@@ -564,12 +564,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       describe('fromEntryHash', async () => {
         afterEach(() => {
-          if (Log.fromCID.restore) {
-            Log.fromCID.restore()
+          if (Log.fromEntryCid.restore) {
+            Log.fromEntryCid.restore()
           }
         })
 
-        it('calls fromEntryCID', async () => {
+        it('calls fromEntryCid', async () => {
           const spy = sinon.spy(Log, 'fromEntryCid')
           const expectedData = {
             id: 'X',
