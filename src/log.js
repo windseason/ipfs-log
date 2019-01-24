@@ -335,7 +335,7 @@ class Log extends GSet {
       let tmp = this.values
       tmp = tmp.slice(-size)
       this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
-      this._headsIndex = Log.findHeads(tmp)
+      this._headsIndex = Log.findHeads(tmp).reduce(uniqueEntriesReducer, {})
       this._length = Object.values(this._entryIndex).length
     }
 
