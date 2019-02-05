@@ -270,6 +270,18 @@ class Log extends GSet {
     return entry
   }
 
+  /*
+   * Creates a javscript iterator over log entries
+   *
+   * @param {Object} options
+   * @param {string} options.gte Beginning hash of the iterator
+   * @param {string} options.lte Beginning hash of the iterator
+   * @param {number} options.number Ending hash of the iterator
+   * @returns {Symbol.Iterator} Iterator object containing log entries
+   *
+   */
+  iterator({ gte, lte, amount }) {}
+
   /**
    * Join two logs.
    *
