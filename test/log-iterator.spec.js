@@ -55,8 +55,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         log3 = new Log(ipfs, testACL, testIdentity3, { logId: 'X' })
         log4 = new Log(ipfs, testACL, testIdentity4, { logId: 'X' })
 
-        for(let i = 0; i <= 100; i++) {
-          await log1.append("entry" + i);
+        for (let i = 0; i <= 100; i++) {
+          await log1.append('entry' + i)
         }
       })
 
@@ -72,9 +72,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it.skip('iterates with lte and default amount value (full log)', async () => { })
 
-      it.skip('throws error if gte is passed without amount or lte', async() => { })
+      it.skip('throws error if gte is passed without amount or lte', async () => { })
 
-      it.skip('throws error if lte is passed without amount or gte', async() => { })
+      it.skip('throws error if lte is passed without amount or gte', async () => { })
     })
   })
 })

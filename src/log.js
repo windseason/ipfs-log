@@ -275,12 +275,12 @@ class Log extends GSet {
    *
    * @param {Object} options
    * @param {string} options.gte Beginning hash of the iterator
-   * @param {string} options.lte Beginning hash of the iterator
-   * @param {number} options.number Ending hash of the iterator
+   * @param {string} options.lte Ending hash of the iterator
+   * @param {number} options.number Number of entried to return to / from the gte / lte hash
    * @returns {Symbol.Iterator} Iterator object containing log entries
    *
    */
-  iterator({ gte, lte, amount }) {}
+  iterator ({ gte, lte, amount }) {}
 
   /**
    * Join two logs.
