@@ -280,7 +280,19 @@ class Log extends GSet {
    * @returns {Symbol.Iterator} Iterator object containing log entries
    *
    */
-  iterator ({ gte, lte, amount }) {}
+  iterator ({ gte = undefined, lte = undefined, amount = -1 } = {}) {
+    if(!gte && !lte) throw LogError.GteOrLteNotDefinedError()
+
+    var iterable = {
+      *[Symbol.iterator]() {
+        yield 1;
+        yield 2;
+        yield 3;
+      }
+    }
+
+    return iterable
+  }
 
   /**
    * Join two logs.

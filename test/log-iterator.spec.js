@@ -60,7 +60,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
       })
 
-      it.skip('is an iterator object', async () => { })
+      it('returns a Symbol.iterator object', async () => {
+        let it = log1.iterator({
+          gte: "zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk",
+          amount: 5
+        })
+
+        assert.equal(typeof it[Symbol.iterator], "function")
+      })
 
       it.skip('iterates with gte and explicit amount', async () => { })
 
@@ -72,9 +79,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it.skip('iterates with lte and default amount value (full log)', async () => { })
 
-      it.skip('throws error if gte is passed without amount or lte', async () => { })
-
-      it.skip('throws error if lte is passed without amount or gte', async () => { })
+      it('throws error if gte or lte not contained in the options argument', async() => {
+        let err
+        try {
+          var it = log1.iterator()
+        } catch (e) {
+          err = e
+        }
+        assert.strictEqual(err.message,
+          'Either the lte or gte option must be passed to log.iterator')
+      })
     })
   })
 })
