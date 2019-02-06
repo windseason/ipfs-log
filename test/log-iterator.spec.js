@@ -69,26 +69,23 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.equal(typeof it[Symbol.iterator], "function")
       })
 
+      it.skip('iterates with gt and explicit amount', async () => { })
+
       it.skip('iterates with gte and explicit amount', async () => { })
+
+      it.skip('iterates with lt and explicit amount', async () => { })
 
       it.skip('iterates with lte and explicit amount', async () => { })
 
-      it.skip('iterates with lte and gte', async () => { })
+      it.skip('iterates with combinations of lt, gt, lte, and gte', async () => { })
+
+      it.skip('iterates with gt and default amount value (full log)', async () => { })
 
       it.skip('iterates with gte and default amount value (full log)', async () => { })
 
-      it.skip('iterates with lte and default amount value (full log)', async () => { })
+      it.skip('iterates with lt and default amount value (full log)', async () => { })
 
-      it('throws error if gte or lte not contained in the options argument', async() => {
-        let err
-        try {
-          var it = log1.iterator()
-        } catch (e) {
-          err = e
-        }
-        assert.strictEqual(err.message,
-          'Either the lte or gte option must be passed to log.iterator')
-      })
+      it.skip('iterates with lte and default amount value (full log)', async () => { })
     })
   })
 })

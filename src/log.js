@@ -274,15 +274,15 @@ class Log extends GSet {
    * Creates a javscript iterator over log entries
    *
    * @param {Object} options
-   * @param {string} options.gte Beginning hash of the iterator
-   * @param {string} options.lte Ending hash of the iterator
+   * @param {string} options.gt Beginning hash of the iterator, non-inclusive
+   * @param {string} options.gte Beginning hash of the iterator, inclusive
+   * @param {string} options.lt Ending hash of the iterator, non-inclusive
+   * @param {string} options.lte Ending hash of the iterator, inclusive
    * @param {number} options.number Number of entried to return to / from the gte / lte hash
    * @returns {Symbol.Iterator} Iterator object containing log entries
    *
    */
   iterator ({ gte = undefined, lte = undefined, amount = -1 } = {}) {
-    if(!gte && !lte) throw LogError.GteOrLteNotDefinedError()
-
     var iterable = {
       *[Symbol.iterator]() {
         yield 1;
