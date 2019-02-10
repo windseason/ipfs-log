@@ -55,7 +55,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         assert.strictEqual(typeof it[Symbol.iterator], 'function')
-        assert.deepStrictEqual(it.next(), { value: null, done: true })
+        assert.deepStrictEqual(it.next(), { value: undefined, done: true })
       })
 
       it('iterates with lte and explicit amount', async () => {
