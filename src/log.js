@@ -285,16 +285,35 @@ class Log extends GSet {
    * @returns {Symbol.Iterator} Iterator object containing log entries
    *
    */
-  iterator ({ gte = undefined, lte = undefined, amount = -1 } = {}) {
-    var iterable = {
-      *[Symbol.iterator]() {
-        yield 1;
-        yield 2;
-        yield 3;
-      }
+  iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
+  {}) {
+    let start = lte ? [this.get(lte)]
+      : lt ? [this.get(this.get(lt).next)]
+        : this.heads
+
+    let end = gte ? this.get(gte).hash
+      : gt ? this.get(gt).hash
+        : null
+
+    let count = end ? -1
+      : amount || -1
+
+    var entries = this.traverse(start, count, end)
+    var entryValues = Object.values(entries)
+
+    // Strip off last entry if gt is non-inclusive
+    if (gt) entryValues.pop()
+
+    // Deal with the amount argument working backwards from gt/gte
+    if ((gt || gte) && amount > -1) {
+      entryValues = entryValues.slice(entryValues.length - amount, entryValues.length)
     }
 
-    return iterable
+    return (function * () {
+      for (let i in entryValues) {
+        yield entryValues[i]
+      }
+    })()
   }
 
   /**
