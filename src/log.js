@@ -181,7 +181,7 @@ class Log extends GSet {
     return this._entryIndex[entry.cid || entry] !== undefined
   }
 
-  traverse (rootEntries, amount = -1) {
+  traverse (rootEntries, amount = -1, endHash) {
     // Sort the given given root entries and use as the starting stack
     var stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
@@ -226,6 +226,9 @@ class Log extends GSet {
       entry.next.map(getEntry)
         .filter(isDefined)
         .forEach(addToStack)
+
+      // If it is the specified end hash, break out of the while loop
+      if (entry.cid === endHash) break
     }
 
     return result
