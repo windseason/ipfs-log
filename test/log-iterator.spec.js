@@ -49,16 +49,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns a Symbol.iterator object', async () => {
-        let it = log1.iterator({
-          gte: 'zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk',
-          amount: 0
-        })
+        let it = log1.iterator({ amount: 0 })
 
         assert.strictEqual(typeof it[Symbol.iterator], 'function')
         assert.deepStrictEqual(it.next(), { value: undefined, done: true })
       })
 
-      it('iterates with lte and explicit amount', async () => {
+      it('returns length with lte and amount', async () => {
         let amount = 10
 
         let it = log1.iterator({
@@ -67,6 +64,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         assert.strictEqual([...it].length, 10)
+      });
+
+
+      it('returns entries with lte and amount', async () => {
+        let amount = 10
+
+        let it = log1.iterator({
+          lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
+          amount: amount
+        })
 
         let i = 0
         for (let entry of it) {
@@ -74,7 +81,18 @@ Object.keys(testAPIs).forEach((IPFS) => {
         }
       })
 
-      it('iterates with lt and explicit amount', async () => {
+      it('returns length with lt and amount', async () => {
+        let amount = 10
+
+        let it = log1.iterator({
+          lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
+          amount: amount
+        })
+
+        assert.strictEqual([...it].length, amount)
+      })
+
+      it('returns entries with lt and amount', async () => {
         let amount = 10
 
         let it = log1.iterator({
@@ -83,15 +101,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         let i = 1
-        let count = 0
         for (let entry of it) {
           assert.strictEqual(entry.payload, 'entry' + (67 - i++))
-          count++
         }
-        assert.strictEqual(count, amount)
       })
 
-      it('iterates with gt and explicit amount', async () => {
+      it('returns correct length with gt and amount', async () => {
         let amount = 5
 
         let it = log1.iterator({
@@ -108,7 +123,18 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(count, amount)
       })
 
-      it('iterates with gte and explicit amount', async () => {
+      it('returns length with gte and amount', async () => {
+        let amount = 12
+
+        let it = log1.iterator({
+          gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
+          amount: amount
+        })
+
+        assert.strictEqual([...it].length, amount)
+      })
+
+      it('returns entries with gte and amount', async () => {
         let amount = 12
 
         let it = log1.iterator({
@@ -117,12 +143,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         let i = 0
-        let count = 0
         for (let entry of it) {
           assert.strictEqual(entry.payload, 'entry' + (79 - i++))
-          count++
         }
-        assert.strictEqual(count, amount)
       })
 
       /* eslint-disable camelcase */
@@ -185,53 +208,75 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
       /* eslint-enable camelcase */
 
-      it('iterates with gt and default amount value (full log)', async () => {
+      it('returns length with gt and default amount', async () => {
+        let it = log1.iterator({
+          gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
+        })
+
+        assert.strictEqual([...it].length, 33)
+      });
+
+      it('returns entries with gt and default amount', async () => {
         let it = log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
         let i = 0
-        let count = 0
         for (let entry of it) {
           assert.strictEqual(entry.payload, 'entry' + (100 - i++))
-          count++
         }
-        assert.strictEqual(count, 33)
       })
 
-      it('iterates with gte and default amount value (full log)', async () => {
+      it('returns length with gte and default amount', async () => {
+        let it = log1.iterator({
+          gte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
+        })
+
+        assert.strictEqual([...it].length, 34)
+      })
+
+      it('returns entries with gte and default amount', async () => {
         let it = log1.iterator({
           gte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
         let i = 0
-        let count = 0
         for (let entry of it) {
           assert.strictEqual(entry.payload, 'entry' + (100 - i++))
-          count++
         }
-        assert.strictEqual(count, 34)
       })
 
-      it('iterates with lt and default amount value (full log)', async () => {
+      it('returns length with lt and default amount value', async () => {
         let it = log1.iterator({
           lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
         assert.strictEqual([...it].length, 67)
+      })
+
+      it('returns entries with lt and default amount value', async () => {
+        let it = log1.iterator({
+          lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
+        })
 
         let i = 0
         for (let entry of it) {
-          assert.strictEqual(entry.payload, 'entry' + (67 - i++))
+          assert.strictEqual(entry.payload, 'entry' + (66 - i++))
         }
       })
 
-      it('iterates with lte and default amount value (full log)', async () => {
+      it('returns length with lte and default amount value', async () => {
         let it = log1.iterator({
           lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
         assert.strictEqual([...it].length, 68)
+      })
+
+      it('returns entries with lte and default amount value', async () => {
+        let it = log1.iterator({
+          lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
+        })
 
         let i = 0
         for (let entry of it) {
