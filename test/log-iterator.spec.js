@@ -41,7 +41,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log1
 
       beforeEach(async () => {
-        log1 = new Log(ipfs, testACL, testIdentity, { logId: 'X' })
+        log1 = new Log(ipfs, testIdentity, { access: testACL, logId: 'X' })
 
         for (let i = 0; i <= 100; i++) {
           await log1.append('entry' + i)
