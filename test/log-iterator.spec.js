@@ -149,64 +149,57 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       /* eslint-disable camelcase */
-      it('iterates with combinations of lt, gt, lte, and gte', async () => {
-        // lt + gt
-        let it_lt_gt = log1.iterator({
+      it('iterates with lt and gt', async () => {
+        let it = log1.iterator({
           gt: 'zdpuAvZ6cDrY57iDxEQ5iSXibAeJPcBFD1jHnAmKq1RUiyuoK',
           lt: 'zdpuAuPfNkZmPdMxbyw1MxEwuv3XdrMMtFaTSi7sgc7j8VnzW'
         })
-        let it_lt_gt_array = [...it_lt_gt]
+        let hashes = [...it].map(e => e.hash)
 
         // neither hash should appear in the array
-        assert.strictEqual(it_lt_gt_array.map(e => e.hash)
-          .indexOf('zdpuAvZ6cDrY57iDxEQ5iSXibAeJPcBFD1jHnAmKq1RUiyuoK'), -1)
-        assert.strictEqual(it_lt_gt_array.map(e => e.hash)
-          .indexOf('zdpuAuPfNkZmPdMxbyw1MxEwuv3XdrMMtFaTSi7sgc7j8VnzW'), -1)
-        assert.strictEqual(it_lt_gt_array.length, 10)
+        assert.strictEqual(hashes.indexOf('zdpuAvZ6cDrY57iDxEQ5iSXibAeJPcBFD1jHnAmKq1RUiyuoK'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuAuPfNkZmPdMxbyw1MxEwuv3XdrMMtFaTSi7sgc7j8VnzW'), -1)
+        assert.strictEqual(hashes.length, 10)
+      })
 
-        // lt + gte
-        let it_lt_gte = log1.iterator({
+      it('iterates with lt and gte', async () => {
+        let it = log1.iterator({
           gte: 'zdpuAyw2rPe5ML6YmYe7DEyAq3CbWH3QpWQ4P6F4ZFroEebzz',
           lt: 'zdpuAxv8bUaFNmCp51zN3AwCLy83FfVCcp7GeTwCdtpVddziP'
         })
-        let it_lt_gte_array = [...it_lt_gte]
+        let hashes = [...it].map(e => e.hash)
 
-        // neither hash should appear in the array
-        assert.strictEqual(it_lt_gte_array.map(e => e.hash)
-          .indexOf('zdpuAyw2rPe5ML6YmYe7DEyAq3CbWH3QpWQ4P6F4ZFroEebzz'), 24)
-        assert.strictEqual(it_lt_gte_array.map(e => e.hash)
-          .indexOf('zdpuAxv8bUaFNmCp51zN3AwCLy83FfVCcp7GeTwCdtpVddziP'), -1)
-        assert.strictEqual(it_lt_gte_array.length, 25)
+        // only the gte hash should appear in the array
+        assert.strictEqual(hashes.indexOf('zdpuAyw2rPe5ML6YmYe7DEyAq3CbWH3QpWQ4P6F4ZFroEebzz'), 24)
+        assert.strictEqual(hashes.indexOf('zdpuAxv8bUaFNmCp51zN3AwCLy83FfVCcp7GeTwCdtpVddziP'), -1)
+        assert.strictEqual(hashes.length, 25)
+      })
 
-        // lte + gt
-        let it_lte_gt = log1.iterator({
+      it('iterates with lte and gt', async () => {
+        let it = log1.iterator({
           gt: 'zdpuApQ4crttH3GmnVQPNdZ5UMNv3aCd3bcccFEKYCAdYUzir',
           lte: 'zdpuAxdV4PTwMZ4Ug2r9Y1Vi48EUJW4YZPnaWZW9kSfbR82SF'
         })
-        let it_lte_gt_array = [...it_lte_gt]
+        let hashes = [...it].map(e => e.hash)
 
-        // neither hash should appear in the array
-        assert.strictEqual(it_lte_gt_array.map(e => e.hash)
-          .indexOf('zdpuApQ4crttH3GmnVQPNdZ5UMNv3aCd3bcccFEKYCAdYUzir'), -1)
-        assert.strictEqual(it_lte_gt_array.map(e => e.hash)
-          .indexOf('zdpuAxdV4PTwMZ4Ug2r9Y1Vi48EUJW4YZPnaWZW9kSfbR82SF'), 0)
-        assert.strictEqual(it_lte_gt_array.length, 4)
+        // only the lte hash should appear in the array
+        assert.strictEqual(hashes.indexOf('zdpuApQ4crttH3GmnVQPNdZ5UMNv3aCd3bcccFEKYCAdYUzir'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuAxdV4PTwMZ4Ug2r9Y1Vi48EUJW4YZPnaWZW9kSfbR82SF'), 0)
+        assert.strictEqual(hashes.length, 4)
+      })
 
-        // lte + gte
-        let it_lte_gte = log1.iterator({
+      it('iterates with lte and gte', async () => {
+        let it = log1.iterator({
           gte: 'zdpuAmAvVqqHiss5arZoY6oNDN6JRLVExfWyN48rxTrsscHaE',
           lte: 'zdpuApYv1r3kPGdSJoDYA8xkEAzKFK3bdvrdRX4jY13xZDpL6'
         })
-        let it_lte_gte_array = [...it_lte_gte]
+        let hashes = [...it].map(e => e.hash)
 
         // neither hash should appear in the array
-        assert.strictEqual(it_lte_gte_array.map(e => e.hash)
-          .indexOf('zdpuAmAvVqqHiss5arZoY6oNDN6JRLVExfWyN48rxTrsscHaE'), 9)
-        assert.strictEqual(it_lte_gte_array.map(e => e.hash)
-          .indexOf('zdpuApYv1r3kPGdSJoDYA8xkEAzKFK3bdvrdRX4jY13xZDpL6'), 0)
-        assert.strictEqual(it_lte_gte_array.length, 10)
+        assert.strictEqual(hashes.indexOf('zdpuAmAvVqqHiss5arZoY6oNDN6JRLVExfWyN48rxTrsscHaE'), 9)
+        assert.strictEqual(hashes.indexOf('zdpuApYv1r3kPGdSJoDYA8xkEAzKFK3bdvrdRX4jY13xZDpL6'), 0)
+        assert.strictEqual(hashes.length, 10)
       })
-      /* eslint-enable camelcase */
 
       it('returns length with gt and default amount', async () => {
         let it = log1.iterator({
