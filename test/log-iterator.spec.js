@@ -330,14 +330,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let errMsg
 
         try {
-          let it = fixture.log.iterator({
+          fixture.log.iterator({
             lte: fixture.log.heads[1]
           })
         } catch (e) {
           errMsg = e.message
         }
 
-        assert.strictEqual(errMsg, "lt or lte must be a string or array of Entries")
+        assert.strictEqual(errMsg, 'lt or lte must be a string or array of Entries')
       })
     })
   })

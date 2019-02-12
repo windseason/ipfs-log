@@ -286,15 +286,15 @@ class Log extends GSet {
    *
    */
   iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
-    {}) {
-    if(amount === 0) return (function * () {})()
-    if(typeof lte === "string") lte = [this.get(lte)]
-    if(typeof lt === "string") lt = [this.get(this.get(lt).next)]
+  {}) {
+    if (amount === 0) return (function * () {})()
+    if (typeof lte === 'string') lte = [this.get(lte)]
+    if (typeof lt === 'string') lt = [this.get(this.get(lt).next)]
 
-    if(lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
-    if(lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
+    if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
+    if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let start = lte ? lte : lt ? lt : this.heads
+    let start = lte || (lt || this.heads)
     let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
     let count = endHash ? -1 : amount || -1
 
