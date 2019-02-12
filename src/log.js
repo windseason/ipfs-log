@@ -277,29 +277,29 @@ class Log extends GSet {
    * Creates a javscript iterator over log entries
    *
    * @param {Object} options
-   * @param {string} options.gt Beginning hash of the iterator, non-inclusive
-   * @param {string} options.gte Beginning hash of the iterator, inclusive
-   * @param {string} options.lt Ending hash of the iterator, non-inclusive
-   * @param {string} options.lte Ending hash of the iterator, inclusive
-   * @param {number} options.number Number of entried to return to / from the gte / lte hash
+   * @param {string|Entry|Array} options.gt Beginning hash of the iterator, non-inclusive
+   * @param {string|Entry|Array} options.gte Beginning hash of the iterator, inclusive
+   * @param {string|Entry|Array} options.lt Ending hash of the iterator, non-inclusive
+   * @param {string|Entry|Array} options.lte Ending hash of the iterator, inclusive
+   * @param {amount} options.amount Number of entried to return to / from the gte / lte hash
    * @returns {Symbol.Iterator} Iterator object containing log entries
    *
    */
   iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
-  {}) {
-    let start = lte ? [this.get(lte)]
-      : lt ? [this.get(this.get(lt).next)]
-        : this.heads
+    {}) {
+    if(amount === 0) return (function * () {})()
+    if(typeof lte === "string") lte = [this.get(lte)]
+    if(typeof lt === "string") lt = [this.get(this.get(lt).next)]
 
-    let end = gte ? this.get(gte).hash
-      : gt ? this.get(gt).hash
-        : null
+    if(lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
+    if(lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let count = end ? -1
-      : amount || -1
+    let start = lte ? lte : lt ? lt : this.heads
+    let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
+    let count = endHash ? -1 : amount || -1
 
-    var entries = this.traverse(start, count, end)
-    var entryValues = Object.values(entries)
+    let entries = this.traverse(start, count, endHash)
+    let entryValues = Object.values(entries)
 
     // Strip off last entry if gt is non-inclusive
     if (gt) entryValues.pop()
