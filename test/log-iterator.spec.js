@@ -3,7 +3,6 @@
 const assert = require('assert')
 const rmrf = require('rimraf')
 const Log = require('../src/log')
-const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 const LogCreator = require('./utils/log-creator')
 
