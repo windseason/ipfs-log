@@ -21,7 +21,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Iterator (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const testACL = new AccessController()
     const { identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-join' + new Date().getTime()
@@ -45,7 +44,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log1
 
       beforeEach(async () => {
-        log1 = new Log(ipfs, testIdentity, { access: testACL, logId: 'X' })
+        log1 = new Log(ipfs, testIdentity, { logId: 'X' })
 
         for (let i = 0; i <= 100; i++) {
           await log1.append('entry' + i)
