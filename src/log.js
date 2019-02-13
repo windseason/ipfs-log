@@ -181,7 +181,7 @@ class Log extends GSet {
     return this._entryIndex[entry.cid || entry] !== undefined
   }
 
-  traverse (rootEntries, amount = -1) {
+  traverse (rootEntries, amount = -1, endHash) {
     // Sort the given given root entries and use as the starting stack
     var stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
@@ -226,6 +226,9 @@ class Log extends GSet {
       entry.next.map(getEntry)
         .filter(isDefined)
         .forEach(addToStack)
+
+      // If it is the specified end hash, break out of the while loop
+      if (entry.cid === endHash) break
     }
 
     return result
@@ -268,6 +271,67 @@ class Log extends GSet {
     // Update the length
     this._length++
     return entry
+  }
+
+  /*
+   * Creates a javscript iterator over log entries
+   *
+   * @param {Object} options
+   * @param {string|Array} options.gt Beginning hash of the iterator, non-inclusive
+   * @param {string|Array} options.gte Beginning hash of the iterator, inclusive
+   * @param {string|Array} options.lt Ending hash of the iterator, non-inclusive
+   * @param {string|Array} options.lte Ending hash of the iterator, inclusive
+   * @param {amount} options.amount Number of entried to return to / from the gte / lte hash
+   * @returns {Symbol.Iterator} Iterator object containing log entries
+   *
+   * @examples
+   *
+   * (async () => {
+   *   log1 = new Log(ipfs, testIdentity, { logId: 'X' })
+   *
+   *   for (let i = 0; i <= 100; i++) {
+   *     await log1.append('entry' + i)
+   *   }
+   *
+   *   let it = log1.iterator({
+   *     lte: 'zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk',
+   *     amount: 10
+   *   })
+   *
+   *   [...it].length // 10
+   * })()
+   *
+   *
+   */
+  iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
+  {}) {
+    if (amount === 0) return (function * () {})()
+    if (typeof lte === 'string') lte = [this.get(lte)]
+    if (typeof lt === 'string') lt = [this.get(this.get(lt).next)]
+
+    if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
+    if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
+
+    let start = lte || (lt || this.heads)
+    let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
+    let count = endHash ? -1 : amount || -1
+
+    let entries = this.traverse(start, count, endHash)
+    let entryValues = Object.values(entries)
+
+    // Strip off last entry if gt is non-inclusive
+    if (gt) entryValues.pop()
+
+    // Deal with the amount argument working backwards from gt/gte
+    if ((gt || gte) && amount > -1) {
+      entryValues = entryValues.slice(entryValues.length - amount, entryValues.length)
+    }
+
+    return (function * () {
+      for (let i in entryValues) {
+        yield entryValues[i]
+      }
+    })()
   }
 
   /**
