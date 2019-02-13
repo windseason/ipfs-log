@@ -277,12 +277,30 @@ class Log extends GSet {
    * Creates a javscript iterator over log entries
    *
    * @param {Object} options
-   * @param {string|Entry|Array} options.gt Beginning hash of the iterator, non-inclusive
-   * @param {string|Entry|Array} options.gte Beginning hash of the iterator, inclusive
-   * @param {string|Entry|Array} options.lt Ending hash of the iterator, non-inclusive
-   * @param {string|Entry|Array} options.lte Ending hash of the iterator, inclusive
+   * @param {string|Array} options.gt Beginning hash of the iterator, non-inclusive
+   * @param {string|Array} options.gte Beginning hash of the iterator, inclusive
+   * @param {string|Array} options.lt Ending hash of the iterator, non-inclusive
+   * @param {string|Array} options.lte Ending hash of the iterator, inclusive
    * @param {amount} options.amount Number of entried to return to / from the gte / lte hash
    * @returns {Symbol.Iterator} Iterator object containing log entries
+   *
+   * @examples
+   *
+   * (async () => {
+   *   log1 = new Log(ipfs, testIdentity, { logId: 'X' })
+   *
+   *   for (let i = 0; i <= 100; i++) {
+   *     await log1.append('entry' + i)
+   *   }
+   *
+   *   let it = log1.iterator({
+   *     lte: 'zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk',
+   *     amount: 10
+   *   })
+   *
+   *   [...it].length // 10
+   * })()
+   *
    *
    */
   iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
