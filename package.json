@@ -16,6 +16,7 @@
     "cids": "^0.5.7",
     "ipld-dag-pb": "^0.15.2",
     "orbit-db-identity-provider": "github:orbitdb/orbit-db-identity-provider",
+    "orbit-db-io": "~0.0.1",
     "p-map": "^1.1.1",
     "p-whilst": "^1.0.0",
     "pify": "^4.0.1"
