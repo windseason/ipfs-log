@@ -13,7 +13,7 @@
       const access = new AccessController()
       const identity = await Identities.createIdentity({ id: 'userA', keystore })
 
-      log = new Log(ipfs, access, identity, 'browser-benchmark-append-signed')
+      log = new Log(ipfs, identity, { logId: 'browser-benchmark-append-signed', access: access })
       await log.append(loopCount)
     </i></pre>
 
@@ -34,7 +34,6 @@
       let queriesPerSecond = 0
       let lastTenSeconds = 0
 
-      const { AccessController } = Log
       const queryLoop = () => {
         return log.append(totalQueries.toString())
           .then((res) => {
@@ -77,9 +76,8 @@
 
           const testKeyPath = '../test/fixtures/keys'
           const keystore = Keystore.create(testKeyPath)
-          const access = new AccessController()
           const identity = await Identities.createIdentity({ id: 'userA', keystore })
-          log = new Log(ipfs, access, identity, 'browser-benchmark-append-signed')
+          log = new Log(ipfs, identity, { logId: 'browser-benchmark-append-signed' })
           queryLoop()
         })
 

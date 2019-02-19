@@ -5,7 +5,7 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
-const { AccessController, IdentityProvider } = Log
+const IdentityProvider = require('orbit-db-identity-provider')
 
 // State
 let ipfs
@@ -45,14 +45,9 @@ let run = (() => {
     // Create a log
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
-    const identitySignerFn = (id, data) => {
-      const key = keystore.getKey(id)
-      return keystore.sign(key, data)
-    }
-    const access = new AccessController()
-    const identity = await IdentityProvider.createIdentity(keystore, 'userA', identitySignerFn)
+    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
 
-    log = new Log(ipfs, access, identity, 'A')
+    log = new Log(ipfs, identity, { logId: 'A' })
 
     const count = parseInt(process.argv[2]) || 50000
     const refCount = 64
@@ -104,16 +99,12 @@ let run = (() => {
 
     const m1 = process.memoryUsage()
 
-    await Log.fromEntryHash(
-      ipfs,
-      log._access,
-      log._identity,
-      log.heads.map(e => e.hash),
-      log._id,
-      -1,
-      [],
-      onDataUpdated
-    )
+    await Log.fromEntryCid(ipfs, log._identity, log.heads.map(e => e.cid), {
+      logId: log._id,
+      length: -1,
+      exclude: [],
+      onProgressCallback: onDataUpdated
+    })
 
     outputMetrics()
     const et = new Date().getTime()

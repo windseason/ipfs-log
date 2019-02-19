@@ -5,7 +5,6 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const Keystore = require('orbit-db-keystore')
 const Log = require('../src/log')
-const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 
 // State
@@ -52,14 +51,13 @@ let run = (() => {
   ipfs.on('ready', async () => {
     // Use memory store to test without disk IO
     // const memstore = new MemStore()
-    // ipfs.object.put = memstore.put.bind(memstore)
-    // ipfs.object.get = memstore.get.bind(memstore)
+    // ipfs.dag.put = memstore.put.bind(memstore)
+    // ipfs.dag.get = memstore.get.bind(memstore)
     const testKeysPath = './test/fixtures/keys'
     const keystore = Keystore.create(testKeysPath)
-    const access = new AccessController()
     const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
 
-    log = new Log(ipfs, access, identity, 'A')
+    log = new Log(ipfs, identity, { logId: 'A' })
 
     // Output metrics at 1 second interval
     setInterval(() => {
