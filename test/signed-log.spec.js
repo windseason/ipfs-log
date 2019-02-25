@@ -46,10 +46,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
     it('has the correct identity', () => {
       const log = new Log(ipfs, testIdentity, { logId: 'A' })
       assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, '04e9224ee3451772f3ad43068313dc5bdc6d3f2c9a8c3a6ba6f73a472d5f47a96ae6d776de13f2fc2076140fd68ca900df2ca4862b06192adbf8f8cb18a99d69aa')
-      assert.strictEqual(log._identity.publicKey, '0411a0d38181c9374eca3e480ecada96b1a4db9375c5e08c3991557759d22f6f2f902d0dc5364a948035002504d825308b0c257b7cbb35229c2076532531f8f4ef')
-      assert.strictEqual(log._identity.signatures.id, '3045022042fa401d9ffb0c32de2f02561dc1c5e605ccc5eb33eb56fb638bb8f17bd2adb7022100d8ae57f2d401c1fe0fb1614897f1c731a201230bc269e1a04d1f7d9faecc3ef7')
-      assert.strictEqual(log._identity.signatures.publicKey, '304402206b9c218629d3cd692ad074586834aefe9da480429352870562bb0b601129363e02203717125e9cdb85bea1f84f74d48e6a04b73cda28660486530f4a4fccacdbfa84')
+      assert.strictEqual(log._identity.id, '038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce')
+      assert.strictEqual(log._identity.publicKey, '021429f512058f4e3c0207c3f8ab569e1445f0a4832ffff9ed8f72bbdf5413ed4c')
+      assert.strictEqual(log._identity.signatures.id, '3044022017996f5e494b5f8f3326921daae5a7750398c25c3e47d6982fffec2e34e1ba2a022012471d02973c094ee193bbbce9ae1ba9e3b8e338e562fc10e169ee1380547282')
+      assert.strictEqual(log._identity.signatures.publicKey, '30440220329d7a4d6a3ffaa552514be087c929f105e6c54fa153cdcbd08c4ca1f07c08d802202ff745ef9eba493f4d1d4da8cc3fc2ff2d9cc1ad7011ecff46af1af2030a365d')
     })
 
     it('has the correct public key', () => {
@@ -138,10 +138,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('throws an error if log is signed but the signature doesn\'t verify', async () => {
-      const replaceAt = (str, index, replacement) => {
-        return str.substr(0, index) + replacement + str.substr(index + replacement.length)
-      }
-
       const log1 = new Log(ipfs, testIdentity, { logId: 'A' })
       const log2 = new Log(ipfs, testIdentity2, { logId: 'A' })
       let err
@@ -149,7 +145,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       try {
         await log1.append('one')
         await log2.append('two')
-        log2.values[0].sig = replaceAt(log2.values[0].sig, 0, 'X')
+        log2.values[0].sig = log1.values[0].sig
         await log1.join(log2)
       } catch (e) {
         err = e.toString()
