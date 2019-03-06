@@ -83,7 +83,6 @@ class Log extends GSet {
 
     // Add entries to the internal cache
     entries = entries || []
-    this._entryIndex = entries.reduce(uniqueEntriesReducer, {})
 
     // Set heads if not passed as an argument
     heads = heads || Log.findHeads(entries)
@@ -131,10 +130,12 @@ class Log extends GSet {
 
   /**
    * Returns the values in the log.
-   * @returns {Array<Entry>}
+   * @returns {Promise<Array<Entry>>}
    */
   get values () {
-    return Object.values(this.traverse(this.heads)).reverse()
+    return this.traverse(this.heads)
+      .then(Object.values)
+      .then(values => values.reverse())
   }
 
   /**
@@ -148,40 +149,42 @@ class Log extends GSet {
   /**
    * Returns an array of Entry objects that reference entries which
    * are not in the log currently.
-   * @returns {Array<Entry>}
+   * @returns {Promise<Array<Entry>>}
    */
   get tails () {
-    return Log.findTails(this.values)
+    return this.values.then(Log.findTails)
   }
 
   /**
    * Returns an array of cids that are referenced by entries which
    * are not in the log currently.
-   * @returns {Array<string>} Array of CIDs
+   * @returns {Promise<Array<string>>} Array of CIDs
    */
   get tailCids () {
-    return Log.findTailCids(this.values)
+    return this.values.then(Log.findTailCids)
   }
 
   /**
    * Find an entry.
    * @param {string} [cid] The CID of the entry
-   * @returns {Entry|undefined}
+   * @returns {Promise<Entry|undefined>}
    */
   get (cid) {
-    return this._entryIndex[cid]
+    return LogIO.fromEntryCid(this._storage, cid, { length: 1 }).then(r => r.values[0])
   }
 
   /**
    * Checks if a entry is part of the log
    * @param {string} cid The CID of the entry
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    */
   has (entry) {
-    return this._entryIndex[entry.cid || entry] !== undefined
+    return this.traverse(this.heads)
+      .then(Object.keys)
+      .then(cids => cids.indexOf(entry.cid || entry) > -1)
   }
 
-  traverse (rootEntries, amount = -1, endHash) {
+  async traverse (rootEntries, amount = -1, endHash) {
     // Sort the given given root entries and use as the starting stack
     var stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
@@ -223,9 +226,7 @@ class Log extends GSet {
       result[entry.cid] = entry
 
       // Add entry's next references to the stack
-      entry.next.map(getEntry)
-        .filter(isDefined)
-        .forEach(addToStack)
+      ;(await Promise.all(entry.next.map(getEntry))).filter(isDefined).forEach(addToStack)
 
       // If it is the specified end hash, break out of the while loop
       if (entry.cid === endHash) break
@@ -264,7 +265,6 @@ class Log extends GSet {
       throw new Error(`Could not append entry, key "${this._identity.id}" is not allowed to write to the log`)
     }
 
-    this._entryIndex[entry.cid] = entry
     nexts.forEach(e => (this._nextsIndex[e] = entry.cid))
     this._headsIndex = {}
     this._headsIndex[entry.cid] = entry
@@ -282,7 +282,7 @@ class Log extends GSet {
    * @param {string|Array} options.lt Ending hash of the iterator, non-inclusive
    * @param {string|Array} options.lte Ending hash of the iterator, inclusive
    * @param {amount} options.amount Number of entried to return to / from the gte / lte hash
-   * @returns {Symbol.Iterator} Iterator object containing log entries
+   * @returns {Promise<Symbol.Iterator>} Iterator object containing log entries
    *
    * @examples
    *
@@ -303,8 +303,13 @@ class Log extends GSet {
    *
    *
    */
-  iterator ({ gt = undefined, gte = undefined, lt = undefined, lte = undefined, amount = -1 } =
-  {}) {
+  async iterator ({
+    gt = undefined,
+    gte = undefined,
+    lt = undefined,
+    lte = undefined,
+    amount = -1
+  } = {}) {
     if (amount === 0) return (function * () {})()
     if (typeof lte === 'string') lte = [this.get(lte)]
     if (typeof lt === 'string') lt = [this.get(this.get(lt).next)]
@@ -316,7 +321,7 @@ class Log extends GSet {
     let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
     let count = endHash ? -1 : amount || -1
 
-    let entries = this.traverse(start, count, endHash)
+    let entries = await this.traverse(start, count, endHash)
     let entryValues = Object.values(entries)
 
     // Strip off last entry if gt is non-inclusive
@@ -382,9 +387,6 @@ class Log extends GSet {
     }
     Object.values(newItems).forEach(addToNextsIndex)
 
-    // Update the internal entry index
-    this._entryIndex = Object.assign(this._entryIndex, newItems)
-
     // Merge the heads
     const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.cid)
     const notInCurrentNexts = e => !this._nextsIndex[e.cid]
@@ -400,9 +402,8 @@ class Log extends GSet {
     if (size > -1) {
       let tmp = this.values
       tmp = tmp.slice(-size)
-      this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
       this._headsIndex = Log.findHeads(tmp).reduce(uniqueEntriesReducer, {})
-      this._length = Object.values(this._entryIndex).length
+      this._length = (await this.values).length
     }
 
     // Find the latest clock from the heads
@@ -475,9 +476,7 @@ class Log extends GSet {
    * @returns {boolean}
    */
   static isLog (log) {
-    return log.id !== undefined &&
-      log.heads !== undefined &&
-      log._entryIndex !== undefined
+    return log.id !== undefined && log.heads !== undefined
   }
 
   /**
