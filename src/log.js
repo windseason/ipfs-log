@@ -170,7 +170,7 @@ class Log extends GSet {
    * @returns {Promise<Entry|undefined>}
    */
   get (cid) {
-    return LogIO.fromEntryCid(this._storage, cid, { length: 1 }).then(r => r.values[0])
+    return Entry.fromCID(this._storage, cid)
   }
 
   /**
