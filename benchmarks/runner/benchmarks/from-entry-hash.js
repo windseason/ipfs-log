@@ -17,15 +17,10 @@ const base = {
     return { ipfs, repo, log, access, identity }
   },
   cycle: async function ({ log, ipfs, access, identity }) {
-    await Log.fromEntryHash(
-      ipfs,
+    await Log.fromEntryHash(ipfs, identity, log.heads.map(e => e.hash), {
       access,
-      identity,
-      log.heads.map(e => e.hash),
-      log._id,
-      -1,
-      []
-    )
+      logId: log._id
+    })
   },
   teardown: async function ({ repo }) {
     await releaseRepo(repo)

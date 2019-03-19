@@ -17,7 +17,7 @@ const base = {
     return { log, ipfs, repo, access, identity }
   },
   cycle: async function ({ log, ipfs, access, identity }) {
-    await Log.fromEntry(ipfs, access, identity, log.heads)
+    await Log.fromEntry(ipfs, identity, log.heads, { access })
   },
   teardown: async function ({ repo }) {
     await releaseRepo(repo)

@@ -9,7 +9,7 @@ const createLog = async (ipfs, logId) => {
   const keysPath = './ipfs-log-benchmarks/keys'
   const keystore = Keystore.create(keysPath)
   const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
-  const log = new Log(ipfs, access, identity, 'A')
+  const log = new Log(ipfs, identity, { logId: 'A', access })
   return { log, access, identity }
 }
 
