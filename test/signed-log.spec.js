@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
@@ -19,13 +20,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Signed Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-signed' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
@@ -34,6 +39,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     it('creates a signed log', () => {
@@ -46,10 +53,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
     it('has the correct identity', () => {
       const log = new Log(ipfs, testIdentity, { logId: 'A' })
       assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, '038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce')
-      assert.strictEqual(log._identity.publicKey, '021429f512058f4e3c0207c3f8ab569e1445f0a4832ffff9ed8f72bbdf5413ed4c')
-      assert.strictEqual(log._identity.signatures.id, '3044022017996f5e494b5f8f3326921daae5a7750398c25c3e47d6982fffec2e34e1ba2a022012471d02973c094ee193bbbce9ae1ba9e3b8e338e562fc10e169ee1380547282')
-      assert.strictEqual(log._identity.signatures.publicKey, '30440220329d7a4d6a3ffaa552514be087c929f105e6c54fa153cdcbd08c4ca1f07c08d802202ff745ef9eba493f4d1d4da8cc3fc2ff2d9cc1ad7011ecff46af1af2030a365d')
+      assert.strictEqual(log._identity.id, '03e0480538c2a39951d054e17ff31fde487cb1031d0044a037b53ad2e028a3e77c')
+      assert.strictEqual(log._identity.publicKey, '038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce')
+      assert.strictEqual(log._identity.signatures.id, '3045022100f5f6f10571d14347aaf34e526ce3419fd64d75ffa7aa73692cbb6aeb6fbc147102203a3e3fa41fa8fcbb9fc7c148af5b640e2f704b20b3a4e0b93fc3a6d44dffb41e')
+      assert.strictEqual(log._identity.signatures.publicKey, '30450221008481508c42efe64512e84177db265a60c8c54cfa99094515a5ad93226633f30202202d1916ac72218e95a3ae9c185b42732c97db60b4d10845918b6240b877e104b1')
     })
 
     it('has the correct public key', () => {

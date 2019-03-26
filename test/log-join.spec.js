@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Clock = require('../src/lamport-clock')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
@@ -25,23 +26,29 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Join (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-join' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     describe('join', () => {
@@ -221,11 +228,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloB1')
         await log3.append('helloB2')
 
-        await log4.append('helloC1')
-        await log4.append('helloC2')
+        await log2.append('helloC1')
+        await log2.append('helloC2')
 
-        await log2.append('helloD1')
-        await log2.append('helloD2')
+        await log4.append('helloD1')
+        await log4.append('helloD2')
         await log1.join(log2)
         await log1.join(log3)
         await log1.join(log4)
@@ -307,11 +314,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const expectedData = [
           { payload: 'helloA1', id: 'X', clock: new Clock(testIdentity.publicKey, 1) },
-          { payload: 'helloD1', id: 'X', clock: new Clock(testIdentity4.publicKey, 1) },
           { payload: 'helloB1', id: 'X', clock: new Clock(testIdentity2.publicKey, 1) },
+          { payload: 'helloD1', id: 'X', clock: new Clock(testIdentity4.publicKey, 1) },
           { payload: 'helloA2', id: 'X', clock: new Clock(testIdentity.publicKey, 2) },
-          { payload: 'helloD2', id: 'X', clock: new Clock(testIdentity4.publicKey, 2) },
           { payload: 'helloB2', id: 'X', clock: new Clock(testIdentity2.publicKey, 2) },
+          { payload: 'helloD2', id: 'X', clock: new Clock(testIdentity4.publicKey, 2) },
           { payload: 'helloC1', id: 'X', clock: new Clock(testIdentity3.publicKey, 3) },
           { payload: 'helloC2', id: 'X', clock: new Clock(testIdentity3.publicKey, 4) },
           { payload: 'helloD3', id: 'X', clock: new Clock(testIdentity4.publicKey, 5) },
@@ -364,11 +371,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         const expectedData = [
           'helloA1',
-          'helloD1',
           'helloB1',
+          'helloD1',
           'helloA2',
-          'helloD2',
           'helloB2',
+          'helloD2',
           'helloC1',
           'helloC2',
           'helloD3',

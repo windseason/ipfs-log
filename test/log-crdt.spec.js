@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
@@ -19,13 +20,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - CRDT (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-crdt' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
       testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
@@ -35,6 +40,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     describe('is a CRDT', () => {

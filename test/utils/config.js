@@ -1,7 +1,9 @@
 module.exports = {
   timeout: 30000,
-  identityKeysPath: './test/fixtures/keys/identity-keys',
-  signingKeysPath: './test/fixtures/keys/signing-keys',
+  identityKeyFixtures: './test/fixtures/keys/identity-keys',
+  signingKeyFixtures: './test/fixtures/keys/signing-keys',
+  identityKeysPath: './orbitdb/identity/identitykeys',
+  signingKeysPath: './orbitdb/identity/signingkeys',
   defaultIpfsConfig: {
     preload: {
       enabled: false
