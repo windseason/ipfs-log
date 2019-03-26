@@ -8,20 +8,15 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
 // Test utils
-const {
-  config,
-  testAPIs,
-  startIpfs,
-  stopIpfs
-} = require('./utils')
+const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
-const last = (arr) => {
+const last = arr => {
   return arr[arr.length - 1]
 }
 
-Object.keys(testAPIs).forEach((IPFS) => {
+Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - Join (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
@@ -32,10 +27,26 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({
+        id: 'userA',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity2 = await IdentityProvider.createIdentity({
+        id: 'userB',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity3 = await IdentityProvider.createIdentity({
+        id: 'userC',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity4 = await IdentityProvider.createIdentity({
+        id: 'userD',
+        identityKeysPath,
+        signingKeysPath
+      })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -58,7 +69,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let items1 = []
         let items2 = []
         let items3 = []
-        const amount = 100
+        const amount = 2
         for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)
           const prev2 = last(items2)
@@ -77,6 +88,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         // Here we're creating a log from entries signed by peer A, B and C
         // "logA" accepts entries from peer C so we can join logs A and B
         const logB = await Log.fromEntry(ipfs, testIdentity3, last(items3), -1)
+
         assert.strictEqual(logA.length, items2.length + items1.length)
         assert.strictEqual(logB.length, items3.length + items2.length + items1.length)
 
@@ -118,14 +130,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log1.join(log2)
         await log1.join(log2)
 
-        const expectedData = [
-          'helloA1', 'helloB1', 'helloA2', 'helloB2'
-        ]
+        const expectedData = ['helloA1', 'helloB1', 'helloA2', 'helloB2']
 
         assert.strictEqual(log1.length, 4)
-        assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
+        assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
 
-        const item = last(log1.values)
+        const item = last(await log1.values)
         assert.strictEqual(item.next.length, 1)
       })
 
@@ -137,13 +147,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log1.join(log2)
         await log2.join(log1)
 
-        const expectedData = [
-          'helloA1', 'helloB1', 'helloA2', 'helloB2'
-        ]
+        const expectedData = ['helloA1', 'helloB1', 'helloA2', 'helloB2']
 
-        assert.deepStrictEqual(log1.values.map((e) => e.cid), log2.values.map((e) => e.cid))
-        assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
-        assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
+        assert.deepStrictEqual(
+          (await log1.values).map(e => e.cid),
+          (await log2.values).map(e => e.cid)
+        )
+        assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
+        assert.deepStrictEqual((await log2.values).map(e => e.payload), expectedData)
       })
 
       it('joins logs twice', async () => {
@@ -155,12 +166,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB2')
         await log2.join(log1)
 
-        const expectedData = [
-          'helloA1', 'helloB1', 'helloA2', 'helloB2'
-        ]
+        const expectedData = ['helloA1', 'helloB1', 'helloA2', 'helloB2']
 
         assert.strictEqual(log2.length, 4)
-        assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
+        assert.deepStrictEqual((await log2.values).map(e => e.payload), expectedData)
       })
 
       it('joins 2 logs two ways', async () => {
@@ -172,12 +181,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB2')
         await log2.join(log1)
 
-        const expectedData = [
-          'helloA1', 'helloB1', 'helloA2', 'helloB2'
-        ]
+        const expectedData = ['helloA1', 'helloB1', 'helloA2', 'helloB2']
 
         assert.strictEqual(log2.length, 4)
-        assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
+        assert.deepStrictEqual((await log2.values).map(e => e.payload), expectedData)
       })
 
       it('joins 2 logs two ways and has the right heads at every step', async () => {
@@ -242,7 +249,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
 
         assert.strictEqual(log1.length, 8)
-        assert.deepStrictEqual(log1.values.map(e => e.payload), expectedData)
+        assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
       })
 
       it('joins 4 logs to one is commutative', async () => {
@@ -262,7 +269,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.join(log4)
 
         assert.strictEqual(log1.length, 8)
-        assert.deepStrictEqual(log1.values.map(e => e.payload), log2.values.map(e => e.payload))
+        assert.deepStrictEqual(
+          (await log1.values).map(e => e.payload),
+          (await log2.values).map(e => e.payload)
+        )
       })
 
       it('joins logs and updates clocks', async () => {
@@ -321,7 +331,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           { payload: 'helloD6', id: 'X', clock: new Clock(testIdentity4.publicKey, 8) }
         ]
 
-        const transformed = log4.values.map((e) => {
+        const transformed = (await log4.values).map(e => {
           return { payload: e.payload, id: e.id, clock: e.clock }
         })
 
@@ -376,7 +386,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         ]
 
         assert.strictEqual(log4.length, 10)
-        assert.deepStrictEqual(log4.values.map((e) => e.payload), expectedData)
+        assert.deepStrictEqual((await log4.values).map(e => e.payload), expectedData)
       })
 
       describe('takes length as an argument', async () => {
@@ -390,52 +400,44 @@ Object.keys(testAPIs).forEach((IPFS) => {
         it('joins only specified amount of entries - one entry', async () => {
           await log1.join(log2, 1)
 
-          const expectedData = [
-            'helloB2'
-          ]
-          const lastEntry = last(log1.values)
+          const expectedData = ['helloB2']
+          const lastEntry = last(await log1.values)
 
           assert.strictEqual(log1.length, 1)
-          assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
           assert.strictEqual(lastEntry.next.length, 1)
         })
 
         it('joins only specified amount of entries - two entries', async () => {
           await log1.join(log2, 2)
 
-          const expectedData = [
-            'helloA2', 'helloB2'
-          ]
-          const lastEntry = last(log1.values)
+          const expectedData = ['helloA2', 'helloB2']
+          const lastEntry = last(await log1.values)
 
           assert.strictEqual(log1.length, 2)
-          assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
           assert.strictEqual(lastEntry.next.length, 1)
         })
 
         it('joins only specified amount of entries - three entries', async () => {
           await log1.join(log2, 3)
 
-          const expectedData = [
-            'helloB1', 'helloA2', 'helloB2'
-          ]
-          const lastEntry = last(log1.values)
+          const expectedData = ['helloB1', 'helloA2', 'helloB2']
+          const lastEntry = last(await log1.values)
 
           assert.strictEqual(log1.length, 3)
-          assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
           assert.strictEqual(lastEntry.next.length, 1)
         })
 
         it('joins only specified amount of entries - (all) four entries', async () => {
           await log1.join(log2, 4)
 
-          const expectedData = [
-            'helloA1', 'helloB1', 'helloA2', 'helloB2'
-          ]
-          const lastEntry = last(log1.values)
+          const expectedData = ['helloA1', 'helloB1', 'helloA2', 'helloB2']
+          const lastEntry = last(await log1.values)
 
           assert.strictEqual(log1.length, 4)
-          assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
+          assert.deepStrictEqual((await log1.values).map(e => e.payload), expectedData)
           assert.strictEqual(lastEntry.next.length, 1)
         })
       })

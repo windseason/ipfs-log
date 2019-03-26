@@ -7,16 +7,11 @@ const IdentityProvider = require('orbit-db-identity-provider')
 const LogCreator = require('./utils/log-creator')
 
 // Test utils
-const {
-  config,
-  testAPIs,
-  startIpfs,
-  stopIpfs
-} = require('./utils')
+const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
-Object.keys(testAPIs).forEach((IPFS) => {
+Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - Iterator (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
@@ -27,10 +22,26 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({
+        id: 'userA',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity2 = await IdentityProvider.createIdentity({
+        id: 'userB',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity3 = await IdentityProvider.createIdentity({
+        id: 'userC',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity4 = await IdentityProvider.createIdentity({
+        id: 'userD',
+        identityKeysPath,
+        signingKeysPath
+      })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -51,7 +62,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns a Symbol.iterator object', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lte: 'zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk',
           amount: 0
         })
@@ -63,7 +74,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns length with lte and amount', async () => {
         let amount = 10
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -74,7 +85,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns entries with lte and amount', async () => {
         let amount = 10
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -88,7 +99,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns length with lt and amount', async () => {
         let amount = 10
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -99,7 +110,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns entries with lt and amount', async () => {
         let amount = 10
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -113,7 +124,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns correct length with gt and amount', async () => {
         let amount = 5
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -130,7 +141,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns length with gte and amount', async () => {
         let amount = 12
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -141,7 +152,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns entries with gte and amount', async () => {
         let amount = 12
 
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
@@ -154,7 +165,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       /* eslint-disable camelcase */
       it('iterates with lt and gt', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAvZ6cDrY57iDxEQ5iSXibAeJPcBFD1jHnAmKq1RUiyuoK',
           lt: 'zdpuAuPfNkZmPdMxbyw1MxEwuv3XdrMMtFaTSi7sgc7j8VnzW'
         })
@@ -167,7 +178,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('iterates with lt and gte', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gte: 'zdpuAyw2rPe5ML6YmYe7DEyAq3CbWH3QpWQ4P6F4ZFroEebzz',
           lt: 'zdpuAxv8bUaFNmCp51zN3AwCLy83FfVCcp7GeTwCdtpVddziP'
         })
@@ -180,7 +191,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('iterates with lte and gt', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuApQ4crttH3GmnVQPNdZ5UMNv3aCd3bcccFEKYCAdYUzir',
           lte: 'zdpuAxdV4PTwMZ4Ug2r9Y1Vi48EUJW4YZPnaWZW9kSfbR82SF'
         })
@@ -193,7 +204,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('iterates with lte and gte', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gte: 'zdpuAmAvVqqHiss5arZoY6oNDN6JRLVExfWyN48rxTrsscHaE',
           lte: 'zdpuApYv1r3kPGdSJoDYA8xkEAzKFK3bdvrdRX4jY13xZDpL6'
         })
@@ -206,7 +217,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns length with gt and default amount', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -214,7 +225,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns entries with gt and default amount', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -225,7 +236,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns length with gte and default amount', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -233,7 +244,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns entries with gte and default amount', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           gte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -244,7 +255,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns length with lt and default amount value', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -252,7 +263,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns entries with lt and default amount value', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -263,7 +274,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns length with lte and default amount value', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -271,7 +282,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns entries with lte and default amount value', async () => {
-        let it = log1.iterator({
+        let it = await log1.iterator({
           lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL'
         })
 
@@ -304,8 +315,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
           amount: 6
         })
 
-        assert.deepStrictEqual([...it].map(e => e.payload),
-          ['entryA10', 'entryA9', 'entryA8', 'entryA7', 'entryC0', 'entryA6'])
+        assert.deepStrictEqual([...it].map(e => e.payload), [
+          'entryA10',
+          'entryA9',
+          'entryA8',
+          'entryA7',
+          'entryC0',
+          'entryA6'
+        ])
       })
 
       it('returns partial logs from single heads #1', async () => {

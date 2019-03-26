@@ -9,16 +9,11 @@ const Clock = require('./lamport-clock')
 const { LastWriteWins, NoZeroes } = require('./log-sorting')
 const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
+const LRU = require('lru')
 
 const randomId = () => new Date().getTime().toString()
-const getCid = e => e.cid
-const flatMap = (res, acc) => res.concat(acc)
-const getNextPointers = entry => entry.next
+const getCID = e => e.cid
 const maxClockTimeReducer = (res, acc) => Math.max(res, acc.clock.time)
-const uniqueEntriesReducer = (res, acc) => {
-  res[acc.cid] = acc
-  return res
-}
 
 /**
  * Log.
@@ -42,9 +37,14 @@ class Log extends GSet {
    * @param {Array<Entry>} options.heads Set the heads of the log
    * @param {Clock} options.clock Set the clock of the log
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {cacheSize} options.cacheSize Size of entryCache
    * @return {Log} The log instance
    */
-  constructor (ipfs, identity, { logId, access, entries, heads, clock, sortFn } = {}) {
+  constructor (
+    ipfs,
+    identity,
+    { logId = randomId(), access, entries = [], heads, clock, sortFn, cacheSize = 200 } = {}
+  ) {
     if (!isDefined(ipfs)) {
       throw LogError.IPFSNotDefinedError()
     }
@@ -74,30 +74,35 @@ class Log extends GSet {
     this._sortFn = NoZeroes(sortFn)
 
     this._storage = ipfs
-    this._id = logId || randomId()
+    this._id = logId
 
     // Access Controller
     this._access = access
+
     // Identity
     this._identity = identity
 
-    // Add entries to the internal cache
-    entries = entries || []
+    // Index of head cids
+    const _heads = isDefined(heads) ? heads : Log.findHeads(entries)
+    this._headsIndex = new Set(_heads.map(getCID))
 
-    // Set heads if not passed as an argument
-    heads = heads || Log.findHeads(entries)
-    this._headsIndex = heads.reduce(uniqueEntriesReducer, {})
+    // Index of all nextpointers in this log
+    this._nextsIndex = new Set()
 
-    // Index of all next pointers in this log
-    this._nextsIndex = {}
-    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.cid))
-    entries.forEach(addToNextsIndex)
+    // Index of the cids of each entry and its parent entry
+    this._parentIndex = new Map()
+
+    // Cache of recently accessed entries
+    this._entryCache = new LRU(cacheSize)
+
+    _heads.forEach(this._indexEntry.bind(this))
+    entries.forEach(this._indexEntry.bind(this))
 
     // Set the length, we calculate the length manually internally
     this._length = entries.length
 
     // Set the clock
-    const maxTime = Math.max(clock ? clock.time : 0, this.heads.reduce(maxClockTimeReducer, 0))
+    const maxTime = Math.max(clock ? clock.time : 0, _heads.reduce(maxClockTimeReducer, 0))
     // Take the given key as the clock id is it's a Key instance,
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
@@ -133,17 +138,21 @@ class Log extends GSet {
    * @returns {Promise<Array<Entry>>}
    */
   get values () {
-    return this.traverse(this.heads)
-      .then(Object.values)
-      .then(values => values.reverse())
+    return new Promise(async resolve => {
+      const entries = await pMap(this.entryCIDs, this.get.bind(this))
+      resolve(entries.sort(this._sortFn))
+    })
   }
 
   /**
-   * Returns an array of heads as cids.
-   * @returns {Array<string>}
+   * Returns an array of heads as entries.
+   * @returns {Promise<Array<Entry>>}
    */
   get heads () {
-    return Object.values(this._headsIndex).sort(this._sortFn).reverse()
+    return new Promise(async resolve => {
+      const entries = await pMap(this.headCIDs, this.get.bind(this))
+      resolve(entries.sort(this._sortFn))
+    })
   }
 
   /**
@@ -152,16 +161,32 @@ class Log extends GSet {
    * @returns {Promise<Array<Entry>>}
    */
   get tails () {
-    return this.values.then(Log.findTails)
+    return new Promise(async resolve => {
+      const entries = await pMap(this.tailCIDs, this.get.bind(this))
+      resolve(entries.sort(this._sortFn))
+    })
+  }
+
+  get entryCIDs () {
+    return Array.from(this._parentIndex.keys())
+  }
+
+  get headCIDs () {
+    return Array.from(this._headsIndex.keys())
   }
 
   /**
    * Returns an array of cids that are referenced by entries which
    * are not in the log currently.
-   * @returns {Promise<Array<string>>} Array of CIDs
+   * @returns {Array<string>} Array of CIDs
    */
-  get tailCids () {
-    return this.values.then(Log.findTailCids)
+  get tailCIDs () {
+    const cids = this.entryCIDs
+    const tailReducer = (res, [entryCID, nextCID]) => {
+      if (cids.indexOf(nextCID) === -1) res.push(entryCID)
+      return res
+    }
+    this._parentIndex.entries().reduce(tailReducer, [])
   }
 
   /**
@@ -170,18 +195,65 @@ class Log extends GSet {
    * @returns {Promise<Entry|undefined>}
    */
   get (cid) {
-    return Entry.fromCID(this._storage, cid)
+    return Promise.resolve(this._entryCache.get(cid))
+
+    // const fromCache = this._entryCache.get(cid)
+
+    // if (fromCache) return Promise.resolve(fromCache)
+    // return Entry.fromCID(this._storage, cid)
+    //   .then(e => this._entryCache.set(cid, e))
+    //   .then(e => {
+    //     console.log('NOT FROM CACHE, ', e.cid)
+    //     return e
+    //   })
   }
 
   /**
    * Checks if a entry is part of the log
    * @param {string} cid The CID of the entry
-   * @returns {Promise<boolean>}
+   * @returns {boolean}
    */
   has (entry) {
-    return this.traverse(this.heads)
-      .then(Object.keys)
-      .then(cids => cids.indexOf(entry.cid || entry) > -1)
+    return this._parentIndex.has(entry.cid || entry)
+  }
+
+  _indexEntry (e) {
+    this._entryCache.set(e.cid, e)
+    this._parentIndex.set(e.cid, e.next[0])
+    const addToNextsIndex = cid => this._nextsIndex.add(cid)
+    e.next.forEach(addToNextsIndex)
+  }
+
+  /**
+   * Verify if entries are allowed to be added to the log and throws if
+   * there's an invalid entry
+   * @param {Entry} entry
+   */
+  async _canAppendEntry (entry) {
+    const canAppend = await this._access.canAppend(entry, this._identity.provider)
+    if (!canAppend) {
+      throw new Error(
+        `Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`
+      )
+    }
+    return true
+  }
+
+  /**
+   * Verify signature for each entry and throws if there's an invalid signature
+   * @param {Entry} entry
+   */
+  async _verifyEntry (entry) {
+    const isValid = await Entry.verify(this._identity.provider, entry)
+    const publicKey = entry.identity ? entry.identity.publicKey : entry.key
+    if (!isValid) {
+      throw new Error(
+        `Could not validate signature "${entry.sig}" for entry "${
+          entry.cid
+        }" and key "${publicKey}"`
+      )
+    }
+    return true
   }
 
   async traverse (rootEntries, amount = -1, endHash) {
@@ -205,9 +277,7 @@ class Log extends GSet {
       }
 
       // Add the entry in front of the stack and sort
-      stack = [entry, ...stack]
-        .sort(this._sortFn)
-        .reverse()
+      stack = [entry, ...stack].sort(this._sortFn).reverse()
 
       // Add to the cache of processed entries
       traversed[entry.cid] = true
@@ -217,7 +287,8 @@ class Log extends GSet {
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0 && (amount === -1 || count < amount)) { // eslint-disable-line no-unmodified-loop-condition
+    while (stack.length > 0 && (amount === -1 || count < amount)) {
+      // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
 
@@ -241,13 +312,16 @@ class Log extends GSet {
    * @return {Log} New Log containing the appended value
    */
   async append (data, pointerCount = 1) {
+    const heads = await this.heads
+
     // Update the clock (find the latest clock)
-    const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
+    const newTime = Math.max(this.clock.time, heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
     // Get the required amount of cids to next entries (as per current state of the log)
-    const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
-    const nexts = Object.keys(Object.assign({}, this._headsIndex, references))
+    const references = await this.traverse(heads, Math.max(pointerCount, heads.length))
+    const referenceCIDs = Object.keys(references)
+    const nexts = Array.from(new Set([...this.headCIDs, ...referenceCIDs]))
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
@@ -260,16 +334,14 @@ class Log extends GSet {
       this.clock
     )
 
-    const canAppend = await this._access.canAppend(entry, this._identity.provider)
-    if (!canAppend) {
-      throw new Error(`Could not append entry, key "${this._identity.id}" is not allowed to write to the log`)
-    }
+    await this._canAppendEntry(entry)
 
-    nexts.forEach(e => (this._nextsIndex[e] = entry.cid))
-    this._headsIndex = {}
-    this._headsIndex[entry.cid] = entry
+    this._headsIndex = new Set([entry.cid])
+    this._indexEntry(entry) // Index the entry
+
     // Update the length
     this._length++
+
     return entry
   }
 
@@ -317,7 +389,8 @@ class Log extends GSet {
     if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
     if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let start = lte || (lt || this.heads)
+    const heads = await this.heads
+    let start = lte || (lt || heads)
     let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
     let count = endHash ? -1 : amount || -1
 
@@ -356,54 +429,34 @@ class Log extends GSet {
     if (this.id !== log.id) return
 
     // Get the difference of the logs
-    const newItems = Log.difference(log, this)
-
-    const identityProvider = this._identity.provider
-    // Verify if entries are allowed to be added to the log and throws if
-    // there's an invalid entry
-    const permitted = async (entry) => {
-      const canAppend = await this._access.canAppend(entry, identityProvider)
-      if (!canAppend) {
-        throw new Error(`Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`)
-      }
-    }
-
-    // Verify signature for each entry and throws if there's an invalid signature
-    const verify = async (entry) => {
-      const isValid = await Entry.verify(identityProvider, entry)
-      const publicKey = entry.identity ? entry.identity.publicKey : entry.key
-      if (!isValid) throw new Error(`Could not validate signature "${entry.sig}" for entry "${entry.cid}" and key "${publicKey}"`)
-    }
+    const newItems = await Log.difference(log, this)
 
     const entriesToJoin = Object.values(newItems)
-    await pMap(entriesToJoin, permitted, { concurrency: 1 })
-    await pMap(entriesToJoin, verify, { concurrency: 1 })
 
-    // Update the internal next pointers index
-    const addToNextsIndex = e => {
-      const entry = this.get(e.cid)
-      if (!entry) this._length++ /* istanbul ignore else */
-      e.next.forEach(a => (this._nextsIndex[a] = e.cid))
-    }
-    Object.values(newItems).forEach(addToNextsIndex)
+    await pMap(entriesToJoin, this._canAppendEntry.bind(this), { concurrency: 1 })
+    await pMap(entriesToJoin, this._verifyEntry.bind(this), { concurrency: 1 })
+
+    entriesToJoin.forEach(this._indexEntry.bind(this))
 
     // Merge the heads
-    const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.cid)
-    const notInCurrentNexts = e => !this._nextsIndex[e.cid]
-    const nextsFromNewItems = Object.values(newItems).map(getNextPointers).reduce(flatMap, [])
-    const mergedHeads = Log.findHeads(Object.values(Object.assign({}, this._headsIndex, log._headsIndex)))
-      .filter(notReferencedByNewItems)
-      .filter(notInCurrentNexts)
-      .reduce(uniqueEntriesReducer, {})
+    const mergedHeads = await Promise.all([this.heads, log.heads]).then(([a, b]) => a.concat(b))
+    const notInCurrentNexts = e => !this._nextsIndex.has(e.cid || e)
+    this._headsIndex = new Set(
+      Log.findHeads(mergedHeads)
+        .map(getCID)
+        .filter(notInCurrentNexts)
+    )
 
-    this._headsIndex = mergedHeads
+    this._length += entriesToJoin.length
 
     // Slice to the requested size
     if (size > -1) {
-      let tmp = this.values
-      tmp = tmp.slice(-size)
-      this._headsIndex = Log.findHeads(tmp).reduce(uniqueEntriesReducer, {})
-      this._length = (await this.values).length
+      let tmp = (await this.values).slice(-size)
+      this._headsIndex = new Set(Log.findHeads(tmp).map(getCID))
+      this._nextsIndex = new Set()
+      this._entryCache.clear()
+      tmp.forEach(this._indexEntry.bind(this))
+      this._length = tmp.length
     }
 
     // Find the latest clock from the heads
@@ -419,10 +472,7 @@ class Log extends GSet {
   toJSON () {
     return {
       id: this.id,
-      heads: this.heads
-        .sort(this._sortFn) // default sorting
-        .reverse() // we want the latest as the first element
-        .map(getCid) // return only the head cids
+      heads: this.headCIDs // return only the head cids
     }
   }
 
@@ -510,8 +560,12 @@ class Log extends GSet {
    * @returns {Promise<Log>}
    * @deprecated
    */
-  static async fromCID (ipfs, identity, cid,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
+  static async fromCID (
+    ipfs,
+    identity,
+    cid,
+    { access, length = -1, exclude, onProgressCallback, sortFn } = {}
+  ) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromCID(ipfs, cid, { length, exclude, onProgressCallback })
     return new Log(ipfs, identity, {
@@ -525,23 +579,32 @@ class Log extends GSet {
   }
 
   /**
-    * Create a log from a multihash.
-    * @param {IPFS} ipfs An IPFS instance
-    * @param {Identity} identity The identity instance
-    * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-    * @param {Object} options
-    * @param {AccessController} options.access The access controller instance
-    * @param {number} options.length How many items to include in the log
-    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-    * @param {function(cid, entry, parent, depth)} options.onProgressCallback
-    * @param {Function} options.sortFn The sort function - by default LastWriteWins
-    * @returns {Promise<Log>}
-    * @deprecated
-    */
-  static async fromMultihash (ipfs, identity, multihash,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
-    return Log.fromCID(ipfs, identity, multihash,
-      { access, length, exclude, onProgressCallback, sortFn })
+   * Create a log from a multihash.
+   * @param {IPFS} ipfs An IPFS instance
+   * @param {Identity} identity The identity instance
+   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
+   * @param {Object} options
+   * @param {AccessController} options.access The access controller instance
+   * @param {number} options.length How many items to include in the log
+   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
+   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
+   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @returns {Promise<Log>}
+   * @deprecated
+   */
+  static async fromMultihash (
+    ipfs,
+    identity,
+    multihash,
+    { access, length = -1, exclude, onProgressCallback, sortFn } = {}
+  ) {
+    return Log.fromCID(ipfs, identity, multihash, {
+      access,
+      length,
+      exclude,
+      onProgressCallback,
+      sortFn
+    })
   }
 
   /**
@@ -558,8 +621,12 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromEntryCid (ipfs, identity, cid,
-    { logId, access, length = -1, exclude, onProgressCallback, sortFn }) {
+  static async fromEntryCid (
+    ipfs,
+    identity,
+    cid,
+    { logId, access, length = -1, exclude, onProgressCallback, sortFn }
+  ) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntryCid(ipfs, cid, { length, exclude, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries: data.values, sortFn })
@@ -580,10 +647,20 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    * @deprecated
    */
-  static async fromEntryHash (ipfs, identity, multihash,
-    { logId, access, length = -1, exclude, onProgressCallback, sortFn }) {
-    return Log.fromEntryCid(ipfs, identity, multihash,
-      { logId, access, length, exclude, onProgressCallback, sortFn })
+  static async fromEntryHash (
+    ipfs,
+    identity,
+    multihash,
+    { logId, access, length = -1, exclude, onProgressCallback, sortFn }
+  ) {
+    return Log.fromEntryCid(ipfs, identity, multihash, {
+      logId,
+      access,
+      length,
+      exclude,
+      onProgressCallback,
+      sortFn
+    })
   }
 
   /**
@@ -599,8 +676,12 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromJSON (ipfs, identity, json,
-    { access, length = -1, timeout, onProgressCallback, sortFn } = {}) {
+  static async fromJSON (
+    ipfs,
+    identity,
+    json,
+    { access, length = -1, timeout, onProgressCallback, sortFn } = {}
+  ) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromJSON(ipfs, json, { length, timeout, onProgressCallback })
     return new Log(ipfs, identity, { logId: data.id, access, entries: data.values, sortFn })
@@ -619,11 +700,14 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromEntry (ipfs, identity, sourceEntries,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
+  static async fromEntry (
+    ipfs,
+    identity,
+    sourceEntries,
+    { access, length = -1, exclude, onProgressCallback, sortFn } = {}
+  ) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntry(ipfs, sourceEntries,
-      { length, exclude, onProgressCallback })
+    const data = await LogIO.fromEntry(ipfs, sourceEntries, { length, exclude, onProgressCallback })
     return new Log(ipfs, identity, { logId: data.id, access, entries: data.values, sortFn })
   }
 
@@ -663,11 +747,11 @@ class Log extends GSet {
     // CIDs of all next entries
     var nexts = []
 
-    var addToIndex = (e) => {
+    var addToIndex = e => {
       if (e.next.length === 0) {
         nullIndex.push(e)
       }
-      var addToReverseIndex = (a) => {
+      var addToReverseIndex = a => {
         /* istanbul ignore else */
         if (!reverseIndex[a]) reverseIndex[a] = []
         reverseIndex[a].push(e)
@@ -704,7 +788,7 @@ class Log extends GSet {
     var cids = {}
     var addToIndex = e => (cids[e.cid] = true)
     var reduceTailCids = (res, entry, idx, arr) => {
-      var addToResult = (e) => {
+      var addToResult = e => {
         /* istanbul ignore else */
         if (cids[e] === undefined) {
           res.splice(0, 0, e)
@@ -718,13 +802,14 @@ class Log extends GSet {
     return entries.reduce(reduceTailCids, [])
   }
 
-  static difference (a, b) {
-    let stack = Object.keys(a._headsIndex)
+  static async difference (a, b) {
+    let stack = a.headCIDs
     let traversed = {}
     let res = {}
 
-    const pushToStack = cid => {
-      if (!traversed[cid] && !b.get(cid)) {
+    const pushToStack = async cid => {
+      const entryB = await b.get(cid)
+      if (!traversed[cid] && !entryB) {
         stack.push(cid)
         traversed[cid] = true
       }
@@ -732,13 +817,15 @@ class Log extends GSet {
 
     while (stack.length > 0) {
       const cid = stack.shift()
-      const entry = a.get(cid)
-      if (entry && !b.get(cid) && entry.id === b.id) {
-        res[entry.cid] = entry
-        traversed[entry.cid] = true
-        entry.next.forEach(pushToStack)
+      const entryA = await a.get(cid)
+      const entryB = await b.get(cid)
+      if (entryA && !entryB && entryA.id === b.id) {
+        res[cid] = entryA
+        traversed[cid] = true
+        await pMap(entryA.next, pushToStack)
       }
     }
+
     return res
   }
 }

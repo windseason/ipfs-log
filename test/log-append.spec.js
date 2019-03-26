@@ -6,16 +6,11 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
 // Test utils
-const {
-  config,
-  testAPIs,
-  startIpfs,
-  stopIpfs
-} = require('./utils')
+const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 
 let ipfs, testIdentity
 
-Object.keys(testAPIs).forEach((IPFS) => {
+Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - Append (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
@@ -26,7 +21,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({
+        id: 'userA',
+        identityKeysPath,
+        signingKeysPath
+      })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -38,10 +37,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
     describe('append', () => {
       describe('append one', async () => {
         let log
+        let values
 
         before(async () => {
           log = new Log(ipfs, testIdentity, 'A')
           await log.append('hello1')
+          values = await log.values
         })
 
         it('added the correct amount of items', () => {
@@ -49,25 +50,25 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('added the correct values', async () => {
-          log.values.forEach((entry) => {
+          values.forEach(entry => {
             assert.strictEqual(entry.payload, 'hello1')
           })
         })
 
         it('added the correct amount of next pointers', async () => {
-          log.values.forEach((entry) => {
+          values.forEach(entry => {
             assert.strictEqual(entry.next.length, 0)
           })
         })
 
         it('has the correct heads', async () => {
-          log.heads.forEach((head) => {
-            assert.strictEqual(head.cid, log.values[0].cid)
+          log.heads.forEach(head => {
+            assert.strictEqual(head.cid, values[0].cid)
           })
         })
 
         it('updated the clocks correctly', async () => {
-          log.values.forEach((entry) => {
+          values.forEach(entry => {
             assert.strictEqual(entry.clock.id, testIdentity.publicKey)
             assert.strictEqual(entry.clock.time, 1)
           })
@@ -79,13 +80,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const nextPointerAmount = 64
 
         let log
+        let values
 
         before(async () => {
           log = new Log(ipfs, testIdentity, 'A')
           for (let i = 0; i < amount; i++) {
             await log.append('hello' + i, nextPointerAmount)
             // Make sure the log has the right heads after each append
-            const values = log.values
+            values = await log.values
             assert.strictEqual(log.heads.length, 1)
             assert.strictEqual(log.heads[0].cid, values[values.length - 1].cid)
           }
@@ -96,20 +98,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('added the correct values', async () => {
-          log.values.forEach((entry, index) => {
+          values.forEach((entry, index) => {
             assert.strictEqual(entry.payload, 'hello' + index)
           })
         })
 
         it('updated the clocks correctly', async () => {
-          log.values.forEach((entry, index) => {
+          values.forEach((entry, index) => {
             assert.strictEqual(entry.clock.time, index + 1)
             assert.strictEqual(entry.clock.id, testIdentity.publicKey)
           })
         })
 
         it('added the correct amount of next pointers', async () => {
-          log.values.forEach((entry, index) => {
+          values.forEach((entry, index) => {
             assert.strictEqual(entry.next.length, Math.min(index, nextPointerAmount))
           })
         })

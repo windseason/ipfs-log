@@ -11,16 +11,11 @@ const IdentityProvider = require('orbit-db-identity-provider')
 const v0Entries = require('./fixtures/v0-entries.fixture')
 
 // Test utils
-const {
-  config,
-  testAPIs,
-  startIpfs,
-  stopIpfs
-} = require('./utils')
+const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 
 let ipfs, testIdentity
 
-Object.keys(testAPIs).forEach((IPFS) => {
+Object.keys(testAPIs).forEach(IPFS => {
   describe('Entry (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
@@ -32,7 +27,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({
+        id: 'userA',
+        identityKeysPath,
+        signingKeysPath
+      })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -102,7 +101,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('`next` parameter can contain nulls and undefined objects', async () => {
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', 'hello1', [])
-        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1, null, undefined])
+        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [
+          entry1,
+          null,
+          undefined
+        ])
         assert.strictEqual(typeof entry2.next[0] === 'string', true)
       })
 
@@ -153,7 +156,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         } catch (e) {
           err = e
         }
-        assert.strictEqual(err.message, '\'next\' argument is not an array')
+        assert.strictEqual(err.message, "'next' argument is not an array")
       })
     })
 
