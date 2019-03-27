@@ -62,7 +62,8 @@ Object.keys(testAPIs).forEach(IPFS => {
         })
 
         it('has the correct heads', async () => {
-          log.heads.forEach(head => {
+          const heads = await log.heads
+          heads.forEach(head => {
             assert.strictEqual(head.cid, values[0].cid)
           })
         })
@@ -88,8 +89,9 @@ Object.keys(testAPIs).forEach(IPFS => {
             await log.append('hello' + i, nextPointerAmount)
             // Make sure the log has the right heads after each append
             values = await log.values
-            assert.strictEqual(log.heads.length, 1)
-            assert.strictEqual(log.heads[0].cid, values[values.length - 1].cid)
+            const heads = await log.heads
+            assert.strictEqual(heads.length, 1)
+            assert.strictEqual(heads[0].cid, values[values.length - 1].cid)
           }
         })
 

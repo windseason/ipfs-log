@@ -164,7 +164,7 @@ class Log extends GSet {
   get heads () {
     return new Promise(async resolve => {
       const entries = await pMap(this.headCIDs, this.get.bind(this))
-      resolve(entries.sort(this._sortFn))
+      resolve(entries.sort(this._sortFn).reverse())
     })
   }
 
@@ -210,6 +210,13 @@ class Log extends GSet {
       return res
     }
     return Array.from(this._entryIndex.entries()).reduce(tailReducer, [])
+  }
+
+  /**
+   * Legacy backward compatibilty
+   */
+  get tailCids () {
+    return this.tailCIDs
   }
 
   /**
