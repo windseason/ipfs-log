@@ -161,7 +161,7 @@ Object.keys(testAPIs).forEach(IPFS => {
       assert.strictEqual(result.length, 10)
     })
 
-    it.only('load only 10 entries and then expand to max from a log with 100 entries', async () => {
+    it('load only 10 entries and then expand to max from a log with 100 entries', async () => {
       const count = 30
 
       let log = new Log(ipfs, testIdentity, { logId: 'X' })

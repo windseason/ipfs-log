@@ -12,7 +12,6 @@ const { isDefined, findUniques } = require('./utils')
 const LRU = require('lru')
 
 const randomId = () => new Date().getTime().toString()
-const getCID = e => e.cid
 const maxClockTimeReducer = (res, acc) => Math.max(res, acc.clock.time)
 
 /**
@@ -84,7 +83,6 @@ class Log extends GSet {
 
     // Index of head cids
     const _heads = isDefined(heads) ? heads : Log.findHeads(entries)
-    this._headsIndex = new Set(_heads.map(getCID))
 
     // Index of the cids of each entry and its parent entry
     this._entryIndex = new Map()
@@ -207,8 +205,8 @@ class Log extends GSet {
    */
   get tailCIDs () {
     const tailReducer = (res, [entryCID, nexts]) => {
-      const entryParent = [...nexts][0]
-      if (!entryParent || !this._entryIndex.has(entryParent)) res.push(entryCID)
+      const entryParentCID = [...nexts][0]
+      if (!this.has(entryParentCID)) res.push(entryCID)
       return res
     }
     return Array.from(this._entryIndex.entries()).reduce(tailReducer, [])
@@ -239,7 +237,7 @@ class Log extends GSet {
    * @returns {boolean}
    */
   has (entry) {
-    return this._entryIndex.has(entry.cid || entry)
+    return entry ? this._entryIndex.has(entry.cid || entry) : false
   }
 
   _indexEntry (e) {
@@ -359,7 +357,6 @@ class Log extends GSet {
 
     await this._canAppendEntry(entry)
 
-    this._headsIndex = new Set([entry.cid])
     this._indexEntry(entry) // Index the entry
 
     // Update the length
@@ -452,32 +449,18 @@ class Log extends GSet {
     if (this.id !== log.id) return
 
     // Get the difference of the logs
-    const newItems = await Log.difference(log, this)
-
-    // if (this.logdif) console.log(newItems)
-
-    const entriesToJoin = Object.values(newItems)
+    const entriesToJoin = await Log.difference(log, this)
 
     await pMap(entriesToJoin, this._canAppendEntry.bind(this), { concurrency: 1 })
     await pMap(entriesToJoin, this._verifyEntry.bind(this), { concurrency: 1 })
 
     entriesToJoin.forEach(this._indexEntry.bind(this))
 
-    // Merge the heads
-    const mergedHeads = await Promise.all([this.heads, log.heads]).then(([a, b]) => a.concat(b))
-    const notInCurrentNexts = e => !this._nextsIndex.has(e.cid || e)
-    this._headsIndex = new Set(
-      Log.findHeads(mergedHeads)
-        .map(getCID)
-        .filter(notInCurrentNexts)
-    )
-
     this._length += entriesToJoin.length
 
     // Slice to the requested size
     if (size > -1) {
       let tmp = (await this.values).slice(-size)
-      this._headsIndex = new Set(Log.findHeads(tmp).map(getCID))
       this._entryIndex = new Map()
       this._entryCache.clear()
       tmp.forEach(this._indexEntry.bind(this))
@@ -485,7 +468,8 @@ class Log extends GSet {
     }
 
     // Find the latest clock from the heads
-    const maxClock = Object.values(this._headsIndex).reduce(maxClockTimeReducer, 0)
+    const heads = await this.heads
+    const maxClock = heads.reduce(maxClockTimeReducer, 0)
     this._clock = new Clock(this.clock.id, Math.max(this.clock.time, maxClock))
     return this
   }
@@ -828,7 +812,8 @@ class Log extends GSet {
   }
 
   static difference (a, b) {
-    const diff = new Set([...a._completeIndex].filter(x => !b._entryIndex.has(x)))
+    const diffFilter = e => !b.has(e)
+    const diff = new Set([...a._completeIndex].filter(diffFilter))
     return pMap(Array.from(diff), a.get.bind(a))
   }
 }
