@@ -86,11 +86,8 @@ class Log extends GSet {
     const _heads = isDefined(heads) ? heads : Log.findHeads(entries)
     this._headsIndex = new Set(_heads.map(getCID))
 
-    // Index of all nextpointers in this log
-    this._nextsIndex = new Set()
-
     // Index of the cids of each entry and its parent entry
-    this._parentIndex = new Map()
+    this._entryIndex = new Map()
 
     // Cache of recently accessed entries
     this._entryCache = new LRU(cacheSize)
@@ -107,6 +104,24 @@ class Log extends GSet {
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
     this._clock = new Clock(this._identity.publicKey, maxTime)
+  }
+
+  /**
+   * Returns all entries and their 'next' references as a single Set
+   * @returns {Set}
+   */
+  get _completeIndex () {
+    return new Set([...this._entryIndex.keys(), ...this._nextsIndex])
+  }
+
+  /**
+   * Returns all 'next' references of each Entry as a single Set
+   * @returns {Set}
+   */
+  get _nextsIndex () {
+    // _entryIndex.values are the 'next' references of each Entry.
+    // Just flatten all 'next' references into a single Set.
+    return new Set([...this._entryIndex.values()].reduce((res, s) => [...res, ...s], []))
   }
 
   /**
@@ -156,7 +171,7 @@ class Log extends GSet {
   }
 
   /**
-   * Returns an array of Entry objects that reference entries which
+   * Returns an array of entry objects that reference entries which
    * are not in the log currently.
    * @returns {Promise<Array<Entry>>}
    */
@@ -167,26 +182,36 @@ class Log extends GSet {
     })
   }
 
+  /**
+   * Returns an array of cids of entries currently in the log.
+   * @returns {Array<string>} Array of CIDs
+   */
   get entryCIDs () {
-    return Array.from(this._parentIndex.keys())
-  }
-
-  get headCIDs () {
-    return Array.from(this._headsIndex.keys())
+    return Array.from(this._entryIndex.keys())
   }
 
   /**
-   * Returns an array of cids that are referenced by entries which
-   * are not in the log currently.
+   * Returns an array of cids of entries that are not referenced by entries in the log.
+   * @returns {Array<string>} Array of CIDs
+   */
+  get headCIDs () {
+    const nextsIndex = this._nextsIndex
+    const headFilter = entryCID => !nextsIndex.has(entryCID)
+    return this.entryCIDs.filter(headFilter, [])
+  }
+
+  /**
+   * Returns an array of cids of entries that are referenced by entries which
+   * are not in the log currently or which are not referenced by any entry (next is empty).
    * @returns {Array<string>} Array of CIDs
    */
   get tailCIDs () {
-    const cids = this.entryCIDs
-    const tailReducer = (res, [entryCID, nextCID]) => {
-      if (cids.indexOf(nextCID) === -1) res.push(entryCID)
+    const tailReducer = (res, [entryCID, nexts]) => {
+      const entryParent = [...nexts][0]
+      if (!entryParent || !this._entryIndex.has(entryParent)) res.push(entryCID)
       return res
     }
-    this._parentIndex.entries().reduce(tailReducer, [])
+    return Array.from(this._entryIndex.entries()).reduce(tailReducer, [])
   }
 
   /**
@@ -214,14 +239,12 @@ class Log extends GSet {
    * @returns {boolean}
    */
   has (entry) {
-    return this._parentIndex.has(entry.cid || entry)
+    return this._entryIndex.has(entry.cid || entry)
   }
 
   _indexEntry (e) {
     this._entryCache.set(e.cid, e)
-    this._parentIndex.set(e.cid, e.next[0])
-    const addToNextsIndex = cid => this._nextsIndex.add(cid)
-    e.next.forEach(addToNextsIndex)
+    this._entryIndex.set(e.cid, new Set(e.next))
   }
 
   /**
@@ -431,6 +454,8 @@ class Log extends GSet {
     // Get the difference of the logs
     const newItems = await Log.difference(log, this)
 
+    // if (this.logdif) console.log(newItems)
+
     const entriesToJoin = Object.values(newItems)
 
     await pMap(entriesToJoin, this._canAppendEntry.bind(this), { concurrency: 1 })
@@ -453,7 +478,7 @@ class Log extends GSet {
     if (size > -1) {
       let tmp = (await this.values).slice(-size)
       this._headsIndex = new Set(Log.findHeads(tmp).map(getCID))
-      this._nextsIndex = new Set()
+      this._entryIndex = new Map()
       this._entryCache.clear()
       tmp.forEach(this._indexEntry.bind(this))
       this._length = tmp.length
@@ -802,31 +827,9 @@ class Log extends GSet {
     return entries.reduce(reduceTailCids, [])
   }
 
-  static async difference (a, b) {
-    let stack = a.headCIDs
-    let traversed = {}
-    let res = {}
-
-    const pushToStack = async cid => {
-      const entryB = await b.get(cid)
-      if (!traversed[cid] && !entryB) {
-        stack.push(cid)
-        traversed[cid] = true
-      }
-    }
-
-    while (stack.length > 0) {
-      const cid = stack.shift()
-      const entryA = await a.get(cid)
-      const entryB = await b.get(cid)
-      if (entryA && !entryB && entryA.id === b.id) {
-        res[cid] = entryA
-        traversed[cid] = true
-        await pMap(entryA.next, pushToStack)
-      }
-    }
-
-    return res
+  static difference (a, b) {
+    const diff = new Set([...a._completeIndex].filter(x => !b._entryIndex.has(x)))
+    return pMap(Array.from(diff), a.get.bind(a))
   }
 }
 
