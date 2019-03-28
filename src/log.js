@@ -8,7 +8,7 @@ const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
 const { LastWriteWins, NoZeroes } = require('./log-sorting')
 const AccessController = require('./default-access-controller')
-const { isDefined, findUniques } = require('./utils')
+const { isDefined } = require('./utils')
 const LRU = require('lru')
 
 const randomId = () => new Date().getTime().toString()
@@ -151,18 +151,6 @@ class Log extends GSet {
   }
 
   /**
-   * Returns an array of entry objects that reference entries which
-   * are not in the log currently.
-   * @returns {Promise<Array<Entry>>}
-   */
-  get tails () {
-    return new Promise(async resolve => {
-      const entries = await pMap(this.tailCIDs, this.get.bind(this))
-      resolve(entries.sort(this._sortFn))
-    })
-  }
-
-  /**
    * Returns an array of cids of entries currently in the log.
    * @returns {Array<string>} Array of CIDs
    */
@@ -178,27 +166,6 @@ class Log extends GSet {
     const nextsIndex = this._nextsIndex
     const headFilter = entryCID => !nextsIndex.has(entryCID)
     return this.entryCIDs.filter(headFilter, [])
-  }
-
-  /**
-   * Returns an array of cids of entries that are referenced by entries which
-   * are not in the log currently or which are not referenced by any entry (next is empty).
-   * @returns {Array<string>} Array of CIDs
-   */
-  get tailCIDs () {
-    const tailReducer = (res, [entryCID, nexts]) => {
-      const entryParentCID = [...nexts][0]
-      if (!this.has(entryParentCID)) res.push(entryCID)
-      return res
-    }
-    return Array.from(this._entryIndex.entries()).reduce(tailReducer, [])
-  }
-
-  /**
-   * Legacy backward compatibilty
-   */
-  get tailCids () {
-    return this.tailCIDs
   }
 
   /**
@@ -711,73 +678,6 @@ class Log extends GSet {
     var compareIds = (a, b) => a.clock.id > b.clock.id
 
     return entries.filter(exists).sort(compareIds)
-  }
-
-  // Find entries that point to another entry that is not in the
-  // input array
-  static findTails (entries) {
-    // Reverse index { next -> entry }
-    var reverseIndex = {}
-    // Null index containing entries that have no parents (nexts)
-    var nullIndex = []
-    // CIDs for all entries for quick lookups
-    var cids = {}
-    // CIDs of all next entries
-    var nexts = []
-
-    var addToIndex = e => {
-      if (e.next.length === 0) {
-        nullIndex.push(e)
-      }
-      var addToReverseIndex = a => {
-        /* istanbul ignore else */
-        if (!reverseIndex[a]) reverseIndex[a] = []
-        reverseIndex[a].push(e)
-      }
-
-      // Add all entries and their parents to the reverse index
-      e.next.forEach(addToReverseIndex)
-      // Get all next references
-      nexts = nexts.concat(e.next)
-      // Get the cids of input entries
-      cids[e.cid] = true
-    }
-
-    // Create our indices
-    entries.forEach(addToIndex)
-
-    var addUniques = (res, entries, idx, arr) => res.concat(findUniques(entries, 'cid'))
-    var exists = e => cids[e] === undefined
-    var findFromReverseIndex = e => reverseIndex[e]
-
-    // Drop cids that are not in the input entries
-    const tails = nexts // For every cid in nexts:
-      .filter(exists) // Remove undefineds and nulls
-      .map(findFromReverseIndex) // Get the Entry from the reverse index
-      .reduce(addUniques, []) // Flatten the result and take only uniques
-      .concat(nullIndex) // Combine with tails the have no next refs (ie. first-in-their-chain)
-
-    return findUniques(tails, 'cid').sort(Entry.compare)
-  }
-
-  // Find the cids to entries that are not in a collection
-  // but referenced by other entries
-  static findTailCids (entries) {
-    var cids = {}
-    var addToIndex = e => (cids[e.cid] = true)
-    var reduceTailCids = (res, entry, idx, arr) => {
-      var addToResult = e => {
-        /* istanbul ignore else */
-        if (cids[e] === undefined) {
-          res.splice(0, 0, e)
-        }
-      }
-      entry.next.reverse().forEach(addToResult)
-      return res
-    }
-
-    entries.forEach(addToIndex)
-    return entries.reduce(reduceTailCids, [])
   }
 
   /**
