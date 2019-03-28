@@ -87,14 +87,14 @@ class Log extends GSet {
     // Index of the cids of each entry and its parent entry
     this._entryIndex = new Map()
 
+    // Set the nextsIndex cache as null
+    this._cacheNextsIndex = null
+
     // Cache of recently accessed entries
     this._entryCache = new LRU(cacheSize)
 
     _heads.forEach(this._indexEntry.bind(this))
     entries.forEach(this._indexEntry.bind(this))
-
-    // Set the length, we calculate the length manually internally
-    this._length = entries.length
 
     // Set the clock
     const maxTime = Math.max(clock ? clock.time : 0, _heads.reduce(maxClockTimeReducer, 0))
@@ -102,24 +102,6 @@ class Log extends GSet {
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
     this._clock = new Clock(this._identity.publicKey, maxTime)
-  }
-
-  /**
-   * Returns all entries and their 'next' references as a single Set
-   * @returns {Set}
-   */
-  get _completeIndex () {
-    return new Set([...this._entryIndex.keys(), ...this._nextsIndex])
-  }
-
-  /**
-   * Returns all 'next' references of each Entry as a single Set
-   * @returns {Set}
-   */
-  get _nextsIndex () {
-    // _entryIndex.values are the 'next' references of each Entry.
-    // Just flatten all 'next' references into a single Set.
-    return new Set([...this._entryIndex.values()].reduce((res, s) => [...res, ...s], []))
   }
 
   /**
@@ -143,7 +125,7 @@ class Log extends GSet {
    * @return {number} Length
    */
   get length () {
-    return this._length
+    return this._completeIndex.size
   }
 
   /**
@@ -220,6 +202,28 @@ class Log extends GSet {
   }
 
   /**
+   * Returns all entries and their 'next' references as a single Set
+   * @returns {Set}
+   */
+  get _completeIndex () {
+    return new Set([...this._entryIndex.keys(), ...this._nextsIndex])
+  }
+
+  /**
+   * Returns all 'next' references of each Entry as a single Set
+   * @returns {Set}
+   */
+  get _nextsIndex () {
+    // _entryIndex.values are the 'next' references of each Entry.
+    // Just flatten all 'next' references into a single Set.
+    if (!this._cacheNextsIndex) {
+      const flatten = (res, s) => [...res, ...s]
+      this._cacheNextsIndex = new Set([...this._entryIndex.values()].reduce(flatten, []))
+    }
+    return this._cacheNextsIndex
+  }
+
+  /**
    * Find an entry.
    * @param {string} [cid] The CID of the entry
    * @returns {Promise<Entry|undefined>}
@@ -245,43 +249,6 @@ class Log extends GSet {
    */
   has (entry) {
     return entry ? this._entryIndex.has(entry.cid || entry) : false
-  }
-
-  _indexEntry (e) {
-    this._entryCache.set(e.cid, e)
-    this._entryIndex.set(e.cid, new Set(e.next))
-  }
-
-  /**
-   * Verify if entries are allowed to be added to the log and throws if
-   * there's an invalid entry
-   * @param {Entry} entry
-   */
-  async _canAppendEntry (entry) {
-    const canAppend = await this._access.canAppend(entry, this._identity.provider)
-    if (!canAppend) {
-      throw new Error(
-        `Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`
-      )
-    }
-    return true
-  }
-
-  /**
-   * Verify signature for each entry and throws if there's an invalid signature
-   * @param {Entry} entry
-   */
-  async _verifyEntry (entry) {
-    const isValid = await Entry.verify(this._identity.provider, entry)
-    const publicKey = entry.identity ? entry.identity.publicKey : entry.key
-    if (!isValid) {
-      throw new Error(
-        `Could not validate signature "${entry.sig}" for entry "${
-          entry.cid
-        }" and key "${publicKey}"`
-      )
-    }
-    return true
   }
 
   async traverse (rootEntries, amount = -1, endHash) {
@@ -365,9 +332,6 @@ class Log extends GSet {
     await this._canAppendEntry(entry)
 
     this._indexEntry(entry) // Index the entry
-
-    // Update the length
-    this._length++
 
     return entry
   }
@@ -456,14 +420,13 @@ class Log extends GSet {
     if (this.id !== log.id) return
 
     // Get the difference of the logs
-    const entriesToJoin = await Log.difference(log, this)
+    const cidsToJoin = Log.difference(log, this)
+    const entriesToJoin = await pMap(cidsToJoin, log.get.bind(log))
 
     await pMap(entriesToJoin, this._canAppendEntry.bind(this), { concurrency: 1 })
     await pMap(entriesToJoin, this._verifyEntry.bind(this), { concurrency: 1 })
 
     entriesToJoin.forEach(this._indexEntry.bind(this))
-
-    this._length += entriesToJoin.length
 
     // Slice to the requested size
     if (size > -1) {
@@ -471,7 +434,6 @@ class Log extends GSet {
       this._entryIndex = new Map()
       this._entryCache.clear()
       tmp.forEach(this._indexEntry.bind(this))
-      this._length = tmp.length
     }
 
     // Find the latest clock from the heads
@@ -818,10 +780,55 @@ class Log extends GSet {
     return entries.reduce(reduceTailCids, [])
   }
 
+  /**
+   * Returns the CIDs of entries which are in log A but not in log B
+   *
+   * @param {Log} a
+   * @param {Log} b
+   * @returns {Array<string>}
+   */
   static difference (a, b) {
     const diffFilter = e => !b.has(e)
     const diff = new Set([...a._completeIndex].filter(diffFilter))
-    return pMap(Array.from(diff), a.get.bind(a))
+    return Array.from(diff)
+  }
+
+  _indexEntry (e) {
+    this._cacheNextsIndex = null
+    this._entryCache.set(e.cid, e)
+    this._entryIndex.set(e.cid, new Set(e.next))
+  }
+
+  /**
+   * Verify if entries are allowed to be added to the log and throws if
+   * there's an invalid entry
+   * @param {Entry} entry
+   */
+  async _canAppendEntry (entry) {
+    const canAppend = await this._access.canAppend(entry, this._identity.provider)
+    if (!canAppend) {
+      throw new Error(
+        `Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`
+      )
+    }
+    return true
+  }
+
+  /**
+   * Verify signature for each entry and throws if there's an invalid signature
+   * @param {Entry} entry
+   */
+  async _verifyEntry (entry) {
+    const isValid = await Entry.verify(this._identity.provider, entry)
+    const publicKey = entry.identity ? entry.identity.publicKey : entry.key
+    if (!isValid) {
+      throw new Error(
+        `Could not validate signature "${entry.sig}" for entry "${
+          entry.cid
+        }" and key "${publicKey}"`
+      )
+    }
+    return true
   }
 }
 

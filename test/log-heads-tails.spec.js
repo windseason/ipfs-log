@@ -16,7 +16,7 @@ const last = arr => {
 }
 
 Object.keys(testAPIs).forEach(IPFS => {
-  describe('Log - Heads and Tails (' + IPFS + ')', function () {
+  describe.only('Log - Heads and Tails (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const { identityKeysPath, signingKeysPath } = config
