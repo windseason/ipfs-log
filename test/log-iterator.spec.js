@@ -12,7 +12,7 @@ const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
 Object.keys(testAPIs).forEach(IPFS => {
-  describe('Log - Iterator (' + IPFS + ')', function () {
+  describe.only('Log - Iterator (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const { identityKeysPath, signingKeysPath } = config

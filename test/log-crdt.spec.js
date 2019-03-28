@@ -6,16 +6,11 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
 // Test utils
-const {
-  config,
-  testAPIs,
-  startIpfs,
-  stopIpfs
-} = require('./utils')
+const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 
 let ipfs, testIdentity, testIdentity2, testIdentity3
 
-Object.keys(testAPIs).forEach((IPFS) => {
+Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - CRDT (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
@@ -26,9 +21,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({
+        id: 'userA',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity2 = await IdentityProvider.createIdentity({
+        id: 'userB',
+        identityKeysPath,
+        signingKeysPath
+      })
+      testIdentity3 = await IdentityProvider.createIdentity({
+        id: 'userC',
+        identityKeysPath,
+        signingKeysPath
+      })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -60,7 +67,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.join(log3)
         await log1.join(log2)
 
-        const res1 = log1.values.slice()
+        const values1 = await log1.values
+        const res1 = values1.slice()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
@@ -76,7 +84,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log1.join(log2)
         await log3.join(log1)
 
-        const res2 = log3.values.slice()
+        const values3 = await log3.values
+        const res2 = values3.slice()
 
         // associativity: a + (b + c) == (a + b) + c
         assert.strictEqual(res1.length, expectedElementsCount)
@@ -94,7 +103,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         // b + a
         await log2.join(log1)
-        const res1 = log2.values.slice()
+        const values2 = await log2.values
+        const res1 = values2.slice()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
@@ -105,7 +115,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         // a + b
         await log1.join(log2)
-        const res2 = log1.values.slice()
+        const values1 = await log1.values
+        const res2 = values1.slice()
 
         // commutativity: a + b == b + a
         assert.strictEqual(res1.length, expectedElementsCount)
@@ -122,7 +133,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log2.join(log1)
-        const resA1 = log2.toString()
+        const resA1 = await log2.toString()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
@@ -131,7 +142,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log1.join(log2)
-        const resA2 = log1.toString()
+        const resA2 = await log1.toString()
 
         assert.strictEqual(resA1, resA2)
 
@@ -143,7 +154,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log1.join(log2)
-        const resB1 = log1.toString()
+        const resB1 = await log1.toString()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
@@ -152,7 +163,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log2.join(log1)
-        const resB2 = log2.toString()
+        const resB2 = await log2.toString()
 
         assert.strictEqual(resB1, resB2)
 
@@ -164,7 +175,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC1')
         await log3.append('helloC2')
         await log3.join(log1)
-        const resC1 = log3.toString()
+        const resC1 = await log3.toString()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log3 = new Log(ipfs, testIdentity3, { logId: 'X' })
@@ -173,7 +184,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC1')
         await log3.append('helloC2')
         await log1.join(log3)
-        const resC2 = log1.toString()
+        const resC2 = await log1.toString()
 
         assert.strictEqual(resC1, resC2)
 
@@ -186,7 +197,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC1')
         await log3.append('helloC2')
         await log3.join(log2)
-        const resD1 = log3.toString()
+        const resD1 = await log3.toString()
 
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
         log3 = new Log(ipfs, testIdentity3, { logId: 'X' })
@@ -195,7 +206,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC1')
         await log3.append('helloC2')
         await log2.join(log3)
-        const resD2 = log2.toString()
+        const resD2 = await log2.toString()
 
         assert.strictEqual(resD1, resD2)
 
@@ -211,7 +222,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC2')
         await log1.join(log2)
         await log1.join(log3)
-        const logLeft = log1.toString()
+        const logLeft = await log1.toString()
 
         log1 = new Log(ipfs, testIdentity, { logId: 'X' })
         log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
@@ -224,7 +235,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log3.append('helloC2')
         await log3.join(log2)
         await log3.join(log1)
-        const logRight = log3.toString()
+        const logRight = await log3.toString()
 
         assert.strictEqual(logLeft, logRight)
       })

@@ -125,7 +125,7 @@ class Log extends GSet {
    * @return {number} Length
    */
   get length () {
-    return this._completeIndex.size
+    return this._entryIndex.size
   }
 
   /**
@@ -170,6 +170,8 @@ class Log extends GSet {
 
   /**
    * Returns all entries and their 'next' references as a single Set
+   * NOTE: There is no particular ordering in this Set
+   *
    * @returns {Set}
    */
   get _completeIndex () {
@@ -178,6 +180,7 @@ class Log extends GSet {
 
   /**
    * Returns all 'next' references of each Entry as a single Set
+   *
    * @returns {Set}
    */
   get _nextsIndex () {
@@ -449,12 +452,13 @@ class Log extends GSet {
    * └─one
    *   └─three
    */
-  toString (payloadMapper) {
-    return this.values
+  async toString (payloadMapper) {
+    const values = await this.values
+    return values
       .slice()
       .reverse()
       .map((e, idx) => {
-        const parents = Entry.findChildren(e, this.values)
+        const parents = Entry.findChildren(e, values)
         const len = parents.length
         let padding = new Array(Math.max(len - 1, 0))
         padding = len > 1 ? padding.fill('  ') : padding
