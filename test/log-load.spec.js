@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const LogCreator = require('./utils/log-creator')
 const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
@@ -32,7 +33,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Load (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-load' + new Date().getTime()
     })
@@ -46,10 +47,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
+      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
 
       const memstore = new MemStore()
@@ -60,6 +65,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     describe('fromJSON', () => {
@@ -145,7 +152,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let identities
 
       before(async () => {
-        identities = [testIdentity, testIdentity2, testIdentity3, testIdentity4]
+        identities = [testIdentity3, testIdentity2, testIdentity, testIdentity4]
       })
 
       it('creates a log from an entry', async () => {
@@ -339,7 +346,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('retrieves full log from an entry CID 3', async () => {
         const log1 = new Log(ipfs, testIdentity, { logId: 'X' })
-        const log2 = new Log(ipfs, testIdentity3, { logId: 'X' })
+        const log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
         const log3 = new Log(ipfs, testIdentity4, { logId: 'X' })
         let items1 = []
         let items2 = []
@@ -393,7 +400,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           'entryB10'
         ]
 
-        const b = await Log.fromEntry(ipfs, testIdentity3, last(items2),
+        const b = await Log.fromEntry(ipfs, testIdentity2, last(items2),
           { length: amount * 2 })
         assert.strictEqual(b.length, amount * 2)
         assert.deepStrictEqual(b.values.map((e) => e.payload), itemsInB)
@@ -439,11 +446,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.deepStrictEqual(c.values.map(e => e.payload), tmp)
 
         // make sure logX comes after A, B and C
-        let logX = new Log(ipfs, testIdentity2, { logId: 'X' })
+        let logX = new Log(ipfs, testIdentity4, { logId: 'X' })
         await logX.append('1')
         await logX.append('2')
         await logX.append('3')
-        const d = await Log.fromEntry(ipfs, testIdentity2, last(logX.values),
+        const d = await Log.fromEntry(ipfs, testIdentity3, last(logX.values),
           { length: -1 })
 
         await c.join(d)
@@ -451,9 +458,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         await c.append('DONE')
         await d.append('DONE')
-        const f = await Log.fromEntry(ipfs, testIdentity2, last(c.values),
+        const f = await Log.fromEntry(ipfs, testIdentity3, last(c.values),
           { amount: -1, exclude: [] })
-        const g = await Log.fromEntry(ipfs, testIdentity2, last(d.values),
+        const g = await Log.fromEntry(ipfs, testIdentity3, last(d.values),
           { length: -1, exclude: [] })
 
         assert.strictEqual(f.toString(), bigLogString)

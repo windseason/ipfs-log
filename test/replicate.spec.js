@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
@@ -22,7 +23,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     let ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig1 = Object.assign({}, config.daemon1, {
       repo: config.daemon1.repo + new Date().getTime()
     })
@@ -33,6 +34,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
     before(async () => {
       rmrf.sync(ipfsConfig1.repo)
       rmrf.sync(ipfsConfig2.repo)
+
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
 
       // Start two IPFS instances
       ipfs1 = await startIpfs(IPFS, ipfsConfig1)
@@ -50,8 +56,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       ipfs2.dag.get = memstore.get.bind(memstore)
 
       // Create an identity for each peers
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
     })
 
     after(async () => {
@@ -59,6 +65,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       await stopIpfs(ipfs2)
       rmrf.sync(ipfsConfig1.repo)
       rmrf.sync(ipfsConfig2.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     describe('replicates logs deterministically', function () {

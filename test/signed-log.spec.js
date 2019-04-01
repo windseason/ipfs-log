@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 
@@ -19,13 +20,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Signed Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-signed' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
       ipfs = await startIpfs(IPFS, ipfsConfig)
@@ -34,6 +39,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     it('creates a signed log', () => {
@@ -46,10 +53,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
     it('has the correct identity', () => {
       const log = new Log(ipfs, testIdentity, { logId: 'A' })
       assert.notStrictEqual(log.id, null)
-      assert.strictEqual(log._identity.id, '04e9224ee3451772f3ad43068313dc5bdc6d3f2c9a8c3a6ba6f73a472d5f47a96ae6d776de13f2fc2076140fd68ca900df2ca4862b06192adbf8f8cb18a99d69aa')
-      assert.strictEqual(log._identity.publicKey, '0411a0d38181c9374eca3e480ecada96b1a4db9375c5e08c3991557759d22f6f2f902d0dc5364a948035002504d825308b0c257b7cbb35229c2076532531f8f4ef')
-      assert.strictEqual(log._identity.signatures.id, '3045022042fa401d9ffb0c32de2f02561dc1c5e605ccc5eb33eb56fb638bb8f17bd2adb7022100d8ae57f2d401c1fe0fb1614897f1c731a201230bc269e1a04d1f7d9faecc3ef7')
-      assert.strictEqual(log._identity.signatures.publicKey, '304402206b9c218629d3cd692ad074586834aefe9da480429352870562bb0b601129363e02203717125e9cdb85bea1f84f74d48e6a04b73cda28660486530f4a4fccacdbfa84')
+      assert.strictEqual(log._identity.id, '03e0480538c2a39951d054e17ff31fde487cb1031d0044a037b53ad2e028a3e77c')
+      assert.strictEqual(log._identity.publicKey, '038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce')
+      assert.strictEqual(log._identity.signatures.id, '3045022100f5f6f10571d14347aaf34e526ce3419fd64d75ffa7aa73692cbb6aeb6fbc147102203a3e3fa41fa8fcbb9fc7c148af5b640e2f704b20b3a4e0b93fc3a6d44dffb41e')
+      assert.strictEqual(log._identity.signatures.publicKey, '30450221008481508c42efe64512e84177db265a60c8c54cfa99094515a5ad93226633f30202202d1916ac72218e95a3ae9c185b42732c97db60b4d10845918b6240b877e104b1')
     })
 
     it('has the correct public key', () => {
@@ -138,10 +145,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('throws an error if log is signed but the signature doesn\'t verify', async () => {
-      const replaceAt = (str, index, replacement) => {
-        return str.substr(0, index) + replacement + str.substr(index + replacement.length)
-      }
-
       const log1 = new Log(ipfs, testIdentity, { logId: 'A' })
       const log2 = new Log(ipfs, testIdentity2, { logId: 'A' })
       let err
@@ -149,7 +152,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       try {
         await log1.append('one')
         await log2.append('two')
-        log2.values[0].sig = replaceAt(log2.values[0].sig, 0, 'X')
+        log2.values[0].sig = log1.values[0].sig
         await log1.join(log2)
       } catch (e) {
         err = e.toString()

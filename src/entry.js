@@ -74,7 +74,7 @@ class Entry {
       clock: entry.clock
     }
 
-    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e))
+    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
   }
 
   /**

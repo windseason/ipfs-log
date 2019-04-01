@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const rmrf = require('rimraf')
+const fs = require('fs-extra')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
@@ -24,13 +25,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Heads and Tails (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-head-and-tails' + new Date().getTime()
     })
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
       testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
@@ -41,6 +46,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
     })
 
     describe('heads', () => {
@@ -241,10 +248,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log4.tails[1].cid, log4.values[1].cid)
       })
 
-      it('returns tails sorted by id', async () => {
-        let log1 = new Log(ipfs, testIdentity2, { logId: 'XX' })
-        let log2 = new Log(ipfs, testIdentity3, { logId: 'XX' })
-        let log3 = new Log(ipfs, testIdentity, { logId: 'XX' })
+      it('returns tails sorted by public key', async () => {
+        let log1 = new Log(ipfs, testIdentity, { logId: 'XX' })
+        let log2 = new Log(ipfs, testIdentity2, { logId: 'XX' })
+        let log3 = new Log(ipfs, testIdentity3, { logId: 'XX' })
         let log4 = new Log(ipfs, testIdentity4, { logId: 'XX' })
         await log1.append('helloX1')
         await log2.append('helloB1')
@@ -254,9 +261,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
         await log4.join(log3)
         assert.strictEqual(log4.tails.length, 3)
         assert.strictEqual(log4.tails[0].id, 'XX')
-        assert.strictEqual(log4.tails[0].clock.id, testIdentity.publicKey)
-        assert.strictEqual(log4.tails[1].clock.id, testIdentity3.publicKey)
-        assert.strictEqual(log4.tails[2].clock.id, testIdentity2.publicKey)
+        assert.strictEqual(log4.tails[0].clock.id, testIdentity3.publicKey)
+        assert.strictEqual(log4.tails[1].clock.id, testIdentity2.publicKey)
+        assert.strictEqual(log4.tails[2].clock.id, testIdentity.publicKey)
         assert.strictEqual(log4.clock.id, testIdentity4.publicKey)
       })
     })
