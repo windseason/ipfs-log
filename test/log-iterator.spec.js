@@ -12,7 +12,7 @@ const { config, testAPIs, startIpfs, stopIpfs } = require('./utils')
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
 Object.keys(testAPIs).forEach(IPFS => {
-  describe.only('Log - Iterator (' + IPFS + ')', function () {
+  describe('Log - Iterator (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const { identityKeysPath, signingKeysPath } = config
@@ -100,7 +100,7 @@ Object.keys(testAPIs).forEach(IPFS => {
         let amount = 10
 
         let it = await log1.iterator({
-          lt: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
+          lte: 'zdpuAx5FC3cgoQSW7oXpBw6x4YiuDuaF9BBgncguzvndP8tDL',
           amount: amount
         })
 
@@ -302,16 +302,16 @@ Object.keys(testAPIs).forEach(IPFS => {
       })
 
       it('returns the full length from all heads', async () => {
-        let it = fixture.log.iterator({
-          lte: fixture.log.heads
+        let it = await fixture.log.iterator({
+          lte: fixture.log.headCIDs
         })
 
         assert.strictEqual([...it].length, 16)
       })
 
       it('returns partial entries from all heads', async () => {
-        let it = fixture.log.iterator({
-          lte: fixture.log.heads,
+        let it = await fixture.log.iterator({
+          lte: fixture.log.headCIDs,
           amount: 6
         })
 
@@ -326,16 +326,16 @@ Object.keys(testAPIs).forEach(IPFS => {
       })
 
       it('returns partial logs from single heads #1', async () => {
-        let it = fixture.log.iterator({
-          lte: [fixture.log.heads[0]]
+        let it = await fixture.log.iterator({
+          lte: [fixture.log.headCIDs[0]]
         })
 
         assert.strictEqual([...it].length, 10)
       })
 
       it('returns partial logs from single heads #2', async () => {
-        let it = fixture.log.iterator({
-          lte: [fixture.log.heads[1]]
+        let it = await fixture.log.iterator({
+          lte: [fixture.log.headCIDs[1]]
         })
 
         assert.strictEqual([...it].length, 11)
@@ -344,9 +344,11 @@ Object.keys(testAPIs).forEach(IPFS => {
       it('throws error if lt/lte not a string or array of entries', async () => {
         let errMsg
 
+        const heads = await fixture.log.heads
+
         try {
-          fixture.log.iterator({
-            lte: fixture.log.heads[1]
+          await fixture.log.iterator({
+            lte: heads[1]
           })
         } catch (e) {
           errMsg = e.message

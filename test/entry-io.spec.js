@@ -14,7 +14,7 @@ let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 const last = arr => arr[arr.length - 1]
 
 Object.keys(testAPIs).forEach(IPFS => {
-  describe('Entry - Persistency (' + IPFS + ')', function () {
+  describe.only('Entry - Persistency (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
     const { identityKeysPath, signingKeysPath } = config

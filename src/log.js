@@ -12,7 +12,7 @@ const { isDefined } = require('./utils')
 const LRU = require('lru')
 
 const randomId = () => new Date().getTime().toString()
-const maxClockTimeReducer = (res, acc) => Math.max(res, acc.clock.time)
+const maxClockTimeReducer = (acc, item) => Math.max(acc, item.clock.time)
 
 /**
  * Log.
@@ -81,20 +81,16 @@ class Log extends GSet {
     // Identity
     this._identity = identity
 
-    // Index of head cids
     const _heads = isDefined(heads) ? heads : Log.findHeads(entries)
 
-    // Index of the cids of each entry and its parent entry
+    // Index of entries in the log
     this._entryIndex = new Map()
-
-    // Set the nextsIndex cache as null
-    this._cacheNextsIndex = null
 
     // Cache of recently accessed entries
     this._entryCache = new LRU(cacheSize)
 
-    _heads.forEach(this._indexEntry.bind(this))
     entries.forEach(this._indexEntry.bind(this))
+    _heads.forEach(this._indexEntry.bind(this))
 
     // Set the clock
     const maxTime = Math.max(clock ? clock.time : 0, _heads.reduce(maxClockTimeReducer, 0))
@@ -135,7 +131,7 @@ class Log extends GSet {
   get values () {
     return new Promise(async resolve => {
       const entries = await pMap(this.entryCIDs, this.get.bind(this))
-      resolve(entries.sort(this._sortFn))
+      resolve(entries)
     })
   }
 
@@ -146,7 +142,7 @@ class Log extends GSet {
   get heads () {
     return new Promise(async resolve => {
       const entries = await pMap(this.headCIDs, this.get.bind(this))
-      resolve(entries.sort(this._sortFn).reverse())
+      resolve(entries)
     })
   }
 
@@ -155,7 +151,7 @@ class Log extends GSet {
    * @returns {Array<string>} Array of CIDs
    */
   get entryCIDs () {
-    return Array.from(this._entryIndex.keys())
+    return this._orderedEntryCIDs
   }
 
   /**
@@ -163,34 +159,42 @@ class Log extends GSet {
    * @returns {Array<string>} Array of CIDs
    */
   get headCIDs () {
-    const nextsIndex = this._nextsIndex
-    const headFilter = entryCID => !nextsIndex.has(entryCID)
-    return this.entryCIDs.filter(headFilter, [])
+    const headFilter = entryCID => !this._nexts.has(entryCID)
+    return this.entryCIDs.filter(headFilter, []).reverse()
   }
 
   /**
-   * Returns all entries and their 'next' references as a single Set
+   * Returns all entries and their 'next' references as a single Set.
    * NOTE: There is no particular ordering in this Set
    *
    * @returns {Set}
    */
   get _completeIndex () {
-    return new Set([...this._entryIndex.keys(), ...this._nextsIndex])
+    return new Set([...this._entryIndex.keys(), ...this._nexts])
   }
 
   /**
-   * Returns all 'next' references of each Entry as a single Set
+   * Returns all 'next' references of each Entry as a single Set.
    *
    * @returns {Set}
    */
-  get _nextsIndex () {
-    // _entryIndex.values are the 'next' references of each Entry.
-    // Just flatten all 'next' references into a single Set.
-    if (!this._cacheNextsIndex) {
-      const flatten = (res, s) => [...res, ...s]
-      this._cacheNextsIndex = new Set([...this._entryIndex.values()].reduce(flatten, []))
+  get _nexts () {
+    if (!this._cachedNexts) {
+      // Flatten all 'next' references into a single Set
+      const reducer = (acc, { next }) => [...acc, ...next]
+      const items = [...this._entryIndex.values()].reduce(reducer, [])
+      this._cachedNexts = new Set(items) // 'Set' since we do not want duplicates
     }
-    return this._cacheNextsIndex
+    return this._cachedNexts
+  }
+
+  get _orderedEntryCIDs () {
+    if (!this._cachedOrder) {
+      const reducer = (acc, [cid, { clock }]) => [...acc, { cid, clock }]
+      const items = [...this._entryIndex.entries()].reduce(reducer, [])
+      this._cachedOrder = items.sort(this._sortFn).map(e => e.cid)
+    }
+    return this._cachedOrder
   }
 
   /**
@@ -221,7 +225,7 @@ class Log extends GSet {
     return entry ? this._entryIndex.has(entry.cid || entry) : false
   }
 
-  async traverse (rootEntries, amount = -1, endHash) {
+  traverse (rootEntries, amount = -1, endHash) {
     // Sort the given given root entries and use as the starting stack
     var stack = rootEntries.sort(this._sortFn).reverse()
     // Cache for checking if we've processed an entry already
@@ -231,41 +235,42 @@ class Log extends GSet {
     // We keep a counter to check if we have traversed requested amount of entries
     let count = 0
 
-    // Named function for getting an entry from the log
-    const getEntry = e => this.get(e)
+    // Named function for getting an indexed entry from the log
+    const getEntry = cid => Object.assign({ cid }, { next: new Set() }, this._entryIndex.get(cid))
 
-    // Add an entry to the stack and traversed nodes index
-    const addToStack = entry => {
-      // If we've already processed the entry, don't add it to the stack
-      if (!entry || traversed[entry.cid]) {
-        return
-      }
+    // Add an indexed entry to the stack and traversed nodes index
+    const addToStack = iEntry => {
+      // If we've already processed the indexed Entry, don't add it to the stack
+      if (!iEntry || traversed[iEntry.cid]) return
 
-      // Add the entry in front of the stack and sort
-      stack = [entry, ...stack].sort(this._sortFn).reverse()
+      // Add the iEntry in front of the stack and sort
+      stack = [iEntry, ...stack].sort(this._sortFn).reverse()
 
       // Add to the cache of processed entries
-      traversed[entry.cid] = true
+      traversed[iEntry.cid] = true
     }
 
     // Start traversal
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
+    // eslint-disable-next-line no-unmodified-loop-condition
     while (stack.length > 0 && (amount === -1 || count < amount)) {
-      // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
-      const entry = stack.shift()
+      const iEntry = stack.shift()
 
       // Add to the result
       count++
-      result[entry.cid] = entry
+      result[iEntry.cid] = iEntry
 
-      // Add entry's next references to the stack
-      ;(await Promise.all(entry.next.map(getEntry))).filter(isDefined).forEach(addToStack)
+      // Add iEntry's next references to the stack
+      Array.from(iEntry.next.values())
+        .map(getEntry)
+        .filter(isDefined)
+        .forEach(addToStack)
 
       // If it is the specified end hash, break out of the while loop
-      if (entry.cid === endHash) break
+      if (iEntry.cid === endHash) break
     }
 
     return result
@@ -277,7 +282,7 @@ class Log extends GSet {
    * @return {Log} New Log containing the appended value
    */
   async append (data, pointerCount = 1) {
-    const heads = await this.heads
+    const heads = this.headCIDs.map(cid => Object.assign({ cid }, this._entryIndex.get(cid)))
 
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, heads.reduce(maxClockTimeReducer, 0)) + 1
@@ -310,8 +315,8 @@ class Log extends GSet {
    * Creates a javscript iterator over log entries
    *
    * @param {Object} options
-   * @param {string|Array} options.gt Beginning hash of the iterator, non-inclusive
-   * @param {string|Array} options.gte Beginning hash of the iterator, inclusive
+   * @param {string} options.gt Beginning hash of the iterator, non-inclusive
+   * @param {string} options.gte Beginning hash of the iterator, inclusive
    * @param {string|Array} options.lt Ending hash of the iterator, non-inclusive
    * @param {string|Array} options.lte Ending hash of the iterator, inclusive
    * @param {amount} options.amount Number of entried to return to / from the gte / lte hash
@@ -342,33 +347,36 @@ class Log extends GSet {
     lt = undefined,
     lte = undefined,
     amount = -1
-  } = {}) {
+  }) {
     if (amount === 0) return (function * () {})()
-    if (typeof lte === 'string') lte = [this.get(lte)]
-    if (typeof lt === 'string') lt = [this.get(this.get(lt).next)]
+    if (typeof lte === 'string') lte = this.has(lte) ? [lte] : null
+    if (typeof lt === 'string') lt = this.has(lt) ? this._nextCIDsOf(lt) : null
 
     if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
     if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    const heads = await this.heads
-    let start = lte || (lt || heads)
-    let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
+    let start = lte || (lt || this.headCIDs)
+    let endHash = gte || (gt || null)
     let count = endHash ? -1 : amount || -1
 
-    let entries = await this.traverse(start, count, endHash)
-    let entryValues = Object.values(entries)
+    start = start.map(cid => Object.assign({ cid }, { next: new Set() }, this._entryIndex.get(cid)))
+
+    let indexedEntries = this.traverse(start, count, endHash)
+    indexedEntries = Object.keys(indexedEntries)
 
     // Strip off last entry if gt is non-inclusive
-    if (gt) entryValues.pop()
+    if (gt) indexedEntries.pop()
 
     // Deal with the amount argument working backwards from gt/gte
     if ((gt || gte) && amount > -1) {
-      entryValues = entryValues.slice(entryValues.length - amount, entryValues.length)
+      indexedEntries = indexedEntries.slice(indexedEntries.length - amount, indexedEntries.length)
     }
 
+    const entries = await Promise.all(indexedEntries.map(this.get.bind(this)))
+
     return (function * () {
-      for (let i in entryValues) {
-        yield entryValues[i]
+      for (let entry of entries) {
+        yield entry
       }
     })()
   }
@@ -428,11 +436,11 @@ class Log extends GSet {
    * Get the log in JSON format as a snapshot.
    * @returns {Object} An object with the id, heads and value properties
    */
-  toSnapshot () {
+  async toSnapshot () {
     return {
       id: this.id,
       heads: this.heads,
-      values: this.values
+      values: await this.values
     }
   }
 
@@ -698,9 +706,14 @@ class Log extends GSet {
   }
 
   _indexEntry (e) {
-    this._cacheNextsIndex = null
+    this._cachedNexts = null
+    this._cachedOrder = null
+    this._entryIndex.set(e.cid, { clock: e.clock, next: new Set(e.next) })
     this._entryCache.set(e.cid, e)
-    this._entryIndex.set(e.cid, new Set(e.next))
+  }
+
+  _nextCIDsOf (cid) {
+    return [...this._entryIndex.get(cid).next.values()]
   }
 
   /**
