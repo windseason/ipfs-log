@@ -50,7 +50,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedCid = 'zdpuAqPdz6zADF1Li9BN4H2RVt5UBqtfCM29K5LzW2Lbj5KZp'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
         assert.strictEqual(entry.cid, expectedCid)
         assert.strictEqual(entry.id, 'A')
@@ -62,7 +62,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a entry with payload', async () => {
-        const expectedCid = 'zdpuArMRv55to941Bts4cb8KYD1ERLVyG4wsGCCAtDgHGpZq6'
+        const expectedCid = 'zdpuArPcD3u8iz7oVvU4zCcm8goTqPfhjYTiGTrB5nWWqTkZx'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, testIdentity, 'A', payload, [])
         assert.strictEqual(entry.payload, payload)
@@ -75,7 +75,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedCid = 'zdpuApdx9vqbXA8mbgFs2hNFeR9F6j7fU6v9eB15v1o6cwmbR'
+        const expectedCid = 'zdpuAozg4rMX67yzCqrC6kCzJvUxHHeqVnTtS62XPn81X9gqV'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -89,7 +89,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('should return an entry interopable with older versions', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedCid = 'zdpuAqPdz6zADF1Li9BN4H2RVt5UBqtfCM29K5LzW2Lbj5KZp'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
         assert.strictEqual(entry.cid, entry.hash)
         assert.strictEqual(entry.cid, expectedCid)
@@ -166,7 +166,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('toCID', () => {
       it('returns an ipfs CID', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedCid = 'zdpuAqPdz6zADF1Li9BN4H2RVt5UBqtfCM29K5LzW2Lbj5KZp'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const cid = await Entry.toCID(ipfs, entry)
         assert.strictEqual(entry.cid, expectedCid)
@@ -213,7 +213,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('toMultihash', () => {
       it('returns an ipfs multihash', async () => {
-        const expectedMultihash = 'QmZDupBAWDNQyooF4uA5WqS2Hu29RtdwmfyYFtRiukWhun'
+        const expectedMultihash = 'QmTs7nMmgnMPqzSRGdkHSTJNdUc2JRfFCgSGK3AzF5hsCN'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const multihash = await Entry.toMultihash(ipfs, entry)
         assert.strictEqual(multihash, expectedMultihash)
@@ -259,7 +259,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('fromCID', () => {
       it('creates a entry from ipfs CID', async () => {
-        const expectedCid = 'zdpuAsV3NwsbADQ98NKpVRh1HDw14PJH7hMXuvUKH9LDBW5Uw'
+        const expectedCid = 'zdpuAppsuDUiuUnW7A34XwDK4s5SXt5R9j1nF4J76KFU8NAAF'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -291,7 +291,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('should return an entry interopable with older and newer versions', async () => {
-        const expectedCidV1 = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedCidV1 = 'zdpuAqPdz6zADF1Li9BN4H2RVt5UBqtfCM29K5LzW2Lbj5KZp'
         const entryV1 = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const finalV1 = await Entry.fromCID(ipfs, entryV1.cid)
         assert.strictEqual(finalV1.cid, finalV1.hash)

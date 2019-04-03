@@ -58,7 +58,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns a Symbol.iterator object', async () => {
         let it = log1.iterator({
-          lte: 'zdpuApFd5XAPkCTmSx7qWQmQzvtdJPtx2K5p9to6ytCS79bfk',
+          lte: 'zdpuB3U4zsEJzqCXCvJsEiiKbzNeugrtuq5GTVndo2a5iPRLc',
           amount: 0
         })
 
@@ -69,7 +69,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns length with lte and amount', async () => {
         let amount = 10
         let it = log1.iterator({
-          lte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          lte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -80,7 +80,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let amount = 10
 
         let it = log1.iterator({
-          lte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          lte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -94,7 +94,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let amount = 10
 
         let it = log1.iterator({
-          lt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          lt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -105,7 +105,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let amount = 10
 
         let it = log1.iterator({
-          lt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          lt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -118,7 +118,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('returns correct length with gt and amount', async () => {
         let amount = 5
         let it = log1.iterator({
-          gt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          gt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -135,7 +135,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let amount = 12
 
         let it = log1.iterator({
-          gt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          gt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -146,7 +146,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let amount = 12
 
         let it = log1.iterator({
-          gt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc',
+          gt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv',
           amount: amount
         })
 
@@ -159,59 +159,59 @@ Object.keys(testAPIs).forEach((IPFS) => {
       /* eslint-disable camelcase */
       it('iterates with lt and gt', async () => {
         let it = log1.iterator({
-          gt: 'zdpuApAwoKaq6YZaarANNoiDMbuz1kXQPZZtEydZnVoKWdfvz',
-          lt: 'zdpuAtwWPWKBGguqXbBRNdgZW5HN2EkzF8KXhb2aDVZsufdv2'
+          gt: 'zdpuAx3jLyGqFvUK25tzBJR5Kgwnhakr6jYeabakWmKcyFUzT',
+          lt: 'zdpuAqFutHNmtL2qT9HHkP6HwJifCcmuTTVuje6pi6DUF5mVD'
         })
         let hashes = [...it].map(e => e.hash)
 
         // neither hash should appear in the array
-        assert.strictEqual(hashes.indexOf('zdpuApAwoKaq6YZaarANNoiDMbuz1kXQPZZtEydZnVoKWdfvz'), -1)
-        assert.strictEqual(hashes.indexOf('zdpuAtwWPWKBGguqXbBRNdgZW5HN2EkzF8KXhb2aDVZsufdv2'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuAx3jLyGqFvUK25tzBJR5Kgwnhakr6jYeabakWmKcyFUzT'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuAqFutHNmtL2qT9HHkP6HwJifCcmuTTVuje6pi6DUF5mVD'), -1)
         assert.strictEqual(hashes.length, 10)
       })
 
       it('iterates with lt and gte', async () => {
         let it = log1.iterator({
-          gte: 'zdpuAknymHzBtebsueZDR9i6mVzkHRgr7BncgDqFhnp91shKU',
-          lt: 'zdpuAkW8HkbReDCxkj3q5PmynyjZ1Wnp13tjLMwdjkp5NmQNs'
+          gte: 'zdpuAqyCCtNbzhm27qmckquELV2LYg3pc8s4x4sm46NvGzcqB',
+          lt: 'zdpuAtJ1w1UuTWMrGVoHXFQdVTs6bzvVsi2bVXi2eLUwb5H1B'
         })
         let hashes = [...it].map(e => e.hash)
 
         // only the gte hash should appear in the array
-        assert.strictEqual(hashes.indexOf('zdpuAknymHzBtebsueZDR9i6mVzkHRgr7BncgDqFhnp91shKU'), 24)
-        assert.strictEqual(hashes.indexOf('zdpuAkW8HkbReDCxkj3q5PmynyjZ1Wnp13tjLMwdjkp5NmQNs'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuAqyCCtNbzhm27qmckquELV2LYg3pc8s4x4sm46NvGzcqB'), 24)
+        assert.strictEqual(hashes.indexOf('zdpuAtJ1w1UuTWMrGVoHXFQdVTs6bzvVsi2bVXi2eLUwb5H1B'), -1)
         assert.strictEqual(hashes.length, 25)
       })
 
       it('iterates with lte and gt', async () => {
         let it = log1.iterator({
-          gt: 'zdpuAsVyCfFWM2sH7vgMWWEBiRP6ZH5doqRXuFQwZNh7hHKiJ',
-          lte: 'zdpuAyedHZHfFvBzUtPqwgQzy8xkG46dp8XacumbCbv7bSz5S'
+          gt: 'zdpuB2dEHnduPD9tM55p8qHmgnvkxR4aQZag7pEtt4RcMzPK9',
+          lte: 'zdpuB1aNsdg2R4yYqjBkm8zT2xRXb46cSMDpRVo8WUxpEYxWN'
         })
         let hashes = [...it].map(e => e.hash)
 
         // only the lte hash should appear in the array
-        assert.strictEqual(hashes.indexOf('zdpuAsVyCfFWM2sH7vgMWWEBiRP6ZH5doqRXuFQwZNh7hHKiJ'), -1)
-        assert.strictEqual(hashes.indexOf('zdpuAyedHZHfFvBzUtPqwgQzy8xkG46dp8XacumbCbv7bSz5S'), 0)
+        assert.strictEqual(hashes.indexOf('zdpuB2dEHnduPD9tM55p8qHmgnvkxR4aQZag7pEtt4RcMzPK9'), -1)
+        assert.strictEqual(hashes.indexOf('zdpuB1aNsdg2R4yYqjBkm8zT2xRXb46cSMDpRVo8WUxpEYxWN'), 0)
         assert.strictEqual(hashes.length, 4)
       })
 
       it('iterates with lte and gte', async () => {
         let it = log1.iterator({
-          gte: 'zdpuAqNv5DRFK8XMCp3s4whxrcoqyyMSAALWH3UTMSmTxCMDh',
-          lte: 'zdpuAmyiEF2TZFLocy4u3UcZS1KU6xTyAq8C7qTbgG8ZqK5Vb'
+          gte: 'zdpuAxNS2DckLG7wgYY3ghzBbo8apcieDL2GNcd14wRqLQwRp',
+          lte: 'zdpuAm6pQSw8Pn2U2DrfnkBEN4ereLczkKs5evZEVjG5wwx6u'
         })
         let hashes = [...it].map(e => e.hash)
 
         // neither hash should appear in the array
-        assert.strictEqual(hashes.indexOf('zdpuAqNv5DRFK8XMCp3s4whxrcoqyyMSAALWH3UTMSmTxCMDh'), 9)
-        assert.strictEqual(hashes.indexOf('zdpuAmyiEF2TZFLocy4u3UcZS1KU6xTyAq8C7qTbgG8ZqK5Vb'), 0)
+        assert.strictEqual(hashes.indexOf('zdpuAxNS2DckLG7wgYY3ghzBbo8apcieDL2GNcd14wRqLQwRp'), 9)
+        assert.strictEqual(hashes.indexOf('zdpuAm6pQSw8Pn2U2DrfnkBEN4ereLczkKs5evZEVjG5wwx6u'), 0)
         assert.strictEqual(hashes.length, 10)
       })
 
       it('returns length with gt and default amount', async () => {
         let it = log1.iterator({
-          gt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          gt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         assert.strictEqual([...it].length, 33)
@@ -219,7 +219,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns entries with gt and default amount', async () => {
         let it = log1.iterator({
-          gt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          gt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         let i = 0
@@ -230,7 +230,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns length with gte and default amount', async () => {
         let it = log1.iterator({
-          gte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          gte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         assert.strictEqual([...it].length, 34)
@@ -238,7 +238,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns entries with gte and default amount', async () => {
         let it = log1.iterator({
-          gte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          gte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         let i = 0
@@ -249,7 +249,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns length with lt and default amount value', async () => {
         let it = log1.iterator({
-          lt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          lt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         assert.strictEqual([...it].length, 67)
@@ -257,7 +257,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns entries with lt and default amount value', async () => {
         let it = log1.iterator({
-          lt: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          lt: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         let i = 0
@@ -268,7 +268,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns length with lte and default amount value', async () => {
         let it = log1.iterator({
-          lte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          lte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         assert.strictEqual([...it].length, 68)
@@ -276,7 +276,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns entries with lte and default amount value', async () => {
         let it = log1.iterator({
-          lte: 'zdpuApnVzgG77RhE4jXAR9yfgx7whjMutgQTgnKZcNWzNjGjc'
+          lte: 'zdpuAxtUhamjBAodvaxDaXBWcvM9yu55Q45PoMvLUSGPFyEuv'
         })
 
         let i = 0
