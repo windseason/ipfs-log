@@ -54,9 +54,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       const log = new Log(ipfs, testIdentity, { logId: 'A' })
       assert.notStrictEqual(log.id, null)
       assert.strictEqual(log._identity.id, '03e0480538c2a39951d054e17ff31fde487cb1031d0044a037b53ad2e028a3e77c')
-      assert.strictEqual(log._identity.publicKey, '038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce')
+      assert.strictEqual(log._identity.publicKey, '048bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711cea5c1b8d47bc20ebaecdca588600ddf2894675e78b2ef17cf49e7bbaf98080361')
       assert.strictEqual(log._identity.signatures.id, '3045022100f5f6f10571d14347aaf34e526ce3419fd64d75ffa7aa73692cbb6aeb6fbc147102203a3e3fa41fa8fcbb9fc7c148af5b640e2f704b20b3a4e0b93fc3a6d44dffb41e')
-      assert.strictEqual(log._identity.signatures.publicKey, '30450221008481508c42efe64512e84177db265a60c8c54cfa99094515a5ad93226633f30202202d1916ac72218e95a3ae9c185b42732c97db60b4d10845918b6240b877e104b1')
+      assert.strictEqual(log._identity.signatures.publicKey, '3044022020982b8492be0c184dc29de0a3a3bd86a86ba997756b0bf41ddabd24b47c5acf02203745fda39d7df650a5a478e52bbe879f0cb45c074025a93471414a56077640a4')
     })
 
     it('has the correct public key', () => {
@@ -159,7 +159,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       const entry = log2.values[0]
-      assert.strictEqual(err, `Error: Could not validate signature "${entry.sig}" for entry "${entry.cid}" and key "${entry.key}"`)
+      assert.strictEqual(err, `Error: Could not validate signature "${entry.sig}" for entry "${entry.hash}" and key "${entry.key}"`)
       assert.strictEqual(log1.values.length, 1)
       assert.strictEqual(log1.values[0].payload, 'one')
     })

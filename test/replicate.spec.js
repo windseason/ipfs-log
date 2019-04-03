@@ -87,7 +87,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromCID(ipfs1, testIdentity, message.data.toString(), -1)
+        const log = await Log.fromMultihash(ipfs1, testIdentity, message.data.toString(), -1)
         await log1.join(log)
         processing--
       }
@@ -100,7 +100,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromCID(ipfs2, testIdentity2, message.data.toString(), -1, null)
+        const log = await Log.fromMultihash(ipfs2, testIdentity2, message.data.toString(), -1, null)
         await log2.join(log)
         processing--
       }
@@ -120,8 +120,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         for (let i = 1; i <= amount; i++) {
           await input1.append('A' + i)
           await input2.append('B' + i)
-          const cid1 = await input1.toCID()
-          const cid2 = await input2.toCID()
+          const cid1 = await input1.toMultihash()
+          const cid2 = await input2.toMultihash()
           await ipfs1.pubsub.publish(channel, Buffer.from(cid1))
           await ipfs2.pubsub.publish(channel, Buffer.from(cid2))
         }

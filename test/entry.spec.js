@@ -50,9 +50,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedHash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
-        assert.strictEqual(entry.cid, expectedCid)
+        assert.strictEqual(entry.hash, expectedHash)
         assert.strictEqual(entry.id, 'A')
         assert.strictEqual(entry.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry.clock.time, 0)
@@ -62,7 +62,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a entry with payload', async () => {
-        const expectedCid = 'zdpuArMRv55to941Bts4cb8KYD1ERLVyG4wsGCCAtDgHGpZq6'
+        const expectedHash = 'zdpuAtjiCZSrHRjnxHJkWP6zXYbZnNDv799AZXUkTgdFLfTho'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, testIdentity, 'A', payload, [])
         assert.strictEqual(entry.payload, payload)
@@ -71,11 +71,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(entry.clock.time, 0)
         assert.strictEqual(entry.v, 1)
         assert.strictEqual(entry.next.length, 0)
-        assert.strictEqual(entry.cid, expectedCid)
+        assert.strictEqual(entry.hash, expectedHash)
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedCid = 'zdpuApdx9vqbXA8mbgFs2hNFeR9F6j7fU6v9eB15v1o6cwmbR'
+        const expectedHash = 'zdpuAsTdJiUff2ymap5cTdLn1yBTWHLoceJ9ikksB2wxrvTPt'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -83,21 +83,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1], entry1.clock)
         assert.strictEqual(entry2.payload, payload2)
         assert.strictEqual(entry2.next.length, 1)
-        assert.strictEqual(entry2.cid, expectedCid)
+        assert.strictEqual(entry2.hash, expectedHash)
         assert.strictEqual(entry2.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry2.clock.time, 1)
       })
 
       it('should return an entry interopable with older versions', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedHash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
-        assert.strictEqual(entry.cid, entry.hash)
-        assert.strictEqual(entry.cid, expectedCid)
+        assert.strictEqual(entry.hash, entry.hash)
+        assert.strictEqual(entry.hash, expectedHash)
       })
 
       it('`next` parameter can be an array of strings', async () => {
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', 'hello1', [])
-        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1.cid])
+        const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1.hash])
         assert.strictEqual(typeof entry2.next[0] === 'string', true)
       })
 
@@ -164,16 +164,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
-    describe('toCID', () => {
-      it('returns an ipfs CID', async () => {
-        const expectedCid = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+    describe('toMultihash', () => {
+      it('returns an ipfs hash', async () => {
+        const expectedHash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
-        const cid = await Entry.toCID(ipfs, entry)
-        assert.strictEqual(entry.cid, expectedCid)
-        assert.strictEqual(cid, expectedCid)
+        const hash = await Entry.toMultihash(ipfs, entry)
+        assert.strictEqual(entry.hash, expectedHash)
+        assert.strictEqual(hash, expectedHash)
       })
 
-      it('returns the correct ipfs CID (multihash) for a v0 entry', async () => {
+      it('returns the correct ipfs hash (multihash) for a v0 entry', async () => {
         const expectedMultihash = 'QmV5NpvViHHouBfo7CSnfX2iB4t5PVWNJG8doKt5cwwnxY'
         const entry = v0Entries.hello
         const multihash = await Entry.toMultihash(ipfs, entry)
@@ -183,7 +183,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if ipfs is not defined', async () => {
         let err
         try {
-          await Entry.toCID()
+          await Entry.toMultihash()
         } catch (e) {
           err = e
         }
@@ -193,27 +193,27 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if the object being passed is invalid', async () => {
         let err1, err2
         try {
-          await Entry.toCID(ipfs, testACL, testIdentity, { cid: 'deadbeef' })
+          await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
         } catch (e) {
           err1 = e
         }
 
-        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry CID')
+        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry hash')
 
         try {
           const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
           delete entry.clock
-          await Entry.toCID(ipfs, entry)
+          await Entry.toMultihash(ipfs, entry)
         } catch (e) {
           err2 = e
         }
-        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry CID')
+        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry hash')
       })
     })
 
     describe('toMultihash', () => {
       it('returns an ipfs multihash', async () => {
-        const expectedMultihash = 'QmZDupBAWDNQyooF4uA5WqS2Hu29RtdwmfyYFtRiukWhun'
+        const expectedMultihash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const multihash = await Entry.toMultihash(ipfs, entry)
         assert.strictEqual(multihash, expectedMultihash)
@@ -239,12 +239,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if the object being passed is invalid', async () => {
         let err1, err2
         try {
-          await Entry.toMultihash(ipfs, testACL, testIdentity, { cid: 'deadbeef' })
+          await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
         } catch (e) {
           err1 = e
         }
 
-        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry CID')
+        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry hash')
 
         try {
           const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
@@ -253,99 +253,95 @@ Object.keys(testAPIs).forEach((IPFS) => {
         } catch (e) {
           err2 = e
         }
-        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry CID')
+        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry hash')
       })
     })
 
-    describe('fromCID', () => {
-      it('creates a entry from ipfs CID', async () => {
-        const expectedCid = 'zdpuAsV3NwsbADQ98NKpVRh1HDw14PJH7hMXuvUKH9LDBW5Uw'
+    describe('fromMultihash', () => {
+      it('creates a entry from ipfs hash', async () => {
+        const expectedHash = 'zdpuAsKJs8R7DCdgURNqmqiQH84p2QqECVBFqzsK5uKhsJLX3'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', payload2, [entry1])
-        const final = await Entry.fromCID(ipfs, entry2.cid)
+        const final = await Entry.fromMultihash(ipfs, entry2.hash)
 
         assert.deepStrictEqual(entry2, final)
         assert.strictEqual(final.id, 'A')
         assert.strictEqual(final.payload, payload2)
         assert.strictEqual(final.next.length, 1)
-        assert.strictEqual(final.next[0], entry1.cid)
-        assert.strictEqual(final.cid, expectedCid)
+        assert.strictEqual(final.next[0], entry1.hash)
+        assert.strictEqual(final.hash, expectedHash)
       })
 
       it('creates a entry from ipfs multihash of v0 entries', async () => {
-        const expectedCid = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
-        const entry1Cid = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
-        const entry2Cid = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
-        const final = await Entry.fromCID(ipfs, entry2Cid)
+        const expectedHash = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
+        const entry1Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
+        const entry2Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
+        const final = await Entry.fromMultihash(ipfs, entry2Hash)
 
         assert.strictEqual(final.id, 'A')
         assert.strictEqual(final.payload, v0Entries.helloAgain.payload)
         assert.strictEqual(final.next.length, 1)
         assert.strictEqual(final.next[0], v0Entries.helloAgain.next[0])
-        assert.strictEqual(final.next[0], entry1Cid)
+        assert.strictEqual(final.next[0], entry1Hash)
         assert.strictEqual(final.v, 0)
-        assert.strictEqual(final.cid, entry2Cid)
-        assert.strictEqual(final.cid, expectedCid)
+        assert.strictEqual(final.hash, entry2Hash)
+        assert.strictEqual(final.hash, expectedHash)
       })
 
       it('should return an entry interopable with older and newer versions', async () => {
-        const expectedCidV1 = 'zdpuB1cRDqfpXeTJxQCakeUAcBHvgUysVwsnNz3C5bMrcgyT6'
+        const expectedHashV1 = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
         const entryV1 = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
-        const finalV1 = await Entry.fromCID(ipfs, entryV1.cid)
-        assert.strictEqual(finalV1.cid, finalV1.hash)
-        assert.strictEqual(finalV1.cid, expectedCidV1)
-        assert.strictEqual(Object.assign({}, finalV1).cid, expectedCidV1)
-        assert.strictEqual(Object.assign({}, finalV1).hash, undefined)
+        const finalV1 = await Entry.fromMultihash(ipfs, entryV1.hash)
+        assert.strictEqual(finalV1.hash, expectedHashV1)
+        assert.strictEqual(Object.assign({}, finalV1).hash, expectedHashV1)
 
-        const expectedCidV0 = 'QmderYccue9XqB7V4EYf71ZygWELdzdbVqo1oxR4nMRrCh'
-        const entryCidV0 = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
-        const finalV0 = await Entry.fromCID(ipfs, entryCidV0)
-        assert.strictEqual(finalV0.cid, finalV0.hash)
-        assert.strictEqual(finalV0.cid, expectedCidV0)
-        assert.strictEqual(Object.assign({}, finalV0).cid, undefined)
-        assert.strictEqual(Object.assign({}, finalV0).hash, expectedCidV0)
+        const expectedHashV0 = 'QmderYccue9XqB7V4EYf71ZygWELdzdbVqo1oxR4nMRrCh'
+        const entryHashV0 = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
+        const finalV0 = await Entry.fromMultihash(ipfs, entryHashV0)
+        assert.strictEqual(finalV0.hash, expectedHashV0)
+        assert.strictEqual(Object.assign({}, finalV0).hash, expectedHashV0)
       })
 
       it('throws an error if ipfs is not present', async () => {
         let err
         try {
-          await Entry.fromCID()
+          await Entry.fromMultihash()
         } catch (e) {
           err = e
         }
         assert.strictEqual(err.message, 'Ipfs instance not defined')
       })
 
-      it('throws an error if CID is undefined', async () => {
+      it('throws an error if hash is undefined', async () => {
         let err
         try {
-          await Entry.fromCID(ipfs)
+          await Entry.fromMultihash(ipfs)
         } catch (e) {
           err = e
         }
-        assert.strictEqual(err.message, 'Invalid CID: undefined')
+        assert.strictEqual(err.message, 'Invalid hash: undefined')
       })
     })
 
     describe('fromMultihash', () => {
       afterEach(() => {
-        if (Entry.fromCID.restore) {
-          Entry.fromCID.restore()
+        if (Entry.fromMultihash.restore) {
+          Entry.fromMultihash.restore()
         }
       })
 
-      it('call fromCID', async () => {
-        const spy = sinon.spy(Entry, 'fromCID')
+      it('call fromMultihash', async () => {
+        const spy = sinon.spy(Entry, 'fromMultihash')
 
-        const expectedCid = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
+        const expectedHash = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
         await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
-        const entry2Cid = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
-        const final = await Entry.fromCID(ipfs, entry2Cid)
+        const entry2Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
+        const final = await Entry.fromMultihash(ipfs, entry2Hash)
 
-        assert(spy.calledOnceWith(ipfs, entry2Cid))
-        assert.strictEqual(final.cid, expectedCid)
+        assert(spy.calledOnceWith(ipfs, entry2Hash))
+        assert.strictEqual(final.hash, expectedHash)
       })
     })
 
@@ -398,17 +394,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('is not an Entry - no id', async () => {
-        const fakeEntry = { next: [], v: 1, cid: 'Foo', payload: 123, seq: 0 }
+        const fakeEntry = { next: [], v: 1, hash: 'Foo', payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
       it('is not an Entry - no seq', async () => {
-        const fakeEntry = { next: [], v: 1, cid: 'Foo', payload: 123 }
+        const fakeEntry = { next: [], v: 1, hash: 'Foo', payload: 123 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
       it('is not an Entry - no next', async () => {
-        const fakeEntry = { id: 'A', v: 1, cid: 'Foo', payload: 123, seq: 0 }
+        const fakeEntry = { id: 'A', v: 1, hash: 'Foo', payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
@@ -417,13 +413,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
-      it('is not an Entry - no cid', async () => {
+      it('is not an Entry - no hash', async () => {
         const fakeEntry = { id: 'A', v: 1, next: [], payload: 123, seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
 
       it('is not an Entry - no payload', async () => {
-        const fakeEntry = { id: 'A', v: 1, next: [], cid: 'Foo', seq: 0 }
+        const fakeEntry = { id: 'A', v: 1, next: [], hash: 'Foo', seq: 0 }
         assert.strictEqual(Entry.isEntry(fakeEntry), false)
       })
     })
