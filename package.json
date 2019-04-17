@@ -15,6 +15,7 @@
   "dependencies": {
     "cids": "^0.5.7",
     "ipld-dag-pb": "^0.15.2",
+    "json-stringify-deterministic": "^1.0.1",
     "orbit-db-identity-provider": "rc1.2",
     "orbit-db-io": "~0.0.1",
     "p-map": "^1.1.1",
