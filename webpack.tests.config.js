@@ -26,6 +26,7 @@ module.exports = {
   ],
   externals: {
     fs: '{}',
+    'fs-extra': '{ copy: () => {} }',
     rimraf: '{ sync: () => {} }',
     'idb-readable-stream': '{}'
   },
@@ -59,7 +60,7 @@ module.exports = {
       },
       // For inlining the fixture keys in browsers tests
       {
-        test: /userA|userB|userC|userD|030f4141da9bb4bc8d9cc9a6a01cdf0e8bc0c0f90fd28646f93d0de4e93b723e31|038bef2231e64d5c7147bd4b8afb84abd4126ee8d8335e4b069ac0a65c7be711ce|0276b51c36dc6a117aef6f8ecaa49c27c309b29bbc97218e21cc0d7c903a21f376|0208290bc83e02be25a65be2e067e4d2ecc55ae88e0c073b5d48887d45e7e0e393$/,
+        test: /userA|userB|userC|userD|0358df8eb5def772917748fdf8a8b146581ad2041eae48d66cc6865f11783499a6|032f7b6ef0432b572b45fcaf27e7f6757cd4123ff5c5266365bec82129b8c5f214|02a38336e3a47f545a172c9f77674525471ebeda7d6c86140e7a778f67ded92260|03e0480538c2a39951d054e17ff31fde487cb1031d0044a037b53ad2e028a3e77c$/,
         loader: 'json-loader'
       }
     ]

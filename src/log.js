@@ -11,12 +11,12 @@ const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
 
 const randomId = () => new Date().getTime().toString()
-const getCid = e => e.cid
+const getHash = e => e.hash
 const flatMap = (res, acc) => res.concat(acc)
 const getNextPointers = entry => entry.next
 const maxClockTimeReducer = (res, acc) => Math.max(res, acc.clock.time)
 const uniqueEntriesReducer = (res, acc) => {
-  res[acc.cid] = acc
+  res[acc.hash] = acc
   return res
 }
 
@@ -91,7 +91,7 @@ class Log extends GSet {
 
     // Index of all next pointers in this log
     this._nextsIndex = {}
-    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.cid))
+    const addToNextsIndex = e => e.next.forEach(a => (this._nextsIndex[a] = e.hash))
     entries.forEach(addToNextsIndex)
 
     // Set the length, we calculate the length manually internally
@@ -138,7 +138,7 @@ class Log extends GSet {
   }
 
   /**
-   * Returns an array of heads as cids.
+   * Returns an array of heads as hashes.
    * @returns {Array<string>}
    */
   get heads () {
@@ -155,30 +155,30 @@ class Log extends GSet {
   }
 
   /**
-   * Returns an array of cids that are referenced by entries which
+   * Returns an array of hashes that are referenced by entries which
    * are not in the log currently.
-   * @returns {Array<string>} Array of CIDs
+   * @returns {Array<string>} Array of hashes
    */
-  get tailCids () {
-    return Log.findTailCids(this.values)
+  get tailHashes () {
+    return Log.findTailHashes(this.values)
   }
 
   /**
    * Find an entry.
-   * @param {string} [cid] The CID of the entry
+   * @param {string} [hash] The hashes of the entry
    * @returns {Entry|undefined}
    */
-  get (cid) {
-    return this._entryIndex[cid]
+  get (hash) {
+    return this._entryIndex[hash]
   }
 
   /**
    * Checks if a entry is part of the log
-   * @param {string} cid The CID of the entry
+   * @param {string} hash The hash of the entry
    * @returns {boolean}
    */
   has (entry) {
-    return this._entryIndex[entry.cid || entry] !== undefined
+    return this._entryIndex[entry.hash || entry] !== undefined
   }
 
   traverse (rootEntries, amount = -1, endHash) {
@@ -197,7 +197,7 @@ class Log extends GSet {
     // Add an entry to the stack and traversed nodes index
     const addToStack = entry => {
       // If we've already processed the entry, don't add it to the stack
-      if (!entry || traversed[entry.cid]) {
+      if (!entry || traversed[entry.hash]) {
         return
       }
 
@@ -207,7 +207,7 @@ class Log extends GSet {
         .reverse()
 
       // Add to the cache of processed entries
-      traversed[entry.cid] = true
+      traversed[entry.hash] = true
     }
 
     // Start traversal
@@ -220,7 +220,7 @@ class Log extends GSet {
 
       // Add to the result
       count++
-      result[entry.cid] = entry
+      result[entry.hash] = entry
 
       // Add entry's next references to the stack
       entry.next.map(getEntry)
@@ -228,7 +228,7 @@ class Log extends GSet {
         .forEach(addToStack)
 
       // If it is the specified end hash, break out of the while loop
-      if (entry.cid === endHash) break
+      if (entry.hash === endHash) break
     }
 
     return result
@@ -244,7 +244,7 @@ class Log extends GSet {
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
-    // Get the required amount of cids to next entries (as per current state of the log)
+    // Get the required amount of hashes to next entries (as per current state of the log)
     const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
     const nexts = Object.keys(Object.assign({}, this._headsIndex, references))
 
@@ -264,10 +264,10 @@ class Log extends GSet {
       throw new Error(`Could not append entry, key "${this._identity.id}" is not allowed to write to the log`)
     }
 
-    this._entryIndex[entry.cid] = entry
-    nexts.forEach(e => (this._nextsIndex[e] = entry.cid))
+    this._entryIndex[entry.hash] = entry
+    nexts.forEach(e => (this._nextsIndex[e] = entry.hash))
     this._headsIndex = {}
-    this._headsIndex[entry.cid] = entry
+    this._headsIndex[entry.hash] = entry
     // Update the length
     this._length++
     return entry
@@ -367,7 +367,7 @@ class Log extends GSet {
     const verify = async (entry) => {
       const isValid = await Entry.verify(identityProvider, entry)
       const publicKey = entry.identity ? entry.identity.publicKey : entry.key
-      if (!isValid) throw new Error(`Could not validate signature "${entry.sig}" for entry "${entry.cid}" and key "${publicKey}"`)
+      if (!isValid) throw new Error(`Could not validate signature "${entry.sig}" for entry "${entry.hash}" and key "${publicKey}"`)
     }
 
     const entriesToJoin = Object.values(newItems)
@@ -376,9 +376,9 @@ class Log extends GSet {
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
-      const entry = this.get(e.cid)
+      const entry = this.get(e.hash)
       if (!entry) this._length++ /* istanbul ignore else */
-      e.next.forEach(a => (this._nextsIndex[a] = e.cid))
+      e.next.forEach(a => (this._nextsIndex[a] = e.hash))
     }
     Object.values(newItems).forEach(addToNextsIndex)
 
@@ -386,8 +386,8 @@ class Log extends GSet {
     this._entryIndex = Object.assign(this._entryIndex, newItems)
 
     // Merge the heads
-    const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.cid)
-    const notInCurrentNexts = e => !this._nextsIndex[e.cid]
+    const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.hash)
+    const notInCurrentNexts = e => !this._nextsIndex[e.hash]
     const nextsFromNewItems = Object.values(newItems).map(getNextPointers).reduce(flatMap, [])
     const mergedHeads = Log.findHeads(Object.values(Object.assign({}, this._headsIndex, log._headsIndex)))
       .filter(notReferencedByNewItems)
@@ -421,7 +421,7 @@ class Log extends GSet {
       heads: this.heads
         .sort(this._sortFn) // default sorting
         .reverse() // we want the latest as the first element
-        .map(getCid) // return only the head cids
+        .map(getHash) // return only the head hashes
     }
   }
 
@@ -480,41 +480,39 @@ class Log extends GSet {
       log._entryIndex !== undefined
   }
 
-  /**
-   * Get the log's CID.
-   * @returns {Promise<string>} The Log CID
-   */
-  toCID () {
-    return LogIO.toCID(this._storage, this)
-  }
+  // /**
+  //  * Get the log's hash.
+  //  * @returns {Promise<string>} The Log hash
+  //  */
+  // toCID () {
+  //   return LogIO.toCID(this._storage, this)
+  // }
 
   /**
    * Get the log's multihash.
-   * @returns {Promise<string>} Multihash of the Log as Base58 encoded string
-   * @deprecated
+   * @returns {Promise<string>} Multihash of the Log as Base58 encoded stringx
    */
-  toMultihash () {
-    return LogIO.toMultihash(this._storage, this)
+  toMultihash ({ format } = {}) {
+    return LogIO.toMultihash(this._storage, this, { format })
   }
 
   /**
-   * Create a log from a CID.
+   * Create a log from a hashes.
    * @param {IPFS} ipfs An IPFS instance
    * @param {Identity} identity The identity instance
-   * @param {string} cid The log CID
+   * @param {string} hash The log hash
    * @param {Object} options
    * @param {AccessController} options.access The access controller instance
    * @param {number} options.length How many items to include in the log
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
+   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @returns {Promise<Log>}
-   * @deprecated
    */
-  static async fromCID (ipfs, identity, cid,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
+  static async fromMultihash (ipfs, identity, hash,
+    { access, length = -1, exclude, onProgressCallback, sortFn, format } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromCID(ipfs, cid, { length, exclude, onProgressCallback })
+    const data = await LogIO.fromMultihash(ipfs, hash, { length, exclude, onProgressCallback, format })
     return new Log(ipfs, identity, {
       logId: data.id,
       access: access,
@@ -525,66 +523,44 @@ class Log extends GSet {
     })
   }
 
-  /**
-    * Create a log from a multihash.
-    * @param {IPFS} ipfs An IPFS instance
-    * @param {Identity} identity The identity instance
-    * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-    * @param {Object} options
-    * @param {AccessController} options.access The access controller instance
-    * @param {number} options.length How many items to include in the log
-    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-    * @param {function(cid, entry, parent, depth)} options.onProgressCallback
-    * @param {Function} options.sortFn The sort function - by default LastWriteWins
-    * @returns {Promise<Log>}
-    * @deprecated
-    */
-  static async fromMultihash (ipfs, identity, multihash,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
-    return Log.fromCID(ipfs, identity, multihash,
-      { access, length, exclude, onProgressCallback, sortFn })
-  }
+  // /**
+  //   * Create a log from a multihash.
+  //   * @param {IPFS} ipfs An IPFS instance
+  //   * @param {Identity} identity The identity instance
+  //   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
+  //   * @param {Object} options
+  //   * @param {AccessController} options.access The access controller instance
+  //   * @param {number} options.length How many items to include in the log
+  //   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
+  //   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
+  //   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+  //   * @returns {Promise<Log>}
+  //   */
+  // static async fromMultihash (ipfs, identity, multihash,
+  //   { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
+  //   return Log.fromCID(ipfs, identity, multihash,
+  //     { access, length, exclude, onProgressCallback, sortFn })
+  // }
 
   /**
-   * Create a log from a single entry's CID.
+   * Create a log from a single entry's hash.
    * @param {IPFS} ipfs An IPFS instance
    * @param {Identity} identity The identity instance
-   * @param {string} cid The entry's CID
+   * @param {string} hash The entry's hash
    * @param {Object} options
    * @param {string} options.logId The ID of the log
    * @param {AccessController} options.access The access controller instance
    * @param {number} options.length How many entries to include in the log
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
+   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromEntryCid (ipfs, identity, cid,
+  static async fromEntryHash (ipfs, identity, hash,
     { logId, access, length = -1, exclude, onProgressCallback, sortFn }) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntryCid(ipfs, cid, { length, exclude, onProgressCallback })
+    const data = await LogIO.fromEntryHash(ipfs, hash, { length, exclude, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries: data.values, sortFn })
-  }
-
-  /**
-   * Create a log from a single entry's multihash.
-   * @param {IPFS} ipfs An IPFS instance
-   * @param {Identity} identity The identity instance
-   * @param {string} multihash The entry's multihash
-   * @param {Object} options
-   * @param {string} options.logId The ID of the log
-   * @param {AccessController} options.access The access controller instance
-   * @param {number} options.length How many entries to include in the log
-   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} options.onProgressCallback
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
-   * @return {Promise<Log>} New Log
-   * @deprecated
-   */
-  static async fromEntryHash (ipfs, identity, multihash,
-    { logId, access, length = -1, exclude, onProgressCallback, sortFn }) {
-    return Log.fromEntryCid(ipfs, identity, multihash,
-      { logId, access, length, exclude, onProgressCallback, sortFn })
   }
 
   /**
@@ -596,7 +572,7 @@ class Log extends GSet {
    * @param {AccessController} options.access The access controller instance
    * @param {number} options.length How many entries to include in the log
    * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
-   * @param {function(cid, entry, parent, depth)} [options.onProgressCallback]
+   * @param {function(hash, entry, parent, depth)} [options.onProgressCallback]
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
@@ -616,7 +592,7 @@ class Log extends GSet {
    * @param {AccessController} options.access The access controller instance
    * @param {number} options.length How many entries to include. Default: infinite.
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-   * @param {function(cid, entry, parent, depth)} [options.onProgressCallback]
+   * @param {function(hash, entry, parent, depth)} [options.onProgressCallback]
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
@@ -639,14 +615,14 @@ class Log extends GSet {
    */
   static findHeads (entries) {
     var indexReducer = (res, entry, idx, arr) => {
-      var addToResult = e => (res[e] = entry.cid)
+      var addToResult = e => (res[e] = entry.hash)
       entry.next.forEach(addToResult)
       return res
     }
 
     var items = entries.reduce(indexReducer, {})
 
-    var exists = e => items[e.cid] === undefined
+    var exists = e => items[e.hash] === undefined
     var compareIds = (a, b) => a.clock.id > b.clock.id
 
     return entries.filter(exists).sort(compareIds)
@@ -659,9 +635,9 @@ class Log extends GSet {
     var reverseIndex = {}
     // Null index containing entries that have no parents (nexts)
     var nullIndex = []
-    // CIDs for all entries for quick lookups
-    var cids = {}
-    // CIDs of all next entries
+    // Hashes for all entries for quick lookups
+    var hashes = {}
+    // Hashes of all next entries
     var nexts = []
 
     var addToIndex = (e) => {
@@ -678,36 +654,36 @@ class Log extends GSet {
       e.next.forEach(addToReverseIndex)
       // Get all next references
       nexts = nexts.concat(e.next)
-      // Get the cids of input entries
-      cids[e.cid] = true
+      // Get the hashes of input entries
+      hashes[e.hash] = true
     }
 
     // Create our indices
     entries.forEach(addToIndex)
 
-    var addUniques = (res, entries, idx, arr) => res.concat(findUniques(entries, 'cid'))
-    var exists = e => cids[e] === undefined
+    var addUniques = (res, entries, idx, arr) => res.concat(findUniques(entries, 'hash'))
+    var exists = e => hashes[e] === undefined
     var findFromReverseIndex = e => reverseIndex[e]
 
-    // Drop cids that are not in the input entries
-    const tails = nexts // For every cid in nexts:
+    // Drop hashes that are not in the input entries
+    const tails = nexts // For every hash in nexts:
       .filter(exists) // Remove undefineds and nulls
       .map(findFromReverseIndex) // Get the Entry from the reverse index
       .reduce(addUniques, []) // Flatten the result and take only uniques
       .concat(nullIndex) // Combine with tails the have no next refs (ie. first-in-their-chain)
 
-    return findUniques(tails, 'cid').sort(Entry.compare)
+    return findUniques(tails, 'hash').sort(Entry.compare)
   }
 
-  // Find the cids to entries that are not in a collection
+  // Find the hashes to entries that are not in a collection
   // but referenced by other entries
-  static findTailCids (entries) {
-    var cids = {}
-    var addToIndex = e => (cids[e.cid] = true)
-    var reduceTailCids = (res, entry, idx, arr) => {
+  static findTailHashes (entries) {
+    var hashes = {}
+    var addToIndex = e => (hashes[e.hash] = true)
+    var reduceTailHashes = (res, entry, idx, arr) => {
       var addToResult = (e) => {
         /* istanbul ignore else */
-        if (cids[e] === undefined) {
+        if (hashes[e] === undefined) {
           res.splice(0, 0, e)
         }
       }
@@ -716,7 +692,7 @@ class Log extends GSet {
     }
 
     entries.forEach(addToIndex)
-    return entries.reduce(reduceTailCids, [])
+    return entries.reduce(reduceTailHashes, [])
   }
 
   static difference (a, b) {
@@ -724,19 +700,19 @@ class Log extends GSet {
     let traversed = {}
     let res = {}
 
-    const pushToStack = cid => {
-      if (!traversed[cid] && !b.get(cid)) {
-        stack.push(cid)
-        traversed[cid] = true
+    const pushToStack = hash => {
+      if (!traversed[hash] && !b.get(hash)) {
+        stack.push(hash)
+        traversed[hash] = true
       }
     }
 
     while (stack.length > 0) {
-      const cid = stack.shift()
-      const entry = a.get(cid)
-      if (entry && !b.get(cid) && entry.id === b.id) {
-        res[entry.cid] = entry
-        traversed[entry.cid] = true
+      const hash = stack.shift()
+      const entry = a.get(hash)
+      if (entry && !b.get(hash) && entry.id === b.id) {
+        res[entry.hash] = entry
+        traversed[entry.hash] = true
         entry.next.forEach(pushToStack)
       }
     }
