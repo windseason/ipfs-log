@@ -148,7 +148,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           'helloA1', 'helloB1', 'helloA2', 'helloB2'
         ]
 
-        assert.deepStrictEqual(log1.values.map((e) => e.cid), log2.values.map((e) => e.cid))
+        assert.deepStrictEqual(log1.values.map((e) => e.hash), log2.values.map((e) => e.hash))
         assert.deepStrictEqual(log1.values.map((e) => e.payload), expectedData)
         assert.deepStrictEqual(log2.values.map((e) => e.payload), expectedData)
       })

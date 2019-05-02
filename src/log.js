@@ -480,14 +480,6 @@ class Log extends GSet {
       log._entryIndex !== undefined
   }
 
-  // /**
-  //  * Get the log's hash.
-  //  * @returns {Promise<string>} The Log hash
-  //  */
-  // toCID () {
-  //   return LogIO.toCID(this._storage, this)
-  // }
-
   /**
    * Get the log's multihash.
    * @returns {Promise<string>} Multihash of the Log as Base58 encoded stringx
@@ -522,25 +514,6 @@ class Log extends GSet {
       sortFn: sortFn
     })
   }
-
-  // /**
-  //   * Create a log from a multihash.
-  //   * @param {IPFS} ipfs An IPFS instance
-  //   * @param {Identity} identity The identity instance
-  //   * @param {string} multihash Multihash (as a Base58 encoded string) to create the Log from
-  //   * @param {Object} options
-  //   * @param {AccessController} options.access The access controller instance
-  //   * @param {number} options.length How many items to include in the log
-  //   * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
-  //   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
-  //   * @param {Function} options.sortFn The sort function - by default LastWriteWins
-  //   * @returns {Promise<Log>}
-  //   */
-  // static async fromMultihash (ipfs, identity, multihash,
-  //   { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
-  //   return Log.fromCID(ipfs, identity, multihash,
-  //     { access, length, exclude, onProgressCallback, sortFn })
-  // }
 
   /**
    * Create a log from a single entry's hash.

@@ -120,10 +120,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         for (let i = 1; i <= amount; i++) {
           await input1.append('A' + i)
           await input2.append('B' + i)
-          const cid1 = await input1.toMultihash()
-          const cid2 = await input2.toMultihash()
-          await ipfs1.pubsub.publish(channel, Buffer.from(cid1))
-          await ipfs2.pubsub.publish(channel, Buffer.from(cid2))
+          const hash1 = await input1.toMultihash()
+          const hash2 = await input2.toMultihash()
+          await ipfs1.pubsub.publish(channel, Buffer.from(hash1))
+          await ipfs2.pubsub.publish(channel, Buffer.from(hash2))
         }
 
         console.log('\nAll messages sent')
