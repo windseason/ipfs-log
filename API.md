@@ -17,10 +17,8 @@ Create a log. Each log gets a unique ID, which can be passed in the `options` as
 ```javascript
 const IdentityProvider = require('orbit-db-identity-provider')
 const identity = await IdentityProvider.createIdentity({ id: 'peerid' })
-const { AccessController } = Log
-const access = new AccessController()
 const ipfs = new IPFS()
-const log = new Log(ipfs, identity, { logId: 'logid', access: access })
+const log = new Log(ipfs, identity, { logId: 'logid' })
 
 console.log(log.id)
 // 'logId'
@@ -86,7 +84,7 @@ await log.append({ some: 'data' })
 await log.append('text'))
 console.log(log.values)
 // [
-// { cid: 'zdpuArZdzymC6zRTMGd5xw4Dw2Q2VCYjuaHAekTSyXS1GmSKs',
+// { hash: 'zdpuArZdzymC6zRTMGd5xw4Dw2Q2VCYjuaHAekTSyXS1GmSKs',
 //     id: 'logId',
 //     payload: { some: 'data' },
 //     next: [],
@@ -100,7 +98,7 @@ console.log(log.values)
 //      '04d1b23b1efe6c4d91cd639caf443528b88358369fa552fe8dd9cda17d6c77c42969c688ec0d201e3f8a128334a3b0806ece694b55892b036c0781ce18d35a374b',
 //     identity: ...
 //   },
-//   { cid: 'zdpuAuDmVuEfgcUja7SCuNuqkiLCPXVutFTkSE8k8b9oLCVcR',
+//   { hash: 'zdpuAuDmVuEfgcUja7SCuNuqkiLCPXVutFTkSE8k8b9oLCVcR',
 //     id: 'logId',
 //     payload: 'text',
 //     next: [ 'zdpuArZdzymC6zRTMGd5xw4Dw2Q2VCYjuaHAekTSyXS1GmSKs' ],
@@ -130,30 +128,24 @@ log1.join(log2)
 // ['A', 'B', 'C', 'D', 'E']
 ```
 
-### toCID()
-
-Returns the cid of the log.
-
-Converting the log to a cid will persist the contents of `log.toJSON` to IPFS, thus causing side effects.
-
-```javascript
-log1.toCID()
-  .then(cid => console.log(cid))
-
-// zdpuAxkRPEwk9LZjdPuEH7TEPCjFeWfqNj1xQM7Z2yj2hGuvp
-```
-
-### toMultihash()
+### toMultihash({ format })
 
 Returns the multihash of the log.
 
 Converting the log to a multihash will persist the contents of `log.toJSON` to IPFS, thus causing side effects.
 
+You can specify the `format` with which to write the content to IPFS. By default `dag-cbor` is used, returning a [CIDv1](https://github.com/multiformats/cid#how-does-it-work) string. To return a  CIDv0 string, set `format` to `dag-pb`.
+
 ```javascript
 log1.toMultihash()
   .then(hash => console.log(hash))
 
-// QmSUrxz12UDsuuQMjzBQ4NDGyYprhFJbQefgeRiomQ5j6T
+// zdpuAsfLFPAYJ41C2bZYZCKZxGkYUD9Wt7mcXHWcR19Jjko9B
+
+log1.toMultihash({format: 'dag-pb' })
+  .then(hash => console.log(hash))
+
+// QmR8rV2Ph2yUaw7eW7e86TZF4XDjb13QbPAN83YEpYHxiw
 ```
 
 ### toBuffer()
@@ -194,20 +186,14 @@ Create a `Log` from an `Entry`.
 
 Creating a log from an entry will retrieve entries from IPFS, thus causing side effects.
 
-#### Log.fromEntryCid(ipfs, identity, cid, [{ logId, length=-1, access, exclude, onProgressCallback, sortFn }])
+#### Log.fromEntryHash(ipfs, identity, hash, [{ logId, length=-1, access, exclude, onProgressCallback, sortFn }])
 
-Create a `Log` from a cid of an `Entry`
+Create a `Log` from a hash of an `Entry`
 
-Creating a log from a cid will retrieve entries from IPFS, thus causing side effects.
+Creating a log from a hash will retrieve entries from IPFS, thus causing side effects.
 
-#### Log.fromCID(ipfs, identity, cid, [{ access, length=-1, exclude, onProgressCallback, sortFn }])
+#### Log.fromMultihash(ipfs, identity, hash, [{ access, length=-1, exclude, onProgressCallback, sortFn }])
 
-Create a `Log` from a cid.
+Create a `Log` from a hash.
 
-Creating a log from a cid will retrieve entries from IPFS, thus causing side effects.
-
-#### Log.fromMultihash(ipfs, identity, multihash, [{ access, length=-1, exclude, onProgressCallback, sortFn }])
-
-Create a `Log` from a multihash.
-
-Creating a log from a multihash will retrieve entries from IPFS, thus causing side effects.
+Creating a log from a hash will retrieve entries from IPFS, thus causing side effects.

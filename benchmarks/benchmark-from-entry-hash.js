@@ -97,7 +97,7 @@ let run = (() => {
 
     const m1 = process.memoryUsage()
 
-    await Log.fromEntryCid(ipfs, log._identity, log.heads.map(e => e.cid), {
+    await Log.fromEntryHash(ipfs, log._identity, log.heads.map(e => e.hash), {
       logId: log._id,
       length: -1,
       exclude: [],
