@@ -18,6 +18,12 @@ const runOne = async (benchmark) => {
     count: 0
   }
 
+  if (global.gc) {
+    global.gc()
+  } else {
+    console.warn('start with --expose-gc')
+  }
+
   let memory = {
     before: process.memoryUsage()
   }
