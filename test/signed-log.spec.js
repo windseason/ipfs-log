@@ -5,6 +5,7 @@ const rmrf = require('rimraf')
 const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
 
 // Test utils
 const {
@@ -12,7 +13,7 @@ const {
   testAPIs,
   startIpfs,
   stopIpfs
-} = require('./utils')
+} = require('orbit-db-test-utils')
 
 let ipfs, testIdentity, testIdentity2
 
@@ -25,14 +26,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-log-signed' + new Date().getTime()
     })
 
+    let keystore, signingKeystore
+
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
+
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -41,6 +48,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
+      await keystore.close()
+      await signingKeystore.close()
     })
 
     it('creates a signed log', () => {

@@ -12,7 +12,7 @@ const {
   testAPIs,
   startIpfs,
   stopIpfs
-} = require('./utils')
+} = require('orbit-db-test-utils')
 
 let ipfs, testIdentity
 
@@ -37,6 +37,7 @@ Object.keys(testAPIs).forEach(IPFS => {
 
     after(async () => {
       await stopIpfs(ipfs)
+      await testIdentity.provider.keystore.close()
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)

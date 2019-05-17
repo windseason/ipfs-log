@@ -5,6 +5,7 @@ const rmrf = require('rimraf')
 const fs = require('fs-extra')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
 
 // Test utils
 const {
@@ -14,8 +15,9 @@ const {
   stopIpfs,
   getIpfsPeerId,
   waitForPeers,
-  MemStore
-} = require('./utils')
+  MemStore,
+  connectPeers
+} = require('orbit-db-test-utils')
 
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('ipfs-log - Replication (' + IPFS + ')', function () {
@@ -31,6 +33,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.daemon2.repo + new Date().getTime()
     })
 
+    let keystore, signingKeystore
+
     before(async () => {
       rmrf.sync(ipfsConfig1.repo)
       rmrf.sync(ipfsConfig2.repo)
@@ -44,6 +48,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       ipfs1 = await startIpfs(IPFS, ipfsConfig1)
       ipfs2 = await startIpfs(IPFS, ipfsConfig2)
 
+      await connectPeers(ipfs1, ipfs2)
+
       // Get the peer IDs
       id1 = await getIpfsPeerId(ipfs1)
       id2 = await getIpfsPeerId(ipfs2)
@@ -55,9 +61,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
       ipfs2.dag.put = memstore.put.bind(memstore)
       ipfs2.dag.get = memstore.get.bind(memstore)
 
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+
       // Create an identity for each peers
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
     })
 
     after(async () => {
@@ -67,6 +76,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(ipfsConfig2.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
+
+      await keystore.close()
+      await signingKeystore.close()
     })
 
     describe('replicates logs deterministically', function () {

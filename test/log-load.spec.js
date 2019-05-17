@@ -3,12 +3,13 @@
 const assert = require('assert')
 const rmrf = require('rimraf')
 const fs = require('fs-extra')
-const LogCreator = require('./utils/log-creator')
 const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
+const LogCreator = require('./utils/log-creator')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
 const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
@@ -21,7 +22,7 @@ const {
   testAPIs,
   startIpfs,
   stopIpfs
-} = require('./utils')
+} = require('orbit-db-test-utils')
 
 let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
 
@@ -45,16 +46,22 @@ Object.keys(testAPIs).forEach((IPFS) => {
       'entryA3', 'entryA4', 'entryA5', 'entryC0'
     ]
 
+    let keystore, signingKeystore
+
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userC', identityKeysPath, signingKeysPath })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', identityKeysPath, signingKeysPath })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userD', identityKeysPath, signingKeysPath })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
+      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
+      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userD', keystore, signingKeystore })
+      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
 
       const memstore = new MemStore()
@@ -67,6 +74,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
+
+      await keystore.close()
+      await signingKeystore.close()
     })
 
     describe('fromJSON', () => {
@@ -77,7 +87,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
         let json = fixture.json
 
@@ -91,7 +101,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry with custom tiebreaker', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
         let json = fixture.json
 
@@ -114,7 +124,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry hash', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
         let json = fixture.json
 
@@ -131,7 +141,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry hash with custom tiebreaker', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
         let json = fixture.json
         let log1 = await Log.fromEntryHash(ipfs, testIdentity, json.heads[0],
@@ -155,7 +165,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
 
         let log = await Log.fromEntry(ipfs, testIdentity, data.heads, { length: -1 })
@@ -165,7 +175,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a log from an entry with custom tiebreaker', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
 
         let log = await Log.fromEntry(ipfs, testIdentity, data.heads,
@@ -176,7 +186,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('keeps the original heads', async () => {
-        let fixture = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let data = fixture.log
 
         let log1 = await Log.fromEntry(ipfs, testIdentity, data.heads,
@@ -540,7 +550,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('sorts', async () => {
-        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let testLog = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let log = testLog.log
         const expectedData = testLog.expectedData
 
@@ -589,7 +599,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('sorts deterministically from random order', async () => {
-        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let testLog = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let log = testLog.log
         const expectedData = testLog.expectedData
 
@@ -605,14 +615,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('sorts entries correctly', async () => {
-        let testLog = await LogCreator.createLogWithTwoHundredEntries(ipfs, identities)
+        let testLog = await LogCreator.createLogWithTwoHundredEntries(Log, ipfs, identities)
         let log = testLog.log
         const expectedData = testLog.expectedData
         assert.deepStrictEqual(log.values.map(e => e.payload), expectedData)
       })
 
       it('sorts entries according to custom tiebreaker function', async () => {
-        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let testLog = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
 
         let firstWriteWinsLog =
           new Log(ipfs, identities[0], { logId: 'X', sortFn: FirstWriteWins })
@@ -622,7 +632,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('throws an error if the tiebreaker returns zero', async () => {
-        let testLog = await LogCreator.createLogWithSixteenEntries(ipfs, identities)
+        let testLog = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
         let firstWriteWinsLog =
           new Log(ipfs, identities[0], { logId: 'X', sortFn: BadComparatorReturnsZero })
         await firstWriteWinsLog.join(testLog.log)
