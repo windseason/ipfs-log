@@ -5,6 +5,7 @@ const args = require('yargs').argv
 const BASELINE_GREP = /[\d\w-]*-baseline/
 const DEFAULT_GREP = /.*/
 const grep = args.grep ? new RegExp(args.grep) : DEFAULT_GREP
+const STRESS_LIMIT = args.stressLimit || 300
 
 const benchmarks = require('./benchmarks')
 const report = require('./report')
@@ -33,8 +34,11 @@ const runOne = async (benchmark) => {
 
   process.stdout.clearLine()
   const startTime = process.hrtime() // eventually convert to hrtime.bigint
-  while (benchmark.while(stats, startTime)) {
-    process.stdout.write(`\r${benchmark.name} / Cycles: ${stats.count}`)
+  while (benchmark.while(stats, startTime, STRESS_LIMIT)) {
+    const elapsed = getElapsed(process.hrtime(startTime))
+    const totalSeconds = (elapsed / 1000000000).toFixed(4)
+    const opsPerSec = (stats.count / totalSeconds).toFixed(4)
+    process.stdout.write(`\r${benchmark.name} / Cycles: ${stats.count} (${opsPerSec.toString()} ops/sec)`)
     await benchmark.cycle(params)
     stats.count++
   }

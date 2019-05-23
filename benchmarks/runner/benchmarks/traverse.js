@@ -30,8 +30,8 @@ const baseline = {
 }
 
 const stress = {
-  while: (stats, startTime) => {
-    return process.hrtime(startTime)[0] < 300
+  while: (stats, startTime, limit) => {
+    return process.hrtime(startTime)[0] < limit
   }
 }
 
