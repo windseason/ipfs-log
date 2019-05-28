@@ -42,6 +42,11 @@ const argv = yargs
       description: '<Int> benchmark cycle limit for baseline benchmarks (Default: 1000)',
       requiresArg: true,
       required: false
+    },
+    logLimit: {
+      description: '<Int> max log size used for baseline benchmarks (inclusive) (Default: 10000)',
+      requiresArg: true,
+      required: false
     }
   })
   .example('$0 -r -g append-baseline', 'Run a single benchmark (append-baseline)')
@@ -53,6 +58,7 @@ const DEFAULT_GREP = /.*/
 const grep = argv.grep ? new RegExp(argv.grep) : DEFAULT_GREP
 const stressLimit = argv.stressLimit || 300
 const baselineLimit = argv.baselineLimit || 1000
+const logLimit = argv.logLimit || 10000
 
 const benchmarks = require('./benchmarks')
 const report = require('./report')
@@ -131,6 +137,11 @@ const start = async () => {
       if (!grep.test(benchmark.name)) {
         continue
       }
+
+      if (benchmark.count && benchmark.count > logLimit) {
+        continue
+      }
+
       const result = await runOne(benchmark)
       results.push(result)
     }
