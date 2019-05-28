@@ -24,14 +24,14 @@ const base = {
 }
 
 const baseline = {
-  while: (stats, startTime) => {
-    return stats.count < 1000
+  while: ({ stats, startTime, baselineLimit }) => {
+    return stats.count < baselineLimit
   }
 }
 
 const stress = {
-  while: (stats, startTime, limit) => {
-    return process.hrtime(startTime)[0] < limit
+  while: ({ stats, startTime, stressLimit }) => {
+    return process.hrtime(startTime)[0] < stressLimit
   }
 }
 

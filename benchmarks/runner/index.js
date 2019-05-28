@@ -15,7 +15,7 @@ const argv = yargs
     },
     report: {
       alias: 'r',
-      description: 'Output report',
+      description: 'Output report (Default: false)',
       requiresArg: false,
       boolean: true,
       required: false
@@ -29,12 +29,17 @@ const argv = yargs
     },
     grep: {
       alias: 'g',
-      description: '<regexp> Regular expression used to match benchmarks',
+      description: '<regexp> Regular expression used to match benchmarks (Default: /.*/)',
       requiresArg: true,
       required: false
     },
     stressLimit: {
-      description: '<Int or Infinity> seconds to run a stress benchmark',
+      description: '<Int or Infinity> seconds to run a stress benchmark (Default: 300)',
+      requiresArg: true,
+      required: false
+    },
+    baselineLimit: {
+      description: '<Int> benchmark cycle limit for baseline benchmarks (Default: 1000)',
       requiresArg: true,
       required: false
     }
@@ -46,13 +51,15 @@ const argv = yargs
 const BASELINE_GREP = /[\d\w-]*-baseline/
 const DEFAULT_GREP = /.*/
 const grep = argv.grep ? new RegExp(argv.grep) : DEFAULT_GREP
-const STRESS_LIMIT = argv.stressLimit || 300
+const stressLimit = argv.stressLimit || 300
+const baselineLimit = argv.baselineLimit || 1000
 
 const benchmarks = require('./benchmarks')
 const report = require('./report')
 
 if (argv.list) {
-  return benchmarks.forEach(b => console.log(b.name))
+  benchmarks.forEach(b => console.log(b.name))
+  process.exit()
 }
 
 const getElapsed = (time) => {
@@ -77,7 +84,7 @@ const runOne = async (benchmark) => {
 
   process.stdout.clearLine()
   const startTime = process.hrtime() // eventually convert to hrtime.bigint
-  while (benchmark.while(stats, startTime, STRESS_LIMIT)) {
+  while (benchmark.while({ stats, startTime, stressLimit, baselineLimit })) {
     const elapsed = getElapsed(process.hrtime(startTime))
     const totalSeconds = (elapsed / 1000000000).toFixed(4)
     const opsPerSec = (stats.count / totalSeconds).toFixed(4)
