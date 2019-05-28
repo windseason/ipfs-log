@@ -1,5 +1,6 @@
 /* global process */
 const os = require('os')
+const fs = require('fs')
 const yargs = require('yargs')
 const argv = yargs
   .usage('IPFS Log benchmark runner\n\nUsage: node --expose-gc $0 [options]')
@@ -70,6 +71,20 @@ if (argv.list) {
 
 const getElapsed = (time) => {
   return +time[0] * 1e9 + +time[1]
+}
+
+const rimraf = (path) => {
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach((file, index) => {
+      const curPath = `${path}/${file}`
+      if (fs.lstatSync(curPath).isDirectory()) {
+        rimraf(curPath)
+      } else {
+        fs.unlinkSync(curPath)
+      }
+    })
+    fs.rmdirSync(path)
+  }
 }
 
 const runOne = async (benchmark) => {
@@ -159,7 +174,7 @@ const start = async () => {
   }
 
   // TODO: compare/delta to cached version
-  // TODO: cleanup ipfs-log-benchmarks
+  rimraf('./ipfs-log-benchmarks')
 }
 
 start()
