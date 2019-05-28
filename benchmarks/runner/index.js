@@ -1,14 +1,59 @@
 /* global process */
 const os = require('os')
-const args = require('yargs').argv
+const yargs = require('yargs')
+const argv = yargs
+  .usage('IPFS Log benchmark runner\n\nUsage: node --expose-gc $0 [options]')
+  .version(false)
+  .help('help').alias('help', 'h')
+  .options({
+    baseline: {
+      alias: 'b',
+      description: 'Run baseline benchmarks only',
+      boolean: true,
+      requiresArg: false,
+      required: false
+    },
+    report: {
+      alias: 'r',
+      description: 'Output report',
+      requiresArg: false,
+      boolean: true,
+      required: false
+    },
+    list: {
+      alias: 'l',
+      description: 'List all benchmarks',
+      requiresArg: false,
+      required: false,
+      boolean: true
+    },
+    grep: {
+      alias: 'g',
+      description: '<regexp> Regular expression used to match benchmarks',
+      requiresArg: true,
+      required: false
+    },
+    stressLimit: {
+      description: '<Int or Infinity> seconds to run a stress benchmark',
+      requiresArg: true,
+      required: false
+    }
+  })
+  .example('$0 -r -g append-baseline', 'Run a single benchmark (append-baseline)')
+  .example('$0 -r -g values-.*-baseline', 'Run all of the values baseline benchmarks')
+  .argv
 
 const BASELINE_GREP = /[\d\w-]*-baseline/
 const DEFAULT_GREP = /.*/
-const grep = args.grep ? new RegExp(args.grep) : DEFAULT_GREP
-const STRESS_LIMIT = args.stressLimit || 300
+const grep = argv.grep ? new RegExp(argv.grep) : DEFAULT_GREP
+const STRESS_LIMIT = argv.stressLimit || 300
 
 const benchmarks = require('./benchmarks')
 const report = require('./report')
+
+if (argv.list) {
+  return benchmarks.forEach(b => console.log(b.name))
+}
 
 const getElapsed = (time) => {
   return +time[0] * 1e9 + +time[1]
@@ -21,8 +66,6 @@ const runOne = async (benchmark) => {
 
   if (global.gc) {
     global.gc()
-  } else {
-    console.warn('start with --expose-gc')
   }
 
   let memory = {
@@ -62,11 +105,15 @@ const runOne = async (benchmark) => {
 
 const start = async () => {
   let results = []
-  const baselineOnly = args.b || args.baseline
+  const baselineOnly = argv.baseline
   const runnerStartTime = process.hrtime()
 
   process.stdout.write(`Running ${baselineOnly ? 'baseline ' : ''}benchmarks matching: ${grep}`)
   process.stdout.write('\n')
+
+  if (!global.gc) {
+    console.warn('start with --expose-gc')
+  }
 
   try {
     for (const benchmark of benchmarks) {
@@ -86,7 +133,7 @@ const start = async () => {
     output += ` in ${(runnerElapsed / 1000000000).toFixed(2)} seconds`
     process.stdout.write(output)
 
-    if (args.r || args.report) {
+    if (argv.report) {
       report(results)
     }
   } catch (e) {
@@ -94,6 +141,7 @@ const start = async () => {
   }
 
   // TODO: compare/delta to cached version
+  // TODO: cleanup ipfs-log-benchmarks
 }
 
 start()
