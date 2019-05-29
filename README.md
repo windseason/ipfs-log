@@ -46,6 +46,7 @@ The module works in **Node.js** and **Browsers**.
 - [Usage](#usage)
 - [API](#api)
 - [Tests](#tests)
+- [Benchmarking](#benchmarking)
 - [Build](#build)
 - [Contribute](#contribute)
 - [License](#license)
@@ -163,6 +164,16 @@ Run tests with go-ipfs only:
 ```
 TEST=go mocha
 ```
+
+## Benchmarking
+
+To use the benchmark runner:
+
+```JavaScript
+node --expose-gc benchmarks/runner/index.js -r --grep append-stress --stress-limit Infinity
+```
+
+This will run the `append-stress` benchmarks until it is canceled. For more information, see the [Benchmarking README](./benchmarks/README.md).
 
 ## Build
 
