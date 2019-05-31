@@ -3,13 +3,11 @@
 const assert = require('assert')
 const rmrf = require('rimraf')
 const dagPB = require('ipld-dag-pb')
-const pify = require('pify')
 const Clock = require('../src/lamport-clock')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 const fs = require('fs-extra')
-const createPbDagNode = pify(dagPB.DAGNode.create)
 
 // For tiebreaker testing
 const { LastWriteWins } = require('../src/log-sorting')
@@ -310,7 +308,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           const hash = await log.toMultihash()
           assert.strictEqual(hash, expectedCid)
           const result = await ipfs.dag.get(hash)
-          const heads = result.value.heads.map(head => head.toBaseEncodedString())
+          const heads = result.value.heads.map(head => head.toBaseEncodedString('base58btc'))
           assert.deepStrictEqual(heads, expectedData.heads)
         })
 
@@ -502,7 +500,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error if data from hash is not valid JSON', async () => {
-          const dagNode = await createPbDagNode(Buffer.from('hello'))
+          const dagNode = dagPB.DAGNode.create(Buffer.from('hello'))
           let cid = await ipfs.dag.put(dagNode, {
             hashAlg: 'sha2-256',
             format: 'dag-pb'

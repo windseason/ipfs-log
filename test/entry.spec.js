@@ -1,7 +1,6 @@
 'use strict'
 
 const assert = require('assert')
-const sinon = require('sinon')
 const rmrf = require('rimraf')
 const fs = require('fs-extra')
 const Entry = require('../src/entry')
@@ -88,13 +87,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(entry2.clock.time, 1)
       })
 
-      it('should return an entry interopable with older versions', async () => {
-        const expectedHash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
-        const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
-        assert.strictEqual(entry.hash, entry.hash)
-        assert.strictEqual(entry.hash, expectedHash)
-      })
-
       it('`next` parameter can be an array of strings', async () => {
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', 'hello1', [])
         const entry2 = await Entry.create(ipfs, testIdentity, 'A', 'hello2', [entry1.hash])
@@ -161,53 +153,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
           err = e
         }
         assert.strictEqual(err.message, '\'next\' argument is not an array')
-      })
-    })
-
-    describe('toMultihash', () => {
-      it('returns an ipfs hash', async () => {
-        const expectedHash = 'zdpuArzxF8fqM5E1zE9TgENc6fHqPXBgMKexM4SfoworsKYnt'
-        const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
-        const hash = await Entry.toMultihash(ipfs, entry)
-        assert.strictEqual(entry.hash, expectedHash)
-        assert.strictEqual(hash, expectedHash)
-      })
-
-      it('returns the correct ipfs hash (multihash) for a v0 entry', async () => {
-        const expectedMultihash = 'QmV5NpvViHHouBfo7CSnfX2iB4t5PVWNJG8doKt5cwwnxY'
-        const entry = v0Entries.hello
-        const multihash = await Entry.toMultihash(ipfs, entry)
-        assert.strictEqual(multihash, expectedMultihash)
-      })
-
-      it('throws an error if ipfs is not defined', async () => {
-        let err
-        try {
-          await Entry.toMultihash()
-        } catch (e) {
-          err = e
-        }
-        assert.strictEqual(err.message, 'Ipfs instance not defined')
-      })
-
-      it('throws an error if the object being passed is invalid', async () => {
-        let err1, err2
-        try {
-          await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
-        } catch (e) {
-          err1 = e
-        }
-
-        assert.strictEqual(err1.message, 'Invalid object format, cannot generate entry hash')
-
-        try {
-          const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
-          delete entry.clock
-          await Entry.toMultihash(ipfs, entry)
-        } catch (e) {
-          err2 = e
-        }
-        assert.strictEqual(err2.message, 'Invalid object format, cannot generate entry hash')
       })
     })
 
@@ -322,26 +267,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
           err = e
         }
         assert.strictEqual(err.message, 'Invalid hash: undefined')
-      })
-    })
-
-    describe('fromMultihash', () => {
-      afterEach(() => {
-        if (Entry.fromMultihash.restore) {
-          Entry.fromMultihash.restore()
-        }
-      })
-
-      it('call fromMultihash', async () => {
-        const spy = sinon.spy(Entry, 'fromMultihash')
-
-        const expectedHash = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
-        await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
-        const entry2Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
-        const final = await Entry.fromMultihash(ipfs, entry2Hash)
-
-        assert(spy.calledOnceWith(ipfs, entry2Hash))
-        assert.strictEqual(final.hash, expectedHash)
       })
     })
 
