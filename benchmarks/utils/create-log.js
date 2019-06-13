@@ -1,7 +1,7 @@
 const Keystore = require('orbit-db-keystore')
 const IdentityProvider = require('orbit-db-identity-provider')
 
-const Log = require('../../../../src/log')
+const Log = require('../../src/log')
 const AccessController = Log.AccessController
 
 const createLog = async (ipfs, logId) => {

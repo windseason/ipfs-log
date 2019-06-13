@@ -8,3 +8,4 @@ test/keystore/
 test-keys/
 test/browser/bundle.js
 test/browser/bundle.js.map
+ipfs-log-benchmarks
