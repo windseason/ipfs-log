@@ -9,7 +9,7 @@ const Clock = require('./lamport-clock')
 const { LastWriteWins, NoZeroes } = require('./log-sorting')
 const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
-
+const EntryIndex = require('./entry-index')
 const randomId = () => new Date().getTime().toString()
 const getHash = e => e.hash
 const flatMap = (res, acc) => res.concat(acc)
@@ -83,7 +83,7 @@ class Log extends GSet {
 
     // Add entries to the internal cache
     entries = entries || []
-    this._entryIndex = entries.reduce(uniqueEntriesReducer, {})
+    this._entryIndex = new EntryIndex(entries.reduce(uniqueEntriesReducer, {}))
 
     // Set heads if not passed as an argument
     heads = heads || Log.findHeads(entries)
@@ -169,7 +169,7 @@ class Log extends GSet {
    * @returns {Entry|undefined}
    */
   get (hash) {
-    return this._entryIndex[hash]
+    return this._entryIndex.get(hash)
   }
 
   /**
@@ -178,7 +178,7 @@ class Log extends GSet {
    * @returns {boolean}
    */
   has (entry) {
-    return this._entryIndex[entry.hash || entry] !== undefined
+    return this._entryIndex.get(entry.hash || entry) !== undefined
   }
 
   traverse (rootEntries, amount = -1, endHash) {
@@ -264,7 +264,7 @@ class Log extends GSet {
       throw new Error(`Could not append entry, key "${this._identity.id}" is not allowed to write to the log`)
     }
 
-    this._entryIndex[entry.hash] = entry
+    this._entryIndex.set(entry.hash, entry)
     nexts.forEach(e => (this._nextsIndex[e] = entry.hash))
     this._headsIndex = {}
     this._headsIndex[entry.hash] = entry
@@ -383,7 +383,7 @@ class Log extends GSet {
     Object.values(newItems).forEach(addToNextsIndex)
 
     // Update the internal entry index
-    this._entryIndex = Object.assign(this._entryIndex, newItems)
+    this._entryIndex.add(newItems)
 
     // Merge the heads
     const notReferencedByNewItems = e => !nextsFromNewItems.find(a => a === e.hash)
@@ -400,9 +400,10 @@ class Log extends GSet {
     if (size > -1) {
       let tmp = this.values
       tmp = tmp.slice(-size)
-      this._entryIndex = tmp.reduce(uniqueEntriesReducer, {})
+      this._entryIndex = null
+      this._entryIndex = new EntryIndex(tmp.reduce(uniqueEntriesReducer, {}))
       this._headsIndex = Log.findHeads(tmp).reduce(uniqueEntriesReducer, {})
-      this._length = Object.values(this._entryIndex).length
+      this._length = this._entryIndex.length
     }
 
     // Find the latest clock from the heads
