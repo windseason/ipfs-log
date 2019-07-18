@@ -528,12 +528,13 @@ class Log extends GSet {
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {number} options.timeout Timeout for fetching a log entry from IPFS
    * @return {Promise<Log>} New Log
    */
   static async fromEntryHash (ipfs, identity, hash,
-    { logId, access, length = -1, exclude, onProgressCallback, sortFn }) {
+    { logId, access, length = -1, exclude, onProgressCallback, sortFn, timeout }) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntryHash(ipfs, hash, { length, exclude, onProgressCallback })
+    const data = await LogIO.fromEntryHash(ipfs, hash, { length, exclude, onProgressCallback, timeout })
     return new Log(ipfs, identity, { logId, access, entries: data.values, sortFn })
   }
 
