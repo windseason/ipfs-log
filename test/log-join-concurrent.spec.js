@@ -63,6 +63,37 @@ Object.keys(testAPIs).forEach(IPFS => {
         let hash2 = await log2.toMultihash()
 
         assert.strictEqual(hash1, hash2)
+        assert.strictEqual(log1.length, 20)
+        assert.deepStrictEqual(log1.values.map(e => e.payload), log2.values.map(e => e.payload))
+      })
+
+      it('Concurrently appending same payload after join results in same state', async () => {
+        for (let i = 10; i < 20; i++) {
+          await log1.append('hello1-' + i)
+          await log2.append('hello2-' + i)
+        }
+
+        await log1.join(log2)
+        await log2.join(log1)
+
+        await log1.append('same')
+        await log2.append('same')
+
+        let hash1 = await log1.toMultihash()
+        let hash2 = await log2.toMultihash()
+
+        assert.strictEqual(hash1, hash2)
+        assert.strictEqual(log1.length, 41)
+        assert.strictEqual(log2.length, 41)
+        assert.deepStrictEqual(log1.values.map(e => e.payload), log2.values.map(e => e.payload))
+      })
+
+      it('Joining after concurrently appending same payload joins entry once', async () => {
+        await log1.join(log2)
+        await log2.join(log1)
+
+        assert.strictEqual(log1.length, log2.length)
+        assert.strictEqual(log1.length, 41)
         assert.deepStrictEqual(log1.values.map(e => e.payload), log2.values.map(e => e.payload))
       })
     })
