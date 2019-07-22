@@ -6,7 +6,8 @@ const Entry = require('./entry')
 const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
-const { LastWriteWins, NoZeroes } = require('./log-sorting')
+const Sorting = require('./log-sorting')
+const { LastWriteWins, NoZeroes } = Sorting
 const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
 const EntryIndex = require('./entry-index')
@@ -221,7 +222,6 @@ class Log extends GSet {
       // Add to the result
       count++
       result[entry.hash] = entry
-
       // Add entry's next references to the stack
       entry.next.map(getEntry)
         .filter(isDefined)
@@ -246,8 +246,9 @@ class Log extends GSet {
 
     // Get the required amount of hashes to next entries (as per current state of the log)
     const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
-    const nexts = Object.keys(Object.assign({}, this._headsIndex, references))
 
+    const sortedHeadIndex = this.heads.reverse().reduce(uniqueEntriesReducer, {})
+    const nexts = Object.keys(Object.assign({}, sortedHeadIndex, references))
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
     const entry = await Entry.create(
@@ -696,4 +697,5 @@ class Log extends GSet {
 }
 
 module.exports = Log
+module.exports.Sorting = Sorting
 module.exports.AccessController = AccessController
