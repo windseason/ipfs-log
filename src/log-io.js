@@ -36,7 +36,7 @@ class LogIO {
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    */
-  static async fromMultihash (ipfs, hash, { length = -1, exclude, onProgressCallback } = {}) {
+  static async fromMultihash (ipfs, hash, { length = -1, exclude, onProgressCallback, timeout } = {}) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(hash)) throw new Error(`Invalid hash: ${hash}`)
 
@@ -44,7 +44,7 @@ class LogIO {
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
 
     const entries = await EntryIO.fetchAll(ipfs, logData.heads,
-      { length, exclude, onProgressCallback })
+      { length, exclude, onProgressCallback, timeout })
 
     // Find latest clock
     const clock = entries.reduce((clock, entry) => {
@@ -124,7 +124,7 @@ class LogIO {
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    */
-  static async fromEntry (ipfs, sourceEntries, { length = -1, exclude, onProgressCallback }) {
+  static async fromEntry (ipfs, sourceEntries, { length = -1, exclude, onProgressCallback, timeout }) {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(sourceEntries)) throw new Error("'sourceEntries' must be defined")
 
@@ -145,7 +145,7 @@ class LogIO {
 
     // Fetch the entries
     const entries = await EntryIO.fetchParallel(ipfs, hashes,
-      { length, exclude, onProgressCallback })
+      { length, exclude, onProgressCallback, timeout })
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)
