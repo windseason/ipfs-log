@@ -503,9 +503,9 @@ class Log extends GSet {
    * @returns {Promise<Log>}
    */
   static async fromMultihash (ipfs, identity, hash,
-    { access, length = -1, exclude, onProgressCallback, sortFn, format } = {}) {
+    { access, length = -1, exclude, onProgressCallback, sortFn, timeout, format } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromMultihash(ipfs, hash, { length, exclude, onProgressCallback, format })
+    const data = await LogIO.fromMultihash(ipfs, hash, { length, exclude, onProgressCallback, timeout, format })
     return new Log(ipfs, identity, {
       logId: data.id,
       access: access,
@@ -572,10 +572,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromEntry (ipfs, identity, sourceEntries,
-    { access, length = -1, exclude, onProgressCallback, sortFn } = {}) {
+    { access, length = -1, exclude, onProgressCallback, timeout, sortFn } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntry(ipfs, sourceEntries,
-      { length, exclude, onProgressCallback })
+      { length, exclude, onProgressCallback, timeout })
     return new Log(ipfs, identity, { logId: data.id, access, entries: data.values, sortFn })
   }
 
