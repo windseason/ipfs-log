@@ -72,8 +72,9 @@ class LogIO {
    * @param {number} options.length How many items to include in the log
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
+   * @param {number} options.timeout Timeout for fetching a log entry from IPFS
    */
-  static async fromEntryHash (ipfs, hash, { length = -1, exclude, onProgressCallback }) {
+  static async fromEntryHash (ipfs, hash, { length = -1, exclude, onProgressCallback, timeout }) {
     if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
     if (!isDefined(hash)) throw new Error("'hash' must be defined")
     // Convert input hash(s) to an array
@@ -82,7 +83,7 @@ class LogIO {
     length = length > -1 ? Math.max(length, 1) : length
 
     const entries = await EntryIO.fetchParallel(ipfs, hashes,
-      { length, exclude, onProgressCallback })
+      { length, exclude, onProgressCallback, timeout })
     // Cap the result at the right size by taking the last n entries,
     // or if given length is -1, then take all
     const sliced = length > -1 ? last(entries, length) : entries
