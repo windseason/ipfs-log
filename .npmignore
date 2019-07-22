@@ -10,3 +10,5 @@ ipfs
 webpack.config.js
 webpack.example.config.js
 webpack.tests.config.js
+dist/ipfslog.min.js.map
+
