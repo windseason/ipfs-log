@@ -165,6 +165,17 @@ class Log extends GSet {
   }
 
   /**
+   * Set the identity for the log
+   * @param {Identity} [identity] The identity to be set
+   */
+  setIdentity (identity) {
+    this._identity = identity
+    // Find the latest clock from the heads
+    const time = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0))
+    this._clock = new Clock(this._identity.publicKey, time)
+  }
+
+  /**
    * Find an entry.
    * @param {string} [hash] The hashes of the entry
    * @returns {Entry|undefined}
