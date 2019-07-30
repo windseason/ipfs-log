@@ -203,6 +203,28 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
+    describe('setIdentity', () => {
+      let log
+
+      beforeEach(async () => {
+        log = new Log(ipfs, testIdentity, { logId: 'AAA' })
+        await log.append('one')
+      })
+
+      it('changes identity', async () => {
+        assert.strictEqual(log.values[0].clock.id, testIdentity.publicKey)
+        assert.strictEqual(log.values[0].clock.time, 1)
+        log.setIdentity(testIdentity2)
+        await log.append('two')
+        assert.strictEqual(log.values[1].clock.id, testIdentity2.publicKey)
+        assert.strictEqual(log.values[1].clock.time, 2)
+        log.setIdentity(testIdentity3)
+        await log.append('three')
+        assert.strictEqual(log.values[2].clock.id, testIdentity3.publicKey)
+        assert.strictEqual(log.values[2].clock.time, 3)
+      })
+    })
+
     describe('has', async () => {
       let log, expectedData
 
