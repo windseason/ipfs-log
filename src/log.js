@@ -1,6 +1,6 @@
 'use strict'
 
-const pMap = require('p-map')
+const pEachSeries = require('p-each-series')
 const GSet = require('./g-set')
 const Entry = require('./entry')
 const LogIO = require('./log-io')
@@ -383,8 +383,10 @@ class Log extends GSet {
     }
 
     const entriesToJoin = Object.values(newItems)
-    await pMap(entriesToJoin, permitted, { concurrency: 1 })
-    await pMap(entriesToJoin, verify, { concurrency: 1 })
+    await pEachSeries(entriesToJoin, async e => {
+      await permitted(e)
+      await verify(e)
+    })
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
