@@ -226,20 +226,20 @@ class Log extends GSet {
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0 && (amount === -1 || count < amount)) { // eslint-disable-line no-unmodified-loop-condition
+    while (stack.length > 0) { // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
 
       // Add to the result
-      count++
       result[entry.hash] = entry
-      // Add entry's next references to the stack
-      entry.next.map(getEntry)
-        .filter(isDefined)
-        .forEach(addToStack)
-
-      // If it is the specified end hash, break out of the while loop
+      if ((amount !== -1) && (++count >= amount)) break
       if (entry.hash === endHash) break
+
+      // Add entry's next references to the stack
+      const entries = entry.next.map(getEntry)
+      const defined = entries.filter(isDefined)
+      defined.forEach(addToStack)
+      // If it is the specified end hash, break out of the while loop
     }
 
     return result
@@ -255,7 +255,6 @@ class Log extends GSet {
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
-    // Get the required amount of hashes to next entries (as per current state of the log)
     const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
 
     const sortedHeadIndex = this.heads.reverse().reduce(uniqueEntriesReducer, {})

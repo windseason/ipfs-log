@@ -9,6 +9,7 @@ const { io } = require('../src/utils')
 const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 const v0Entries = require('./fixtures/v0-entries.fixture')
+const Keystore = require('orbit-db-keystore')
 
 // Test utils
 const {
@@ -16,7 +17,7 @@ const {
   testAPIs,
   startIpfs,
   stopIpfs
-} = require('./utils')
+} = require('orbit-db-test-utils')
 
 let ipfs, testIdentity
 
@@ -30,11 +31,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-entry' + new Date().getTime()
     })
 
+    let keystore, signingKeystore
+
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -45,6 +52,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       rmrf.sync(ipfsConfig.repo)
+      await keystore.close()
+      await signingKeystore.close()
     })
 
     describe('create', () => {
