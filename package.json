@@ -12,6 +12,12 @@
   "engines": {
     "node": ">=8.0.0"
   },
+  "keywords": [
+    "ipfs",
+    "log",
+    "crdts",
+    "crdt"
+  ],
   "dependencies": {
     "cids": "~0.7.1",
     "ipld-dag-pb": "^0.17.4",
@@ -80,5 +86,10 @@
     "benchmark": "node --expose-gc benchmarks/runner/index.js -r --grep baseline",
     "benchmark:stress": "node --expose-gc benchmarks/runner/index.js -r --grep stress",
     "examples": "http-server examples/browser"
-  }
+  },
+  "localMaintainers": [
+    "haad <haad@haja.io>",
+    "hajamark <mark@haja.io>",
+    "shamb0t <shams@haja.io>"
+  ]
 }
