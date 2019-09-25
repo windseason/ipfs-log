@@ -26,6 +26,17 @@ console.log(log.id)
 
 `ipfs` is an instance of IPFS. `identity` is an instance of [Identity](https://github.com/orbitdb/orbit-db-identity-provider/blob/master/src/identity.js), used to sign entries. `logId` is a unique log identifier. Usually this should be a user id or similar. `access` is an instance of `AccessController`, which by default allows any one to append to the log.
 
+`sortFn` determines the order of entries and resolves conflicts. By default, the `sortFn` is set to [SortByEntryHash](https://github.com/orbitdb/ipfs-log/blob/1d609385f7c5db9926a0388cfcdf7fd2a796c522/src/log-sorting.js#L34) which orders entries by clock-time and resolves conflicts using the entry hash.
+
+A custom sorting function can be passed as `sortFn` and should take two entries and return either `-1` or `1` indicating which of the arguments is greater. The function must not return `0` (meaning there is no defined order) when comparing entries. See [Log Sorting](https://github.com/orbitdb/ipfs-log/blob/master/src/log-sorting.js#L15)
+
+```javascript
+const { LastWriteWins } = Log.Sorting
+const log = new Log(ipfs, identity, { logId: 'logid', sortFn: LastWriteWins })
+
+// `log` entries sorted using `LastWriteWins`
+```
+
 ### Properties
 
 #### id

@@ -7,7 +7,7 @@ const LogIO = require('./log-io')
 const LogError = require('./log-errors')
 const Clock = require('./lamport-clock')
 const Sorting = require('./log-sorting')
-const { LastWriteWins, NoZeroes } = Sorting
+const { SortByEntryHash, NoZeroes } = Sorting
 const AccessController = require('./default-access-controller')
 const { isDefined, findUniques } = require('./utils')
 const EntryIndex = require('./entry-index')
@@ -42,7 +42,7 @@ class Log extends GSet {
    * @param {Array<Entry>} options.entries An Array of Entries from which to create the log
    * @param {Array<Entry>} options.heads Set the heads of the log
    * @param {Clock} options.clock Set the clock of the log
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {Function} options.sortFn The sort function - by default SortByEntryHash
    * @return {Log} The log instance
    */
   constructor (ipfs, identity, { logId, access, entries, heads, clock, sortFn } = {}) {
@@ -67,7 +67,7 @@ class Log extends GSet {
     }
 
     if (!isDefined(sortFn)) {
-      sortFn = LastWriteWins
+      sortFn = SortByEntryHash
     }
 
     super()
@@ -512,7 +512,7 @@ class Log extends GSet {
    * @param {number} options.length How many items to include in the log
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {Function} options.sortFn The sort function - by default SortByEntryHash
    * @returns {Promise<Log>}
    */
   static async fromMultihash (ipfs, identity, hash,
@@ -540,7 +540,7 @@ class Log extends GSet {
    * @param {number} options.length How many entries to include in the log
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {Function} options.sortFn The sort function - by default SortByEntryHash
    * @param {number} options.timeout Timeout for fetching a log entry from IPFS
    * @return {Promise<Log>} New Log
    */
@@ -561,7 +561,7 @@ class Log extends GSet {
    * @param {number} options.length How many entries to include in the log
    * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
    * @param {function(hash, entry, parent, depth)} [options.onProgressCallback]
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {Function} options.sortFn The sort function - by default SortByEntryHash
    * @return {Promise<Log>} New Log
    */
   static async fromJSON (ipfs, identity, json,
@@ -581,7 +581,7 @@ class Log extends GSet {
    * @param {number} options.length How many entries to include. Default: infinite.
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} [options.onProgressCallback]
-   * @param {Function} options.sortFn The sort function - by default LastWriteWins
+   * @param {Function} options.sortFn The sort function - by default SortByEntryHash
    * @return {Promise<Log>} New Log
    */
   static async fromEntry (ipfs, identity, sourceEntries,

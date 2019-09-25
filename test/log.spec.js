@@ -127,8 +127,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
         const one = await Entry.create(ipfs, testIdentity, 'A', 'entryA', [])
         const two = await Entry.create(ipfs, testIdentity, 'A', 'entryB', [])
         const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
+        const entries = [one, two, three].sort((a, b) => a.hash < b.hash ? -1 : 1)
         const log = new Log(ipfs, testIdentity,
           { logId: 'A', entries: [one, two, three] })
+        assert.strictEqual(log.heads.length, 3)
+        assert.strictEqual(log.heads[2].hash, entries[0].hash)
+        assert.strictEqual(log.heads[1].hash, entries[1].hash)
+        assert.strictEqual(log.heads[0].hash, entries[2].hash)
+      })
+
+      it('finds heads if heads not given as params - LWW', async () => {
+        const one = await Entry.create(ipfs, testIdentity, 'A', 'entryA', [])
+        const two = await Entry.create(ipfs, testIdentity, 'A', 'entryB', [])
+        const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
+        const log = new Log(ipfs, testIdentity,
+          { logId: 'A', entries: [one, two, three], sortFn: Log.Sorting.LastWriteWins })
         assert.strictEqual(log.heads.length, 3)
         assert.strictEqual(log.heads[2].hash, one.hash)
         assert.strictEqual(log.heads[1].hash, two.hash)
