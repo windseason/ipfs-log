@@ -12,3 +12,5 @@ webpack.example.config.js
 webpack.tests.config.js
 dist/ipfslog.min.js.map
 
+Makefile
+circle.yml

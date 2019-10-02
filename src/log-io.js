@@ -7,7 +7,7 @@ const LogError = require('./log-errors')
 const { isDefined, findUniques, difference, io } = require('./utils')
 
 const IPLD_LINKS = ['heads']
-const last = (arr, n) => arr.slice(arr.length - n, arr.length)
+const last = (arr, n) => arr.slice(arr.length - Math.min(arr.length, n), arr.length)
 
 class LogIO {
   //
