@@ -1,6 +1,6 @@
 {
   "name": "ipfs-log",
-  "version": "4.4.0-rc3",
+  "version": "4.4.0",
   "description": "Append-only log CRDT on IPFS",
   "main": "src/log.js",
   "author": "Haad",
@@ -16,7 +16,7 @@
     "cids": "~0.7.1",
     "ipld-dag-pb": "^0.17.4",
     "json-stringify-deterministic": "^1.0.1",
-    "orbit-db-identity-provider": "next",
+    "orbit-db-identity-provider": "~0.2.0",
     "multihashing-async": "^0.7.0",
     "orbit-db-io": "~0.1.1",
     "p-each-series": "^2.1.0",
