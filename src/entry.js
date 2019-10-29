@@ -25,7 +25,7 @@ class Entry {
    * console.log(entry)
    * // { hash: null, payload: "hello", next: [] }
    */
-  static async create (ipfs, identity, logId, data, next = [], clock) {
+  static async create (ipfs, identity, logId, data, next = [], clock, options = {}) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(identity)) throw new Error('Identity is required, cannot create entry')
     if (!isDefined(logId)) throw new Error('Entry requires an id')
@@ -50,7 +50,7 @@ class Entry {
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
     entry.sig = signature
-    entry.hash = await Entry.toMultihash(ipfs, entry)
+    entry.hash = await Entry.toMultihash(ipfs, entry, options)
 
     return entry
   }
@@ -101,7 +101,7 @@ class Entry {
    * // "Qm...Foo"
    * @deprecated
    */
-  static async toMultihash (ipfs, entry) {
+  static async toMultihash (ipfs, entry, options = {}) {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!Entry.isEntry(entry)) throw new Error('Invalid object format, cannot generate entry hash')
 
@@ -118,8 +118,8 @@ class Entry {
     if (entry.key) Object.assign(e, { key: entry.key })
     if (entry.identity) Object.assign(e, { identity: entry.identity })
     if (entry.sig) Object.assign(e, { sig: entry.sig })
-
-    return io.write(ipfs, writeFormats[e.v], e, { links: IPLD_LINKS })
+    options = Object.assign({}, options, { links: IPLD_LINKS })
+    return io.write(ipfs, writeFormats[e.v], e, options)
   }
 
   /**

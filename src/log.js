@@ -267,7 +267,8 @@ class Log extends GSet {
       this.id,
       data,
       nexts,
-      this.clock
+      this.clock,
+      { pin: this.pin }
     )
 
     const canAppend = await this._access.canAppend(entry, this._identity.provider)
