@@ -1,12 +1,12 @@
 'use strict'
 
 class LogCreator {
-  static async createLogWithSixteenEntries (Log, ipfs, identities) {
+  static async createLogWithSixteenEntries (Log, ipfs, identityList, identities, keystore) {
     const create = async () => {
-      let logA = new Log(ipfs, identities[0], { logId: 'X' })
-      let logB = new Log(ipfs, identities[1], { logId: 'X' })
-      let log3 = new Log(ipfs, identities[2], { logId: 'X' })
-      let log = new Log(ipfs, identities[3], { logId: 'X' })
+      let logA = new Log(ipfs, identityList[0], identities, keystore, { logId: 'X' })
+      let logB = new Log(ipfs, identityList[1], identities, keystore, { logId: 'X' })
+      let log3 = new Log(ipfs, identityList[2], identities, keystore, { logId: 'X' })
+      let log = new Log(ipfs, identityList[3], identities, keystore, { logId: 'X' })
 
       for (let i = 1; i <= 5; i++) {
         await logA.append('entryA' + i)
@@ -37,14 +37,14 @@ class LogCreator {
     return { log: log, expectedData: expectedData, json: log.toJSON() }
   }
 
-  static async createLogWithTwoHundredEntries (Log, ipfs, identities) {
+  static async createLogWithTwoHundredEntries (Log, ipfs, identityList, identities, keystore) {
     const amount = 100
 
     let expectedData = []
 
     const create = async () => {
-      let logA = new Log(ipfs, identities[0], { logId: 'X' })
-      let logB = new Log(ipfs, identities[1], { logId: 'X' })
+      let logA = new Log(ipfs, identityList[0], identities, keystore, { logId: 'X' })
+      let logB = new Log(ipfs, identityList[1], identities, keystore, { logId: 'X' })
       for (let i = 1; i <= amount; i++) {
         await logA.append('entryA' + i)
         await logB.join(logA)

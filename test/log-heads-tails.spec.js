@@ -16,7 +16,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4
+let ipfs, testIdentity, testIdentity2, testIdentity3, testIdentity4, identities, keystore
 
 const last = (arr) => {
   return arr[arr.length - 1]
@@ -31,7 +31,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-log-head-and-tails' + new Date().getTime()
     })
 
-    let keystore, signingKeystore
+    let signingKeystore
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
@@ -42,11 +42,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userD', keystore, signingKeystore })
+      identities = new IdentityProvider()
+      testIdentity = await identities.createIdentity(keystore, { id: 'userA', signingKeystore })
+      testIdentity2 = await identities.createIdentity(keystore, { id: 'userB', signingKeystore })
+      testIdentity3 = await identities.createIdentity(keystore, { id: 'userC', signingKeystore })
+      testIdentity4 = await identities.createIdentity(keystore, { id: 'userD', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -62,28 +62,28 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('heads', () => {
       it('finds one head after one entry', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         assert.strictEqual(log1.heads.length, 1)
       })
 
       it('finds one head after two entries', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log1.append('helloA2')
         assert.strictEqual(log1.heads.length, 1)
       })
 
       it('log contains the head entry', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log1.append('helloA2')
         assert.deepStrictEqual(log1.get(log1.heads[0].hash), log1.heads[0])
       })
 
       it('finds head after a join and append', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
 
         await log1.append('helloA1')
         await log1.append('helloA2')
@@ -98,8 +98,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('finds two heads after a join', async () => {
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
 
         await log1.append('helloA1')
         await log1.append('helloA2')
@@ -118,8 +118,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('finds two heads after two joins', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
 
         await log1.append('helloA1')
         await log1.append('helloA2')
@@ -145,9 +145,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('finds two heads after three joins', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log3 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log3 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
 
         await log1.append('helloA1')
         await log1.append('helloA2')
@@ -171,9 +171,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('finds three heads after three joins', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log3 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log3 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
 
         await log1.append('helloA1')
         await log1.append('helloA2')
@@ -201,20 +201,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('tails', () => {
       it('returns a tail', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         assert.strictEqual(log1.tails.length, 1)
       })
 
       it('tail is a Entry', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         assert.strictEqual(Entry.isEntry(log1.tails[0]), true)
       })
 
       it('returns tail entries', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log2.append('helloB1')
         await log1.join(log2)
@@ -224,8 +224,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns tail hashes', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log1.append('helloA2')
         await log2.append('helloB1')
@@ -235,8 +235,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns no tail hashes if all entries point to empty nexts', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log2.append('helloB1')
         await log1.join(log2)
@@ -244,14 +244,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns tails after loading a partial log', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity2, { logId: 'A' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity2, identities, keystore, { logId: 'A' })
         await log1.append('helloA1')
         await log1.append('helloA2')
         await log2.append('helloB1')
         await log2.append('helloB2')
         await log1.join(log2)
-        const log4 = await Log.fromEntry(ipfs, testIdentity, log1.heads, { length: 2 })
+        const log4 = await Log.fromEntry(ipfs, testIdentity, identities, keystore, log1.heads, { length: 2 })
         assert.strictEqual(log4.length, 2)
         assert.strictEqual(log4.tails.length, 2)
         assert.strictEqual(log4.tails[0].hash, log4.values[0].hash)
@@ -259,10 +259,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('returns tails sorted by public key', async () => {
-        let log1 = new Log(ipfs, testIdentity, { logId: 'XX' })
-        let log2 = new Log(ipfs, testIdentity2, { logId: 'XX' })
-        let log3 = new Log(ipfs, testIdentity3, { logId: 'XX' })
-        let log4 = new Log(ipfs, testIdentity4, { logId: 'XX' })
+        let log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'XX' })
+        let log2 = new Log(ipfs, testIdentity2, identities, keystore, { logId: 'XX' })
+        let log3 = new Log(ipfs, testIdentity3, identities, keystore, { logId: 'XX' })
+        let log4 = new Log(ipfs, testIdentity4, identities, keystore, { logId: 'XX' })
         await log1.append('helloX1')
         await log2.append('helloB1')
         await log3.append('helloA1')
