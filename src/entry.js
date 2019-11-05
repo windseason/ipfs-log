@@ -25,7 +25,7 @@ class Entry {
    * console.log(entry)
    * // { hash: null, payload: "hello", next: [] }
    */
-  static async create (ipfs, identity, logId, data, next = [], clock) {
+  static async create (ipfs, identity, logId, data, next = [], clock, refs = []) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(identity)) throw new Error('Identity is required, cannot create entry')
     if (!isDefined(logId)) throw new Error('Entry requires an id')
@@ -41,6 +41,7 @@ class Entry {
       id: logId, // For determining a unique chain
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of hashes
+      refs: refs,
       v: 1, // To tag the version of this data structure
       clock: clock || new Clock(identity.publicKey)
     }
@@ -73,6 +74,7 @@ class Entry {
       id: entry.id,
       payload: entry.payload,
       next: entry.next,
+      refs: entry.refs,
       v: entry.v,
       clock: entry.clock
     }
@@ -111,6 +113,7 @@ class Entry {
       id: entry.id,
       payload: entry.payload,
       next: entry.next,
+      refs: entry.refs,
       v: entry.v,
       clock: entry.clock
     }
@@ -118,7 +121,6 @@ class Entry {
     if (entry.key) Object.assign(e, { key: entry.key })
     if (entry.identity) Object.assign(e, { identity: entry.identity })
     if (entry.sig) Object.assign(e, { sig: entry.sig })
-
     return io.write(ipfs, writeFormats[e.v], e, { links: IPLD_LINKS })
   }
 
@@ -143,6 +145,7 @@ class Entry {
       id: e.id,
       payload: e.payload,
       next: e.next,
+      refs: e.refs,
       v: e.v,
       clock: new Clock(e.clock.id, e.clock.time)
     }

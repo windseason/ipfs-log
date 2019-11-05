@@ -193,9 +193,13 @@ class Log extends GSet {
     return this._entryIndex.get(entry.hash || entry) !== undefined
   }
 
-  traverse (rootEntries, amount = -1, endHash) {
-    // Sort the given given root entries and use as the starting stack
-    var stack = rootEntries.sort(this._sortFn).reverse()
+  getNextAndTraverse (rootEntries, amount) {
+    const getFirstNextPointer = entry => entry.refs[0]
+    let stack = rootEntries
+      .map(getFirstNextPointer)
+      .map(e => this.get(e))
+      .filter(isDefined)
+
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
@@ -217,31 +221,94 @@ class Log extends GSet {
       stack = [entry, ...stack]
         .sort(this._sortFn)
         .reverse()
+        // Add to the cache of processed entries
+      traversed[entry.hash] = true
+    }
 
+    const addEntry = rootEntry => {
+      result[rootEntry.hash] = rootEntry
+      traversed[rootEntry.hash] = true
+      count++
+    }
+
+    rootEntries.forEach(addEntry)
+
+    // Start traversal
+    // Process stack until it's empty (traversed the full log)
+    // or when we have the requested amount of entries
+    // If requested entry amount is -1, traverse all
+    while (stack.length > 0 && (count < amount || amount < 0)) { // eslint-disable-line no-unmodified-loop-condition
+      // Get the next element from the stack
+      const entry = stack.shift()
+
+      // Add to the result
+      // result[entry.hash] = entry
+      addEntry(entry)
+      // if ((amount !== -1) && (++count >= amount)) break
+
+      // Add entry's next references to the stack
+      const entries = entry.next.map(getEntry)
+      const defined = entries.filter(isDefined)
+      defined.forEach(addToStack)
+    }
+
+    return result
+  }
+
+  traverse (rootEntries, amount = -1, endHash) {
+    // Sort the given given root entries and use as the starting stack
+    let stack = rootEntries.sort(this._sortFn).reverse()
+
+    // Cache for checking if we've processed an entry already
+    let traversed = {}
+    // End result
+    let result = {}
+    let count = 0
+    // Named function for getting an entry from the log
+    const getEntry = e => this.get(e)
+
+    // Add an entry to the stack and traversed nodes index
+    const addToStack = entry => {
+      // If we've already processed the entry, don't add it to the stack
+      if (!entry || traversed[entry.hash]) {
+        return
+      }
+
+      // Add the entry in front of the stack and sort
+      stack = [entry, ...stack]
+        .sort(this._sortFn)
+        .reverse()
       // Add to the cache of processed entries
       traversed[entry.hash] = true
+    }
+
+    const addEntry = rootEntry => {
+      result[rootEntry.hash] = rootEntry
+      traversed[rootEntry.hash] = true
+      count++
     }
 
     // Start traversal
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0) { // eslint-disable-line no-unmodified-loop-condition
+    while (stack.length > 0 && (count < amount || amount < 0)) { // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
-
       // Add to the result
-      result[entry.hash] = entry
-      if ((amount !== -1) && (++count >= amount)) break
-      if (entry.hash === endHash) break
+      addEntry(entry)
+      // If it is the specified end hash, break out of the while loop
+      if (endHash && endHash === entry.hash) break
 
       // Add entry's next references to the stack
       const entries = entry.next.map(getEntry)
       const defined = entries.filter(isDefined)
       defined.forEach(addToStack)
-      // If it is the specified end hash, break out of the while loop
     }
 
+    stack = []
+    traversed = {}
+    // End result
     return result
   }
 
@@ -255,10 +322,36 @@ class Log extends GSet {
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
-    const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
+    const heads = this.traverse(this.heads, this.heads.length)
 
     const sortedHeadIndex = this.heads.reverse().reduce(uniqueEntriesReducer, {})
-    const nexts = Object.keys(Object.assign({}, sortedHeadIndex, references))
+    const nexts = Object.keys(Object.assign({}, sortedHeadIndex, heads))
+    const all = Object.values(this.getNextAndTraverse(this.heads, pointerCount))
+    const getEveryPow2 = (maxDistance) => {
+      const entries = new Set()
+      for (let i = 1; i <= maxDistance; i *= 2) {
+        const index = Math.min(i - 1, all.length - 1)
+        const ref = all[index]
+        entries.add(ref)
+      }
+      return entries
+    }
+
+    // If pointer count is 4, returns 2
+    // If pointer count is 8, returns 3 references
+    // If pointer count is 512, returns 9 references
+    // If pointer count is 2048, returns 11 references
+    const references = getEveryPow2(Math.min(pointerCount, all.length))
+    let refSet = new Set(references)
+
+    // Always include the last known reference
+    if (all.length < pointerCount && all[all.length - 1]) { refSet.add(all[all.length - 1]) }
+
+    // Delete the heads from the refs
+    const delRef = e => refSet.delete(e)
+    nexts.forEach(delRef)
+    const refs = Array.from(refSet).map(getHash)
+
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
     const entry = await Entry.create(
@@ -267,7 +360,8 @@ class Log extends GSet {
       this.id,
       data,
       nexts,
-      this.clock
+      this.clock,
+      refs
     )
 
     const canAppend = await this._access.canAppend(entry, this._identity.provider)
@@ -323,7 +417,7 @@ class Log extends GSet {
     if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
     if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let start = lte || (lt || this.heads)
+    let start = (lte || (lt || this.heads)).filter(isDefined)
     let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
     let count = endHash ? -1 : amount || -1
 

@@ -52,15 +52,18 @@ class EntryIO {
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchAll (ipfs, hashes,
-    { length = -1, exclude = [], timeout = null, onProgressCallback }) {
+    { length = -1, exclude = [], timeout = null, onProgressCallback, concurrency = 32 } = {}) {
     let result = []
     let cache = {}
-    let loadingQueue = Array.isArray(hashes)
-      ? hashes.slice()
-      : [hashes]
+    let loadingQueue = Array.isArray(hashes) ? hashes.slice() : [hashes]
 
     // Add a hash to the loading queue
     const addToLoadingQueue = e => loadingQueue.push(e)
+
+    const shouldFetchMore = () => {
+      return loadingQueue.length > 0 &&
+          (result.length < length || length < 0)
+    }
 
     // Add entries that we don't need to fetch to the "cache"
     exclude = exclude && Array.isArray(exclude) ? exclude : []
@@ -72,15 +75,9 @@ class EntryIO {
     }
     exclude.forEach(addToExcludeCache)
 
-    const shouldFetchMore = () => {
-      return loadingQueue.length > 0 &&
-          (result.length < length || length < 0)
-    }
-
     const fetchEntry = () => {
       const hash = loadingQueue.shift()
-
-      if (cache[hash]) {
+      if (!hash || cache[hash]) {
         return Promise.resolve()
       }
 
@@ -97,15 +94,16 @@ class EntryIO {
         const addToResults = (entry) => {
           if (Entry.isEntry(entry)) {
             entry.next.forEach(addToLoadingQueue)
+            entry.refs.forEach(addToLoadingQueue)
             result.push(entry)
             cache[hash] = entry
             if (onProgressCallback) {
-              onProgressCallback(hash, entry, result.length)
+              onProgressCallback(hash, entry, result.length, result, loadingQueue)
             }
           }
         }
 
-        // Load the entry
+        // // Load the entry
         try {
           const entry = await Entry.fromMultihash(ipfs, hash)
           addToResults(entry)
@@ -119,6 +117,9 @@ class EntryIO {
     }
 
     await pWhilst(shouldFetchMore, fetchEntry)
+    // Free memory to avoid minor GC
+    cache = {}
+    loadingQueue = []
     return result
   }
 }

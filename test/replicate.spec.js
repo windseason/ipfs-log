@@ -99,7 +99,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs1, testIdentity, message.data.toString(), -1)
+        const log = await Log.fromMultihash(ipfs1, testIdentity, message.data.toString())
         await log1.join(log)
         processing--
       }
@@ -112,7 +112,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs2, testIdentity2, message.data.toString(), -1, null)
+        const log = await Log.fromMultihash(ipfs2, testIdentity2, message.data.toString())
         await log2.join(log)
         processing--
       }

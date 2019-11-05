@@ -93,7 +93,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       describe('append 100 items to a log', async () => {
         const amount = 100
-        const nextPointerAmount = 64
+        const nextPointerAmount = 100
 
         let log
 
@@ -125,9 +125,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
           })
         })
 
-        it('added the correct amount of next pointers', async () => {
+        it('added the correct amount of refs pointers', async () => {
           log.values.forEach((entry, index) => {
-            assert.strictEqual(entry.next.length, Math.min(index, nextPointerAmount))
+            assert.strictEqual(entry.refs.length, index > 2 ? Math.ceil(Math.log2(Math.min(nextPointerAmount, index))) + 1 : index)
           })
         })
       })

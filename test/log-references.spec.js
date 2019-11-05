@@ -1,0 +1,153 @@
+'use strict'
+
+const assert = require('assert')
+const rmrf = require('rimraf')
+const fs = require('fs-extra')
+const Log = require('../src/log')
+const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
+
+// Test utils
+const {
+  config,
+  testAPIs,
+  startIpfs,
+  stopIpfs
+} = require('orbit-db-test-utils')
+
+let ipfs, testIdentity
+
+Object.keys(testAPIs).forEach((IPFS) => {
+  describe('Log - References (' + IPFS + ')', function () {
+    this.timeout(config.timeout)
+
+    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
+    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
+      repo: config.defaultIpfsConfig.repo + '-log-refs' + new Date().getTime()
+    })
+
+    let keystore, signingKeystore
+
+    before(async () => {
+      rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+      await fs.copy(identityKeyFixtures, identityKeysPath)
+      await fs.copy(signingKeyFixtures, signingKeysPath)
+
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+
+      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
+      ipfs = await startIpfs(IPFS, ipfsConfig)
+    })
+
+    after(async () => {
+      await stopIpfs(ipfs)
+      rmrf.sync(ipfsConfig.repo)
+      rmrf.sync(identityKeysPath)
+      rmrf.sync(signingKeysPath)
+
+      await keystore.close()
+      await signingKeystore.close()
+    })
+    describe('References', () => {
+      it('creates entries with references', async () => {
+        const amount = 64
+        const maxReferenceDistance = 2
+        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, { logId: 'B' })
+        let log3 = new Log(ipfs, testIdentity, { logId: 'C' })
+        let log4 = new Log(ipfs, testIdentity, { logId: 'D' })
+
+        for (let i = 0; i < amount; i++) {
+          await log1.append(i.toString(), maxReferenceDistance)
+        }
+
+        for (let i = 0; i < amount * 2; i++) {
+          await log2.append(i.toString(), Math.pow(maxReferenceDistance, 2))
+        }
+
+        for (let i = 0; i < amount * 3; i++) {
+          await log3.append(i.toString(), Math.pow(maxReferenceDistance, 3))
+        }
+
+        for (let i = 0; i < amount * 4; i++) {
+          await log4.append(i.toString(), Math.pow(maxReferenceDistance, 4))
+        }
+
+        assert.strict.equal(log1.values[log1.length - 1].next.length, 1)
+        assert.strict.equal(log2.values[log2.length - 1].next.length, 1)
+        assert.strict.equal(log3.values[log3.length - 1].next.length, 1)
+        assert.strict.equal(log4.values[log4.length - 1].next.length, 1)
+        assert.strict.equal(log1.values[log1.length - 1].refs.length, 2)
+        assert.strict.equal(log2.values[log2.length - 1].refs.length, 3)
+        assert.strict.equal(log3.values[log3.length - 1].refs.length, 4)
+        assert.strict.equal(log4.values[log4.length - 1].refs.length, 5)
+      })
+
+      const inputs = [
+        { amount: 1, referenceCount: 1, refLength: 0 },
+        { amount: 1, referenceCount: 2, refLength: 0 },
+        { amount: 2, referenceCount: 1, refLength: 1 },
+        { amount: 2, referenceCount: 2, refLength: 1 },
+        { amount: 3, referenceCount: 2, refLength: 2 },
+        { amount: 3, referenceCount: 4, refLength: 2 },
+        { amount: 4, referenceCount: 2, refLength: 2 },
+        { amount: 4, referenceCount: 4, refLength: 3 },
+        { amount: 32, referenceCount: 4, refLength: 3 },
+        { amount: 32, referenceCount: 8, refLength: 4 },
+        { amount: 32, referenceCount: 16, refLength: 5 },
+        { amount: 18, referenceCount: 32, refLength: 6 },
+        { amount: 128, referenceCount: 32, refLength: 6 },
+        { amount: 64, referenceCount: 64, refLength: 7 },
+        { amount: 65, referenceCount: 64, refLength: 7 },
+        { amount: 128, referenceCount: 64, refLength: 7 },
+        { amount: 128, referenceCount: 1, refLength: 1 },
+        { amount: 128, referenceCount: 2, refLength: 2 },
+        { amount: 256, referenceCount: 1, refLength: 1 },
+        { amount: 256, referenceCount: 256, refLength: 8 },
+        { amount: 256, referenceCount: 1024, refLength: 8 }
+      ]
+
+      inputs.forEach(input => {
+        it(`has ${input.refLength} references, max distance ${input.referenceCount}, total of ${input.amount} entries`, async () => {
+          const test = async (amount, referenceCount, refLength) => {
+            let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+            for (let i = 0; i < amount; i++) {
+              await log1.append((i + 1).toString(), referenceCount)
+            }
+
+            assert.strict.equal(log1.values.length, input.amount)
+            assert.strict.equal(log1.values[log1.length - 1].clock.time, input.amount)
+
+            for (let k = 0; k < input.amount; k++) {
+              const idx = log1.length - k - 1
+              assert.strict.equal(log1.values[idx].clock.time, idx + 1)
+
+              // Check the first ref (distance 1)
+              if (log1.values[idx].refs.length > 0) { assert.strict.equal(log1.values[idx].refs[0], log1.values[idx - 1].hash) }
+
+              // Check the second ref (distance 2)
+              if (log1.values[idx].refs.length > 1) { assert.strict.equal(log1.values[idx].refs[1], log1.values[idx - 2].hash) }
+
+              // Check the third ref (distance 4)
+              if (log1.values[idx].refs.length > 2 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[2], log1.values[idx - 4].hash) }
+
+              // Check the fourth ref (distance 8)
+              if (log1.values[idx].refs.length > 3 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[3], log1.values[idx - 8].hash) }
+
+              // Check the fifth ref (distance 16)
+              if (log1.values[idx].refs.length > 4 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[4], log1.values[idx - 16].hash) }
+
+              // Check the reference of each entry
+              if (idx > referenceCount) { assert.strict.equal(log1.values[idx].refs.length, refLength) }
+            }
+          }
+
+          await test(input.amount, input.referenceCount, input.refLength)
+        })
+      })
+    })
+  })
+})
