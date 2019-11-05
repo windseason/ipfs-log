@@ -42,7 +42,6 @@ class LogIO {
 
     const logData = await io.read(ipfs, hash, { links: IPLD_LINKS })
     if (!logData.heads || !logData.id) throw LogError.NotALogError()
-
     const entries = await EntryIO.fetchAll(ipfs, logData.heads,
       { length, exclude, onProgressCallback, timeout })
 
@@ -53,7 +52,6 @@ class LogIO {
       }
       return clock
     }, new Clock(logData.id))
-
     const finalEntries = entries.slice().sort(Entry.compare)
     const heads = finalEntries.filter(e => logData.heads.includes(e.hash))
     return {
