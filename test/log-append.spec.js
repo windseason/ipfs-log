@@ -37,8 +37,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-      identities = new IdentityProvider()
-      testIdentity = await identities.createIdentity(keystore, { id: 'userA', signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -57,7 +57,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log
 
         before(async () => {
-          log = new Log(ipfs, testIdentity, identities, keystore, 'A')
+          log = new Log(ipfs, testIdentity, identities, 'A')
           await log.append('hello1')
         })
 
@@ -98,7 +98,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log
 
         before(async () => {
-          log = new Log(ipfs, testIdentity, identities, keystore, 'A')
+          log = new Log(ipfs, testIdentity, identities, 'A')
           for (let i = 0; i < amount; i++) {
             await log.append('hello' + i, nextPointerAmount)
             // Make sure the log has the right heads after each append

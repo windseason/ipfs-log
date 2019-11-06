@@ -16,7 +16,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, identityProvider, keystore
+let ipfs, identityProvider
 let testIdentity, testIdentity2, testIdentity3, testIdentity4
 
 const last = arr => arr[arr.length - 1]
@@ -30,7 +30,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-entry-io' + new Date().getTime()
     })
 
-    let options, signingKeystore
+    let options, keystore, signingKeystore
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
@@ -47,11 +47,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
       options = users.map((user) => {
         return Object.assign({}, defaultOptions, { id: user, signingKeystore })
       })
-      identityProvider = new IdentityProvider()
-      testIdentity = await identityProvider.createIdentity(keystore, options[0])
-      testIdentity2 = await identityProvider.createIdentity(keystore, options[1])
-      testIdentity3 = await identityProvider.createIdentity(keystore, options[2])
-      testIdentity4 = await identityProvider.createIdentity(keystore, options[3])
+      identityProvider = new IdentityProvider({ keystore })
+      testIdentity = await identityProvider.createIdentity(options[0])
+      testIdentity2 = await identityProvider.createIdentity(options[1])
+      testIdentity3 = await identityProvider.createIdentity(options[2])
+      testIdentity4 = await identityProvider.createIdentity(options[3])
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -66,7 +66,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('log with one entry', async () => {
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       await log.append('one')
       const hash = log.values[0].hash
       const res = await EntryIO.fetchAll(ipfs, hash, 1)
@@ -74,7 +74,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('log with 2 entries', async () => {
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       await log.append('one')
       await log.append('two')
       const hash = last(log.values).hash
@@ -83,7 +83,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('loads max 1 entry from a log of 2 entry', async () => {
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       await log.append('one')
       await log.append('two')
       const hash = last(log.values).hash
@@ -93,67 +93,67 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     it('log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       for (let i = 0; i < count; i++) {
         await log.append('hello' + i)
       }
 
       const hash = await log.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, keystore, hash, -1)
+      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, hash, -1)
       assert.strictEqual(result.length, count)
     })
 
     it('load only 42 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
-      let log2 = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
+      let log2 = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
-          log2 = new Log(ipfs, testIdentity, identityProvider, keystore,
+          log2 = new Log(ipfs, testIdentity, identityProvider,
             { logId: log2.id, entries: log2.values, heads: log2.heads.concat(log.heads) })
           await log2.append('hi' + i)
         }
       }
 
       const hash = await log.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, keystore, hash, { length: 42 })
+      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, hash, { length: 42 })
       assert.strictEqual(result.length, 42)
     })
 
     it('load only 99 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
-      let log2 = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
+      let log2 = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
-          log2 = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: log2.id, entries: log2.values })
+          log2 = new Log(ipfs, testIdentity, identityProvider, { logId: log2.id, entries: log2.values })
           await log2.append('hi' + i)
           await log2.join(log)
         }
       }
 
       const hash = await log2.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, keystore, hash, { length: 99 })
+      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, hash, { length: 99 })
       assert.strictEqual(result.length, 99)
     })
 
     it('load only 10 entries from a log with 100 entries', async () => {
       const count = 100
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
-      let log2 = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
-      let log3 = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
+      let log2 = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
+      let log3 = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
       for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
-          log2 = new Log(ipfs, testIdentity, identityProvider, keystore,
+          log2 = new Log(ipfs, testIdentity, identityProvider,
             { logId: log2.id, entries: log2.values, heads: log2.heads })
           await log2.append('hi' + i)
           await log2.join(log)
         }
         if (i % 25 === 0) {
-          log3 = new Log(ipfs, testIdentity, identityProvider, keystore,
+          log3 = new Log(ipfs, testIdentity, identityProvider,
             { logId: log3.id, entries: log3.values, heads: log3.heads.concat(log2.heads) })
           await log3.append('--' + i)
         }
@@ -161,16 +161,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       await log3.join(log2)
       const hash = await log3.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, keystore, hash, { length: 10 })
+      const result = await Log.fromMultihash(ipfs, testIdentity, identityProvider, hash, { length: 10 })
       assert.strictEqual(result.length, 10)
     })
 
     it('load only 10 entries and then expand to max from a log with 100 entries', async () => {
       const count = 30
 
-      let log = new Log(ipfs, testIdentity, identityProvider, keystore, { logId: 'X' })
-      let log2 = new Log(ipfs, testIdentity2, identityProvider, keystore, { logId: 'X' })
-      let log3 = new Log(ipfs, testIdentity3, identityProvider, keystore, { logId: 'X' })
+      let log = new Log(ipfs, testIdentity, identityProvider, { logId: 'X' })
+      let log2 = new Log(ipfs, testIdentity2, identityProvider, { logId: 'X' })
+      let log3 = new Log(ipfs, testIdentity3, identityProvider, { logId: 'X' })
       for (let i = 1; i <= count; i++) {
         await log.append('hello' + i)
         if (i % 10 === 0) {
@@ -178,7 +178,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           await log2.join(log)
         }
         if (i % 25 === 0) {
-          log3 = new Log(ipfs, testIdentity3, identityProvider, keystore,
+          log3 = new Log(ipfs, testIdentity3, identityProvider,
             { logId: log3.id, entries: log3.values, heads: log3.heads.concat(log2.heads) })
           await log3.append('--' + i)
         }
@@ -186,7 +186,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       await log3.join(log2)
 
-      const log4 = new Log(ipfs, testIdentity4, identityProvider, keystore, { logId: 'X' })
+      const log4 = new Log(ipfs, testIdentity4, identityProvider, { logId: 'X' })
       await log4.join(log2)
       await log4.join(log3)
 

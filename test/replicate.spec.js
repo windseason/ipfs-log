@@ -65,9 +65,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       signingKeystore = new Keystore(signingKeysPath)
 
       // Create an identity for each peers
-      identities = new IdentityProvider()
-      testIdentity = await identities.createIdentity(keystore, { id: 'userB', signingKeystore })
-      testIdentity2 = await identities.createIdentity(keystore, { id: 'userA', signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userB', signingKeystore })
+      testIdentity2 = await identities.createIdentity({ id: 'userA', signingKeystore })
     })
 
     after(async () => {
@@ -78,7 +78,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
 
-      await keystore.close()
+      await identities.keystore.close()
       await signingKeystore.close()
     })
 
@@ -100,7 +100,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs1, testIdentity, identities, keystore, message.data.toString(), -1)
+        const log = await Log.fromMultihash(ipfs1, testIdentity, identities, message.data.toString(), -1)
         await log1.join(log)
         processing--
       }
@@ -113,16 +113,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         processing++
         process.stdout.write('\r')
         process.stdout.write(`> Buffer1: ${buffer1.length} - Buffer2: ${buffer2.length}`)
-        const log = await Log.fromMultihash(ipfs2, testIdentity2, identities, keystore, message.data.toString(), -1, null)
+        const log = await Log.fromMultihash(ipfs2, testIdentity2, identities, message.data.toString(), -1, null)
         await log2.join(log)
         processing--
       }
 
       beforeEach(async () => {
-        log1 = new Log(ipfs1, testIdentity, identities, keystore, { logId })
-        log2 = new Log(ipfs2, testIdentity2, identities, keystore, { logId })
-        input1 = new Log(ipfs1, testIdentity, identities, keystore, { logId })
-        input2 = new Log(ipfs2, testIdentity2, identities, keystore, { logId })
+        log1 = new Log(ipfs1, testIdentity, identities, { logId })
+        log2 = new Log(ipfs2, testIdentity2, identities, { logId })
+        input1 = new Log(ipfs1, testIdentity, identities, { logId })
+        input2 = new Log(ipfs2, testIdentity2, identities, { logId })
         await ipfs1.pubsub.subscribe(channel, handleMessage)
         await ipfs2.pubsub.subscribe(channel, handleMessage2)
       })
@@ -158,7 +158,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         console.log('Waiting for all to process')
         await whileProcessingMessages(config.timeout)
 
-        let result = new Log(ipfs1, testIdentity, identities, keystore, { logId })
+        let result = new Log(ipfs1, testIdentity, identities, { logId })
         await result.join(log1)
         await result.join(log2)
 

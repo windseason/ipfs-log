@@ -44,7 +44,7 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Log} The log instance
    */
-  constructor (ipfs, identity, identities, keystore, { logId, access, entries, heads, clock, sortFn } = {}) {
+  constructor (ipfs, identity, identities, { logId, access, entries, heads, clock, sortFn } = {}) {
     if (!isDefined(ipfs)) {
       throw LogError.IPFSNotDefinedError()
     }
@@ -82,7 +82,6 @@ class Log extends GSet {
     // identity
     this._identity = identity
     this._identities = identities
-    this._keystore = keystore
 
     // Add entries to the internal cache
     entries = entries || []
@@ -268,10 +267,9 @@ class Log extends GSet {
    * @param {Entry} entry Entry to add
    * @return {Log} New Log containing the appended value
    */
-  async append (data, pointerCount = 1, { identity, identities, keystore } = {}) {
+  async append (data, pointerCount = 1, { identity, identities } = {}) {
     identity = identity || this.identity
     identities = identities || this.identities
-    keystore = keystore || this._keystore
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     // this._clock = new Clock(this.clock.id, newTime)
@@ -287,7 +285,6 @@ class Log extends GSet {
       this._storage,
       identity,
       identities,
-      keystore,
       this.id,
       data,
       nexts,
@@ -298,7 +295,7 @@ class Log extends GSet {
     if (!canAppend) {
       throw new Error(`Could not append entry, key "${identity.id}" is not allowed to write to the log`)
     }
-    const verifyIdentity = await identities.verifyIdentity(entry.identity, keystore)
+    const verifyIdentity = await identities.verifyIdentity(entry.identity)
     if (!verifyIdentity) {
       throw new Error(`Could not append entry, key "${identity.id}" could not be verified`)
     }
@@ -384,13 +381,12 @@ class Log extends GSet {
    * @example
    * await log1.join(log2)
    */
-  async join (log, size = -1, { identities, keystore } = {}) {
+  async join (log, size = -1, { identities } = {}) {
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!Log.isLog(log)) throw LogError.NotALogError()
     if (this.id !== log.id) return
 
     identities = identities || this.identities
-    keystore = keystore || this._keystore
 
     // Get the difference of the logs
     const newItems = Log.difference(log, this)
@@ -404,7 +400,7 @@ class Log extends GSet {
         throw new Error(`Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`)
       }
       if (entry.v > 0) {
-        const verifyIdentity = await identities.verifyIdentity(entry.identity, keystore)
+        const verifyIdentity = await identities.verifyIdentity(entry.identity)
         if (!verifyIdentity) {
           throw new Error(`Could not append entry, key "${entry.identity.id}" could not be verified`)
         }
@@ -413,7 +409,7 @@ class Log extends GSet {
 
     // Verify signature for each entry and throws if there's an invalid signature
     const verify = async (entry) => {
-      const isValid = await Entry.verify(entry, keystore)
+      const isValid = await Entry.verify(entry, identities)
       const publicKey = entry.identity ? entry.identity.publicKey : entry.key
       if (!isValid) throw new Error(`Could not validate signature "${entry.sig}" for entry "${entry.hash}" and key "${publicKey}"`)
     }
@@ -552,11 +548,11 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @returns {Promise<Log>}
    */
-  static async fromMultihash (ipfs, identity, identities, keystore, hash,
+  static async fromMultihash (ipfs, identity, identities, hash,
     { access, length = -1, exclude, onProgressCallback, sortFn, timeout, format } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromMultihash(ipfs, hash, { length, exclude, onProgressCallback, timeout, format })
-    return new Log(ipfs, identity, identities, keystore, {
+    return new Log(ipfs, identity, identities, {
       logId: data.id,
       access: access,
       entries: data.values,
@@ -581,11 +577,11 @@ class Log extends GSet {
    * @param {number} options.timeout Timeout for fetching a log entry from IPFS
    * @return {Promise<Log>} New Log
    */
-  static async fromEntryHash (ipfs, identity, identities, keystore, hash,
+  static async fromEntryHash (ipfs, identity, identities, hash,
     { logId, access, length = -1, exclude, onProgressCallback, sortFn, timeout }) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntryHash(ipfs, hash, { length, exclude, onProgressCallback, timeout })
-    return new Log(ipfs, identity, identities, keystore, { logId, access, entries: data.values, sortFn })
+    return new Log(ipfs, identity, identities, { logId, access, entries: data.values, sortFn })
   }
 
   /**
@@ -601,11 +597,11 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromJSON (ipfs, identity, identities, keystore, json,
+  static async fromJSON (ipfs, identity, identities, json,
     { access, length = -1, timeout, onProgressCallback, sortFn } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromJSON(ipfs, json, { length, timeout, onProgressCallback })
-    return new Log(ipfs, identity, identities, keystore, { logId: data.id, access, entries: data.values, sortFn })
+    return new Log(ipfs, identity, identities, { logId: data.id, access, entries: data.values, sortFn })
   }
 
   /**
@@ -621,12 +617,12 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
-  static async fromEntry (ipfs, identity, identities, keystore, sourceEntries,
+  static async fromEntry (ipfs, identity, identities, sourceEntries,
     { access, length = -1, exclude, onProgressCallback, timeout, sortFn } = {}) {
     // TODO: need to verify the entries with 'key'
     const data = await LogIO.fromEntry(ipfs, sourceEntries,
       { length, exclude, onProgressCallback, timeout })
-    return new Log(ipfs, identity, identities, keystore, { logId: data.id, access, entries: data.values, sortFn })
+    return new Log(ipfs, identity, identities, { logId: data.id, access, entries: data.values, sortFn })
   }
 
   /**

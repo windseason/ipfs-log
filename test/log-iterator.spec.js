@@ -38,10 +38,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-      identities = new IdentityProvider()
-      testIdentity = await identities.createIdentity(keystore, { id: 'userA', signingKeystore })
-      testIdentity2 = await identities.createIdentity(keystore, { id: 'userB', signingKeystore })
-      testIdentity3 = await identities.createIdentity(keystore, { id: 'userC', signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
+      testIdentity2 = await identities.createIdentity({ id: 'userB', signingKeystore })
+      testIdentity3 = await identities.createIdentity({ id: 'userC', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -59,7 +59,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log1
 
       beforeEach(async () => {
-        log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'X' })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'X' })
 
         for (let i = 0; i <= 100; i++) {
           await log1.append('entry' + i)
@@ -301,7 +301,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       before(async () => {
         idList = [testIdentity3, testIdentity2, testIdentity3, testIdentity]
-        fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, idList, identities, keystore)
+        fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, idList, identities)
       })
 
       it('returns the full length from all heads', async () => {

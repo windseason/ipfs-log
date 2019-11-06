@@ -34,8 +34,8 @@ Object.keys(testAPIs).forEach(IPFS => {
       await fs.copy(signingKeyFixtures, signingKeysPath)
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-      identities = new IdentityProvider()
-      testIdentity = await identities.createIdentity(keystore, { id: 'userA', signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -52,8 +52,8 @@ Object.keys(testAPIs).forEach(IPFS => {
       let log1, log2
 
       before(async () => {
-        log1 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A', sortFn: SortByEntryHash })
-        log2 = new Log(ipfs, testIdentity, identities, keystore, { logId: 'A', sortFn: SortByEntryHash })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
+        log2 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
       })
 
       it('joins consistently', async () => {

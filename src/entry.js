@@ -25,11 +25,10 @@ class Entry {
    * console.log(entry)
    * // { hash: null, payload: "hello", next: [] }
    */
-  static async create (ipfs, identity, identityProvider, keystore, logId, data, next = [], clock) {
+  static async create (ipfs, identity, identityProvider, logId, data, next = [], clock) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(identity)) throw new Error('identity is required, cannot create entry')
     if (!isDefined(identityProvider)) throw new Error('identityProvider is required, cannot create entry')
-    if (!isDefined(keystore)) throw new Error('keystore is required, cannot create entry')
     if (!isDefined(logId)) throw new Error('Entry requires an id')
     if (!isDefined(data)) throw new Error('Entry requires data')
     if (!isDefined(next) || !Array.isArray(next)) throw new Error("'next' argument is not an array")
@@ -47,7 +46,7 @@ class Entry {
       clock: clock || new Clock(identity.publicKey)
     }
 
-    const signature = await identityProvider.sign(identity, Entry.toBuffer(entry), keystore)
+    const signature = await identityProvider.sign(identity, Entry.toBuffer(entry))
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
     entry.sig = signature
@@ -78,9 +77,9 @@ class Entry {
    * @param {Entry} entry The entry being verified
    * @return {Promise} A promise that resolves to a boolean value indicating if the signature is valid
    */
-  static async verify (entry, keystore) {
+  static async verify (entry, identities) {
     if (!Entry.isEntry(entry)) throw new Error('Invalid Log entry')
-    if (!keystore) throw new Error('keystore is required, cannot verify entry')
+    if (!identities) throw new Error('IdentityProvider is required, cannot verify entry')
     if (!entry.key) throw new Error("Entry doesn't have a key")
     if (!entry.sig) throw new Error("Entry doesn't have a signature")
 
@@ -93,7 +92,7 @@ class Entry {
       clock: entry.clock
     }
 
-    return keystore.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
+    return identities.keystore.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
   }
 
   /**
