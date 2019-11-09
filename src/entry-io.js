@@ -1,125 +1,149 @@
 'use strict'
 
-const pWhilst = require('p-whilst')
 const pMap = require('p-map')
+const pDoWhilst = require('p-do-whilst')
 const Entry = require('./entry')
 
 class EntryIO {
-  /**
-   * Fetch log entries in parallel.
-   * @param {IPFS} ipfs An IPFS instance
-   * @param {string|Array<string>} hashes hashes of the entries to fetch
-   * @param {Object} options
-   * @param {number} options.length How many entries to fetch
-   * @param {Array<Entry>} options.exclude Entries to not fetch
-   * @param {number} options.concurrency Max concurrent fetch operations
-   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
-   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
-   * @returns {Promise<Array<Entry>>}
-   */
-  static async fetchParallel (ipfs, hashes,
-    { length = -1, exclude = [], concurrency = null, timeout, onProgressCallback } = {}) {
-    const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash,
-      { length, exclude, timeout, onProgressCallback })
-    const getHashes = e => e.hash
-    const uniquelyConcatArrays = (arr1, arr2) => {
-      // Add any new entries to arr1
-      const entryHashes = arr1.map(getHashes)
-      arr2.forEach(entry => {
-        if (entryHashes.indexOf(entry.hash) === -1) arr1.push(entry)
-      })
-      return arr1
-    }
-    const flatten = (arr) => arr.reduce(uniquelyConcatArrays, [])
-    const hashesToFetch = Array.isArray(hashes) ? hashes.slice() : [hashes]
-    concurrency = Math.max(concurrency || hashesToFetch.length, 1)
-
-    const entries = await pMap(hashesToFetch, fetchOne, { concurrency: concurrency })
-    // Flatten the results and get unique vals
-    return flatten(entries)
+  // Fetch log graphs in parallel
+  static fetchParallel (ipfs, hashes, {length, exclude = [], concurrency, timeout, onProgressCallback}) {
+    const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash, length, exclude, timeout, onProgressCallback)
+    const concatArrays = (arr1, arr2) => arr1.concat(arr2)
+    const flatten = (arr) => arr.reduce(concatArrays, [])
+    return pMap(hashes, fetchOne, { concurrency: Math.max(concurrency || hashes.length, 1) })
+      .then(flatten) // Flatten the results
   }
 
   /**
-   * Fetch log entries sequentially.
-   * @param {IPFS} ipfs An IPFS instance
-   * @param {string|Array<string>} hashes hashes of the entries to fetch
-   * @param {Object} options
-   * @param {number} options.length How many entries to fetch
-   * @param {Array<Entry>} options.exclude Entries to not fetch
-   * @param {number} options.concurrency Max concurrent fetch operations
-   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
-   * @param {function(hash, entry, parent, depth)} options.onProgressCallback
+   * Fetch log entries sequentially
+   *
+   * @param {IPFS} [ipfs] An IPFS instance
+   * @param {string} [hash] Multihash of the entry to fetch
+   * @param {string} [parent] Parent of the node to be fetched
+   * @param {Object} [all] Entries to skip
+   * @param {Number} [amount=-1] How many entries to fetch
+   * @param {Number} [depth=0] Current depth of the recursion
+   * @param {function(hash, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
-  static async fetchAll (ipfs, hashes,
-    { length = -1, exclude = [], timeout = null, onProgressCallback, concurrency = 32 } = {}) {
+  static async fetchAll (ipfs, hashes, amount, exclude = [], timeout = null, onProgressCallback, onStartProgressCallback, concurrency = 32, delay = 0) {
     let result = []
     let cache = {}
-    let loadingQueue = Array.isArray(hashes) ? hashes.slice() : [hashes]
+    let loadingCache = {}
+    let loadingQueue = Array.isArray(hashes)
+      ? {0: hashes.slice()}
+      : {0: [hashes]}
 
-    // Add a hash to the loading queue
-    const addToLoadingQueue = e => loadingQueue.push(e)
-
-    const shouldFetchMore = () => {
-      return loadingQueue.length > 0 &&
-          (result.length < length || length < 0)
+    // Add a multihash to the loading queue
+    const addToLoadingQueue = (e, idx) => {
+      if (!loadingCache[e]) {
+        if (!loadingQueue[idx]) loadingQueue[idx] = []
+        if (!loadingQueue[idx].includes(e)) {
+          loadingQueue[idx].push(e)
+        }
+        loadingCache[e] = idx
+      }
     }
 
     // Add entries that we don't need to fetch to the "cache"
-    exclude = exclude && Array.isArray(exclude) ? exclude : []
-    var addToExcludeCache = e => {
-      if (Entry.isEntry(e)) {
-        result.push(e)
-        cache[e.hash] = e
-      }
-    }
+    var addToExcludeCache = e => cache[e.hash] = e
     exclude.forEach(addToExcludeCache)
 
-    const fetchEntry = () => {
-      const hash = loadingQueue.shift()
+    const loadingQueueHasMore = () => Object.values(loadingQueue)
+      .find(e => e && e.length > 0) !== undefined
+
+    const shouldFetchMore = () => {
+      // console.log("Amount:", amount)
+      return loadingQueueHasMore()
+          && (result.length < amount || amount < 0)
+    }
+
+    const getNextFromQueue = (length = 1) => {
+      const all = Object.values(loadingQueue).reduce((res, acc) => {
+        while (acc.length > 0 && res.length < length) {
+          const e = acc.shift()
+          res.push(e)
+        }
+        return res
+      }, [])
+      return all
+    }
+
+    const fetchEntry = (entryHash) => {
+      const hash = entryHash
+
       if (!hash || cache[hash]) {
         return Promise.resolve()
       }
 
-      return new Promise(async (resolve, reject) => {
+      return new Promise((resolve, reject) => {
         // Resolve the promise after a timeout (if given) in order to
         // not get stuck loading a block that is unreachable
-        const timer = timeout
-          ? setTimeout(() => {
-            console.warn(`Warning: Couldn't fetch entry '${hash}', request timed out (${timeout}ms)`)
-            resolve()
-          }, timeout)
-          : null
+        // const timer = timeout 
+        // ? setTimeout(() => {
+        //     console.warn(`Warning: Couldn't fetch entry '${hash}', request timed out (${timeout}ms)`)
+        //     resolve()
+        //   } , timeout) 
+        // : null
+
+        const sleep = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms))
 
         const addToResults = (entry) => {
+          // clearTimeout(timer)
           if (Entry.isEntry(entry)) {
-            entry.next.forEach(addToLoadingQueue)
-            entry.refs.forEach(addToLoadingQueue)
-            result.push(entry)
-            cache[hash] = entry
-            if (onProgressCallback) {
-              onProgressCallback(hash, entry, result.length, result, loadingQueue)
+            try {
+              entry.next.forEach(addToLoadingQueue)
+              entry.refs.forEach(addToLoadingQueue)
+
+              result.push(entry)
+              cache[hash] = entry
+              if (onProgressCallback) {
+                onProgressCallback(hash, entry, result.length, result, loadingQueue)
+              }
+            } catch (e) {
+              console.error(e)
             }
           }
         }
 
-        // // Load the entry
-        try {
-          const entry = await Entry.fromMultihash(ipfs, hash)
-          addToResults(entry)
-          resolve()
-        } catch (e) {
-          reject(e)
-        } finally {
-          clearTimeout(timer)
+        if (onStartProgressCallback) {
+          onStartProgressCallback(hash, null, result.length, result, loadingQueue)
         }
+
+        // Load the entry
+        Entry.fromMultihash(ipfs, hash)
+          .then(addToResults)
+          .then(async (entry) => {
+            // Simulate network latency
+            if (delay > 0)
+              await sleep(delay)
+
+            return entry
+          })
+          .then(resolve)
+          .catch(err => {
+            resolve()
+          })
       })
     }
 
-    await pWhilst(shouldFetchMore, fetchEntry)
+    let running = 0
+    const _processQueue = async () => {
+      if (running < concurrency) {
+        const nexts = getNextFromQueue(concurrency)
+        running += nexts.length
+        await pMap(nexts, fetchEntry)
+        running -= nexts.length
+      }
+    }
+
+    await pDoWhilst(async () => await _processQueue(), shouldFetchMore)
+
     // Free memory to avoid minor GC
     cache = {}
+    loadingCache = {}
     loadingQueue = []
+
     return result
   }
 }

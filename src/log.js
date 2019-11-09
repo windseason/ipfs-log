@@ -1,6 +1,7 @@
 'use strict'
 
 const pEachSeries = require('p-each-series')
+const pMap = require('p-map')
 const GSet = require('./g-set')
 const Entry = require('./entry')
 const LogIO = require('./log-io')
@@ -194,11 +195,11 @@ class Log extends GSet {
   }
 
   getNextAndTraverse (rootEntries, amount) {
-    const getFirstNextPointer = entry => entry.refs[0]
+    const getFirstNextPointer = entry => entry.next[0]
     let stack = rootEntries
-      .map(getFirstNextPointer)
-      .map(e => this.get(e))
-      .filter(isDefined)
+      // .map(getFirstNextPointer)
+      // .map(e => this.get(e))
+      // .filter(isDefined)
 
     // Cache for checking if we've processed an entry already
     let traversed = {}
@@ -252,6 +253,8 @@ class Log extends GSet {
       defined.forEach(addToStack)
     }
 
+    stack = []
+    traversed = {}
     return result
   }
 
@@ -328,7 +331,7 @@ class Log extends GSet {
     const nexts = Object.keys(Object.assign({}, sortedHeadIndex, heads))
     const all = Object.values(this.getNextAndTraverse(this.heads, pointerCount))
     const getEveryPow2 = (maxDistance) => {
-      const entries = new Set()
+      let entries = new Set()
       for (let i = 1; i <= maxDistance; i *= 2) {
         const index = Math.min(i - 1, all.length - 1)
         const ref = all[index]
@@ -341,16 +344,25 @@ class Log extends GSet {
     // If pointer count is 8, returns 3 references
     // If pointer count is 512, returns 9 references
     // If pointer count is 2048, returns 11 references
+    // const references = getEveryPow2(Math.min(pointerCount, all.length))
     const references = getEveryPow2(Math.min(pointerCount, all.length))
     let refSet = new Set(references)
 
     // Always include the last known reference
-    if (all.length < pointerCount && all[all.length - 1]) { refSet.add(all[all.length - 1]) }
+    if (all.length < pointerCount && all[all.length - 1]) { 
+      refSet.add(all[all.length - 1]) 
+    }
 
     // Delete the heads from the refs
-    const delRef = e => refSet.delete(e)
-    nexts.forEach(delRef)
-    const refs = Array.from(refSet).map(getHash)
+    // const delRef = e => {
+    //   // console.log(":", e, refSet)
+    //   refSet.delete(e)
+    // }
+    // nexts.forEach(delRef)
+    const isNext = e => !nexts.includes(e)
+    const refs = Array.from(refSet).map(getHash).filter(isNext)
+    // const refs = Array.from(refSet).map(getHash)
+    // console.log(":", refs, nexts)
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
@@ -476,10 +488,10 @@ class Log extends GSet {
     }
 
     const entriesToJoin = Object.values(newItems)
-    await pEachSeries(entriesToJoin, async e => {
+    await pMap(entriesToJoin, async e => {
       await permitted(e)
       await verify(e)
-    })
+    }, { concurrency: 100 })
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
