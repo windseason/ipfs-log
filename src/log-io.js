@@ -81,10 +81,11 @@ class LogIO {
     length = length > -1 ? Math.max(length, 1) : length
 
     const entries = await EntryIO.fetchParallel(ipfs, hashes,
-      { length, exclude, onProgressCallback, timeout })
+      { length, exclude, onProgressCallback, timeout, concurrency: 128 })
     // Cap the result at the right size by taking the last n entries,
     // or if given length is -1, then take all
     const sliced = length > -1 ? last(entries, length) : entries
+    // console.log(">>>", sliced.length)
     return {
       values: sliced
     }
@@ -143,7 +144,7 @@ class LogIO {
 
     // Fetch the entries
     const entries = await EntryIO.fetchParallel(ipfs, hashes,
-      { length, exclude, onProgressCallback, timeout })
+      { length, exclude, onProgressCallback, timeout, concurrency: 64 })
 
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(entries)
