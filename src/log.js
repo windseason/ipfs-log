@@ -1,6 +1,5 @@
 'use strict'
 
-const pEachSeries = require('p-each-series')
 const pMap = require('p-map')
 const GSet = require('./g-set')
 const Entry = require('./entry')
@@ -195,11 +194,10 @@ class Log extends GSet {
   }
 
   getNextAndTraverse (rootEntries, amount) {
-    const getFirstNextPointer = entry => entry.next[0]
     let stack = rootEntries
-      // .map(getFirstNextPointer)
-      // .map(e => this.get(e))
-      // .filter(isDefined)
+    // .map(getFirstNextPointer)
+    // .map(e => this.get(e))
+    // .filter(isDefined)
 
     // Cache for checking if we've processed an entry already
     let traversed = {}
@@ -349,8 +347,8 @@ class Log extends GSet {
     let refSet = new Set(references)
 
     // Always include the last known reference
-    if (all.length < pointerCount && all[all.length - 1]) { 
-      refSet.add(all[all.length - 1]) 
+    if (all.length < pointerCount && all[all.length - 1]) {
+      refSet.add(all[all.length - 1])
     }
 
     // Delete the heads from the refs

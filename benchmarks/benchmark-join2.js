@@ -9,18 +9,12 @@ const Keystore = require('orbit-db-keystore')
 
 const leveldown = require('leveldown')
 const storage = require('orbit-db-storage-adapter')(leveldown)
-const {MemStore} = require('orbit-db-test-utils')
-
 // State
 let ipfs
 let log1, log2
 
 // Metrics
 let totalQueries = 0
-let seconds = 0
-let queriesPerSecond = 0
-let lastTenSeconds = 0
-
 const queryLoop = async () => {
   try {
     await Promise.all([
@@ -31,8 +25,6 @@ const queryLoop = async () => {
     await log1.join(log2)
     await log2.join(log1)
     totalQueries++
-    lastTenSeconds++
-    queriesPerSecond++
     setImmediate(queryLoop)
   } catch (e) {
     console.error(e)
@@ -68,8 +60,8 @@ let run = (() => {
     // ipfs.dag.put = memstore.put.bind(memstore)
     // ipfs.dag.get = memstore.get.bind(memstore)
 
-    const signingKeysPath1 = './test/fixtures/keys1'
-    const signingKeysPath2 = './test/fixtures/keys2'
+    const signingKeysPath1 = './benchmarks/ipfs-log-benchmarks/keys1'
+    const signingKeysPath2 = './benchmarks/ipfs-log-benchmarks/keys2'
     const store1 = await storage.createStore(signingKeysPath1)
     const store2 = await storage.createStore(signingKeysPath2)
     const keystore1 = new Keystore(store1)
@@ -81,30 +73,30 @@ let run = (() => {
     log2 = new Log(ipfs, identity2, { logId: 'A' })
 
     const amount = 10000
-    console.log("log length:", amount)
+    console.log('log length:', amount)
 
-    console.log("Writing log...")
+    console.log('Writing log...')
     const st3 = new Date().getTime()
     for (let i = 0; i < amount; i++) {
       await log1.append('a' + i, 64)
     }
     const et3 = new Date().getTime()
-    console.log("write took", (et3-st3), "ms")
+    console.log('write took', (et3 - st3), 'ms')
 
-    console.log("Joining logs...")
+    console.log('Joining logs...')
     const st = new Date().getTime()
     await log2.join(log1)
     const et = new Date().getTime()
-    console.log("join took", (et-st), "ms")
+    console.log('join took', (et - st), 'ms')
 
-    console.log("Loading log...")
+    console.log('Loading log...')
     const st2 = new Date().getTime()
-    const l2 = await Log.fromEntryHash(ipfs, identity, log1.heads[0].hash, {logId: 'A'})
+    const l2 = await Log.fromEntryHash(ipfs, identity, log1.heads[0].hash, { logId: 'A' })
     const et2 = new Date().getTime()
-    console.log("load took", (et2-st2), "ms")
-    console.log("Entry size:", Buffer.from(JSON.stringify(l2.heads)).length, "bytes")
+    console.log('load took', (et2 - st2), 'ms')
+    console.log('Entry size:', Buffer.from(JSON.stringify(l2.heads)).length, 'bytes')
     // console.log(log2.heads)
-    console.log("log length:", log2.values.length)
+    console.log('log length:', log2.values.length)
     console.log(log2.values.map(e => e.payload))
   })
 })()

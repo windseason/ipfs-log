@@ -6,7 +6,7 @@ const Entry = require('./entry')
 
 class EntryIO {
   // Fetch log graphs in parallel
-  static fetchParallel (ipfs, hashes, {length, exclude = [], concurrency, timeout, onProgressCallback}) {
+  static fetchParallel (ipfs, hashes, { length, exclude = [], concurrency, timeout, onProgressCallback }) {
     const fetchOne = (hash) => EntryIO.fetchAll(ipfs, hash, length, exclude, timeout, onProgressCallback)
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])
@@ -26,14 +26,13 @@ class EntryIO {
    * @param {function(hash, entry, parent, depth)} onProgressCallback
    * @returns {Promise<Array<Entry>>}
    */
-  static async fetchAll (ipfs, hashes, amount, exclude = [], timeout = null, onProgressCallback, onStartProgressCallback, concurrency = 32, delay = 0) {
+  static async fetchAll (ipfs, hashes, { length = -1, exclude = [], timeout = null, onProgressCallback, onStartProgressCallback, concurrency = 32, delay = 0 } = {}) {
     let result = []
     let cache = {}
     let loadingCache = {}
     let loadingQueue = Array.isArray(hashes)
-      ? {0: hashes.slice()}
-      : {0: [hashes]}
-
+      ? { 0: hashes.slice() }
+      : { 0: [hashes] }
     // Add a multihash to the loading queue
     const addToLoadingQueue = (e, idx) => {
       if (!loadingCache[e]) {
@@ -46,16 +45,15 @@ class EntryIO {
     }
 
     // Add entries that we don't need to fetch to the "cache"
-    var addToExcludeCache = e => cache[e.hash] = e
+    const addToExcludeCache = e => { cache[e.hash] = e }
     exclude.forEach(addToExcludeCache)
 
     const loadingQueueHasMore = () => Object.values(loadingQueue)
       .find(e => e && e.length > 0) !== undefined
 
     const shouldFetchMore = () => {
-      // console.log("Amount:", amount)
-      return loadingQueueHasMore()
-          && (result.length < amount || amount < 0)
+      return loadingQueueHasMore() &&
+          (result.length < length || length < 0)
     }
 
     const getNextFromQueue = (length = 1) => {
@@ -69,9 +67,7 @@ class EntryIO {
       return all
     }
 
-    const fetchEntry = (entryHash) => {
-      const hash = entryHash
-
+    const fetchEntry = (hash) => {
       if (!hash || cache[hash]) {
         return Promise.resolve()
       }
@@ -79,11 +75,11 @@ class EntryIO {
       return new Promise((resolve, reject) => {
         // Resolve the promise after a timeout (if given) in order to
         // not get stuck loading a block that is unreachable
-        // const timer = timeout 
+        // const timer = timeout
         // ? setTimeout(() => {
         //     console.warn(`Warning: Couldn't fetch entry '${hash}', request timed out (${timeout}ms)`)
         //     resolve()
-        //   } , timeout) 
+        //   } , timeout)
         // : null
 
         const sleep = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms))
@@ -115,14 +111,13 @@ class EntryIO {
           .then(addToResults)
           .then(async (entry) => {
             // Simulate network latency
-            if (delay > 0)
-              await sleep(delay)
+            if (delay > 0) { await sleep(delay) }
 
             return entry
           })
           .then(resolve)
           .catch(err => {
-            resolve()
+            reject(err)
           })
       })
     }
@@ -130,14 +125,17 @@ class EntryIO {
     let running = 0
     const _processQueue = async () => {
       if (running < concurrency) {
-        const nexts = getNextFromQueue(concurrency)
+        let nexts = getNextFromQueue(concurrency)
+        if (result.length + nexts.length > length && !(length < 0)) {
+          nexts = nexts.slice(0, length - result.length) // trim nexts to match length
+        }
         running += nexts.length
         await pMap(nexts, fetchEntry)
         running -= nexts.length
       }
     }
 
-    await pDoWhilst(async () => await _processQueue(), shouldFetchMore)
+    await pDoWhilst(async () => _processQueue(), shouldFetchMore)
 
     // Free memory to avoid minor GC
     cache = {}
