@@ -13,7 +13,6 @@ const LogCreator = require('./utils/log-creator')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
 const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
-
 const BadComparatorReturnsZero = (a, b) => 0
 
 // Test utils
@@ -627,13 +626,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         let firstWriteWinsLog =
           new Log(ipfs, identities[0], { logId: 'X', sortFn: FirstWriteWins })
-        // let names = {}
-        // console.log(testLog.log.values.map(e => {
-        //   names[e.hash] = e.payload
-        //   return { p: e.payload, time:e.clock.time, refs: e.refs.map(e => names[e]), next: e.next.map(e => names[e]) }
-        //   }))
         await firstWriteWinsLog.join(testLog.log)
-        // console.log(testLog.log.values.map(e => e.payload))
         assert.deepStrictEqual(firstWriteWinsLog.values.map(e => e.payload),
           firstWriteExpectedData)
       })
@@ -711,7 +704,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('retrieves partially joined log deterministically - multiple next pointers', async () => {
-        const nextPointersAmount = 10
+        const nextPointersAmount = 64
 
         let logA = new Log(ipfs, testIdentity, { logId: 'X' })
         let logB = new Log(ipfs, testIdentity3, { logId: 'X' })
@@ -732,16 +725,19 @@ Object.keys(testAPIs).forEach((IPFS) => {
         for (let i = 6; i <= 10; i++) {
           await logA.append('entryA' + i, nextPointersAmount)
         }
+
         await log.join(log3)
         await log.append('entryC0', nextPointersAmount)
 
         await log.join(logA)
+
         const hash = await log.toMultihash()
 
         // First 5
         let res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 5 })
+
         const first5 = [
-          'entryC0', 'entryA8', 'entryA9', 'entryA10'
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
@@ -750,9 +746,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 11 })
 
         const first11 = [
-          'entryA4', 'entryA5', 'entryB5', 'entryA6',
-          'entryC0', 'entryA7', 'entryA8',
-          'entryA9', 'entryA10'
+          'entryA1', 'entryA2', 'entryA3', 'entryA4',
+          'entryA5', 'entryA6',
+          'entryC0',
+          'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
@@ -761,7 +758,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 16 - 1 })
 
         const all = [
-          'entryA1', /* excl */ 'entryA2', /* excl */ 'entryA3', 'entryB3',
+          'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
           'entryA6',
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'

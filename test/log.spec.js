@@ -275,7 +275,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log//, testIdentity2, testIdentity3, testIdentity4
       const expectedData = {
         id: 'AAA',
-        heads: ['zdpuAziVsRGqmKBmRnBWT2z3SgZd1zN7ENeGhd1sZdDvKD6dV']
+        heads: ['zdpuAx6oQ4fs8uS5D9ijJ6GQYu9NaSLp6T4b1kopCfMNw5oUf']
       }
 
       beforeEach(async () => {
@@ -294,11 +294,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
       describe('toSnapshot', () => {
         const expectedData = {
           id: 'AAA',
-          heads: ['zdpuAziVsRGqmKBmRnBWT2z3SgZd1zN7ENeGhd1sZdDvKD6dV'],
+          heads: ['zdpuAx6oQ4fs8uS5D9ijJ6GQYu9NaSLp6T4b1kopCfMNw5oUf'],
           values: [
             'zdpuAn68uyCp4DKDUXBfC3JVWfnFfoniar5JEYW2hLYugWCMq',
             'zdpuAyGSP8c7me4Zyvy6PVZo2i8WWHkK6oqFQFtawAALw6XNU',
-            'zdpuAziVsRGqmKBmRnBWT2z3SgZd1zN7ENeGhd1sZdDvKD6dV'
+            'zdpuAx6oQ4fs8uS5D9ijJ6GQYu9NaSLp6T4b1kopCfMNw5oUf'
           ]
         }
 

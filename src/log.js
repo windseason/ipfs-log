@@ -83,8 +83,9 @@ class Log extends GSet {
     this._identity = identity
 
     // Add entries to the internal cache
-    entries = entries || []
-    this._entryIndex = new EntryIndex(entries.reduce(uniqueEntriesReducer, {}))
+    const uniqueEntries = (entries || []).reduce(uniqueEntriesReducer, {})
+    this._entryIndex = new EntryIndex(uniqueEntries)
+    entries = Object.values(uniqueEntries) || []
 
     // Set heads if not passed as an argument
     heads = heads || Log.findHeads(entries)
@@ -230,7 +231,7 @@ class Log extends GSet {
       count++
     }
 
-    rootEntries.forEach(addEntry)
+    // rootEntries.forEach(addEntry)
 
     // Start traversal
     // Process stack until it's empty (traversed the full log)
@@ -335,6 +336,7 @@ class Log extends GSet {
         const ref = all[index]
         entries.add(ref)
       }
+
       return entries
     }
 
@@ -342,8 +344,7 @@ class Log extends GSet {
     // If pointer count is 8, returns 3 references
     // If pointer count is 512, returns 9 references
     // If pointer count is 2048, returns 11 references
-    // const references = getEveryPow2(Math.min(pointerCount, all.length))
-    const references = getEveryPow2(Math.min(pointerCount, all.length))
+    const references = getEveryPow2(Math.min(pointerCount, all.length ))
     let refSet = new Set(references)
 
     // Always include the last known reference
@@ -352,15 +353,8 @@ class Log extends GSet {
     }
 
     // Delete the heads from the refs
-    // const delRef = e => {
-    //   // console.log(":", e, refSet)
-    //   refSet.delete(e)
-    // }
-    // nexts.forEach(delRef)
     const isNext = e => !nexts.includes(e)
     const refs = Array.from(refSet).map(getHash).filter(isNext)
-    // const refs = Array.from(refSet).map(getHash)
-    // console.log(":", refs, nexts)
 
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache

@@ -80,10 +80,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strict.equal(log2.values[log2.length - 1].next.length, 1)
         assert.strict.equal(log3.values[log3.length - 1].next.length, 1)
         assert.strict.equal(log4.values[log4.length - 1].next.length, 1)
-        assert.strict.equal(log1.values[log1.length - 1].refs.length, 2)
-        assert.strict.equal(log2.values[log2.length - 1].refs.length, 3)
-        assert.strict.equal(log3.values[log3.length - 1].refs.length, 4)
-        assert.strict.equal(log4.values[log4.length - 1].refs.length, 5)
+        assert.strict.equal(log1.values[log1.length - 1].refs.length, 1)
+        assert.strict.equal(log2.values[log2.length - 1].refs.length, 2)
+        assert.strict.equal(log3.values[log3.length - 1].refs.length, 3)
+        assert.strict.equal(log4.values[log4.length - 1].refs.length, 4)
       })
 
       const inputs = [
@@ -91,21 +91,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
         { amount: 1, referenceCount: 2, refLength: 0 },
         { amount: 2, referenceCount: 1, refLength: 1 },
         { amount: 2, referenceCount: 2, refLength: 1 },
-        { amount: 3, referenceCount: 2, refLength: 2 },
-        { amount: 3, referenceCount: 4, refLength: 2 },
-        { amount: 4, referenceCount: 2, refLength: 2 },
-        { amount: 4, referenceCount: 4, refLength: 3 },
-        { amount: 32, referenceCount: 4, refLength: 3 },
-        { amount: 32, referenceCount: 8, refLength: 4 },
-        { amount: 32, referenceCount: 16, refLength: 5 },
-        { amount: 18, referenceCount: 32, refLength: 6 },
-        { amount: 128, referenceCount: 32, refLength: 6 },
-        { amount: 64, referenceCount: 64, refLength: 7 },
-        { amount: 65, referenceCount: 64, refLength: 7 },
-        { amount: 128, referenceCount: 64, refLength: 7 },
-        { amount: 128, referenceCount: 1, refLength: 1 },
-        { amount: 128, referenceCount: 2, refLength: 2 },
-        { amount: 256, referenceCount: 1, refLength: 1 },
+        { amount: 3, referenceCount: 2, refLength: 1 },
+        { amount: 3, referenceCount: 4, refLength: 1 },
+        { amount: 4, referenceCount: 4, refLength: 2 },
+        { amount: 4, referenceCount: 4, refLength: 2 },
+        { amount: 32, referenceCount: 4, refLength: 2 },
+        { amount: 32, referenceCount: 8, refLength: 3 },
+        { amount: 32, referenceCount: 16, refLength: 4 },
+        { amount: 18, referenceCount: 32, refLength: 5 },
+        { amount: 128, referenceCount: 32, refLength: 5 },
+        { amount: 64, referenceCount: 64, refLength: 6 },
+        { amount: 65, referenceCount: 64, refLength: 6 },
+        { amount: 128, referenceCount: 64, refLength: 6 },
+        { amount: 128, referenceCount: 1, refLength: 0 },
+        { amount: 128, referenceCount: 2, refLength: 1 },
+        { amount: 256, referenceCount: 1, refLength: 0 },
         { amount: 256, referenceCount: 256, refLength: 8 },
         { amount: 256, referenceCount: 1024, refLength: 8 }
       ]
@@ -125,20 +125,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
               const idx = log1.length - k - 1
               assert.strict.equal(log1.values[idx].clock.time, idx + 1)
 
-              // Check the first ref (distance 1)
-              if (log1.values[idx].refs.length > 0) { assert.strict.equal(log1.values[idx].refs[0], log1.values[idx - 1].hash) }
+              // Check the first ref (distance 2)
+              if (log1.values[idx].refs.length > 0) { assert.strict.equal(log1.values[idx].refs[0], log1.values[idx - 2].hash) }
 
               // Check the second ref (distance 2)
-              if (log1.values[idx].refs.length > 1) { assert.strict.equal(log1.values[idx].refs[1], log1.values[idx - 2].hash) }
+
+              if (log1.values[idx].refs.length > 1 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[1], log1.values[idx - 4].hash) }
 
               // Check the third ref (distance 4)
-              if (log1.values[idx].refs.length > 2 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[2], log1.values[idx - 4].hash) }
+              if (log1.values[idx].refs.length > 2 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[2], log1.values[idx - 8].hash) }
 
               // Check the fourth ref (distance 8)
-              if (log1.values[idx].refs.length > 3 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[3], log1.values[idx - 8].hash) }
+              if (log1.values[idx].refs.length > 3 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[3], log1.values[idx - 16].hash) }
 
               // Check the fifth ref (distance 16)
-              if (log1.values[idx].refs.length > 4 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[4], log1.values[idx - 16].hash) }
+              if (log1.values[idx].refs.length > 4 && idx > referenceCount) { assert.strict.equal(log1.values[idx].refs[4], log1.values[idx - 32].hash) }
 
               // Check the reference of each entry
               if (idx > referenceCount) { assert.strict.equal(log1.values[idx].refs.length, refLength) }
