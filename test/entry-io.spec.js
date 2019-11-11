@@ -96,7 +96,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
       for (let i = 0; i < count; i++) {
         await log.append('hello' + i)
       }
-
       const hash = await log.toMultihash()
       const result = await Log.fromMultihash(ipfs, testIdentity, hash)
       assert.strictEqual(result.length, count)
