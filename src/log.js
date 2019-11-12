@@ -344,7 +344,7 @@ class Log extends GSet {
     // If pointer count is 8, returns 3 references
     // If pointer count is 512, returns 9 references
     // If pointer count is 2048, returns 11 references
-    const references = getEveryPow2(Math.min(pointerCount, all.length ))
+    const references = getEveryPow2(Math.min(pointerCount, all.length))
     let refSet = new Set(references)
 
     // Always include the last known reference

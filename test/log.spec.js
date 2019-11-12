@@ -297,7 +297,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           heads: ['zdpuAx6oQ4fs8uS5D9ijJ6GQYu9NaSLp6T4b1kopCfMNw5oUf'],
           values: [
             'zdpuAn68uyCp4DKDUXBfC3JVWfnFfoniar5JEYW2hLYugWCMq',
-            'zdpuAyGSP8c7me4Zyvy6PVZo2i8WWHkK6oqFQFtawAALw6XNU',
+            'zdpuAnL1hHKvL6w8tZXDXBQviFjbbhxHCL65ym7jq4W4rbX14',
             'zdpuAx6oQ4fs8uS5D9ijJ6GQYu9NaSLp6T4b1kopCfMNw5oUf'
           ]
         }
