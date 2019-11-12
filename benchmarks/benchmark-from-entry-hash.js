@@ -42,7 +42,7 @@ let run = (() => {
 
   ipfs.on('ready', async () => {
     // Create a log
-    const signingKeysPath1 = './benchmarks/ipfs-log-benchmarks/keys1'
+    const signingKeysPath = './benchmarks/ipfs-log-benchmarks/keys1'
     const identity = await IdentityProvider.createIdentity({ id: 'userA', signingKeysPath })
 
     log = new Log(ipfs, identity, { logId: 'A' })
