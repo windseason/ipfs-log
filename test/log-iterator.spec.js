@@ -16,7 +16,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity, testIdentity2, testIdentity3
+let ipfs, testIdentity, testIdentity2, testIdentity3, identities
 
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Iterator (' + IPFS + ')', function () {
@@ -38,10 +38,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
+      testIdentity2 = await identities.createIdentity({ id: 'userB', signingKeystore })
+      testIdentity3 = await identities.createIdentity({ id: 'userC', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -59,7 +59,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log1
 
       beforeEach(async () => {
-        log1 = new Log(ipfs, testIdentity, { logId: 'X' })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'X' })
 
         for (let i = 0; i <= 100; i++) {
           await log1.append('entry' + i)
@@ -297,11 +297,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     describe('Iteration over forked/joined logs', () => {
-      let fixture, identities
+      let fixture, idList
 
       before(async () => {
-        identities = [testIdentity3, testIdentity2, testIdentity3, testIdentity]
-        fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
+        idList = [testIdentity3, testIdentity2, testIdentity3, testIdentity]
+        fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, idList, identities)
       })
 
       it('returns the full length from all heads', async () => {

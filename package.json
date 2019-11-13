@@ -12,12 +12,18 @@
   "engines": {
     "node": ">=8.0.0"
   },
+  "keywords": [
+    "ipfs",
+    "log",
+    "crdts",
+    "crdt"
+  ],
   "dependencies": {
     "cids": "~0.7.1",
     "ipld-dag-pb": "^0.17.4",
     "json-stringify-deterministic": "^1.0.1",
+    "orbit-db-identity-provider": "orbitdb/orbit-db-identity-provider#feat/keystore",
     "multihashing-async": "^0.7.0",
-    "orbit-db-identity-provider": "~0.2.0",
     "orbit-db-io": "~0.1.1",
     "p-do-whilst": "^1.1.0",
     "p-each-series": "^2.1.0",
@@ -82,5 +88,10 @@
     "benchmark": "node --expose-gc benchmarks/runner/index.js -r --grep baseline",
     "benchmark:stress": "node --expose-gc benchmarks/runner/index.js -r --grep stress",
     "examples": "http-server examples/browser"
-  }
+  },
+  "localMaintainers": [
+    "haad <haad@haja.io>",
+    "hajamark <mark@haja.io>",
+    "shamb0t <shams@haja.io>"
+  ]
 }
