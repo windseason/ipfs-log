@@ -60,17 +60,15 @@ let run = (() => {
     // ipfs.dag.put = memstore.put.bind(memstore)
     // ipfs.dag.get = memstore.get.bind(memstore)
 
-    const signingKeysPath1 = './benchmarks/ipfs-log-benchmarks/keys1'
-    const signingKeysPath2 = './benchmarks/ipfs-log-benchmarks/keys2'
-    const store1 = await storage.createStore(signingKeysPath1)
-    const store2 = await storage.createStore(signingKeysPath2)
-    const keystore1 = new Keystore(store1)
-    const keystore2 = new Keystore(store2)
-    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore: keystore1 })
-    const identity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore: keystore2 })
+    const signingKeysPath = './benchmarks/ipfs-log-benchmarks/keys1'
+    const store = await storage.createStore(signingKeysPath)
+    const keystore = new Keystore(store)
+    const identityProvider = new IdentityProvider({ keystore })
+    const identity = await identityProvider.createIdentity({ id: 'userA' })
+    const identity2 = await identityProvider.createIdentity({ id: 'userB' })
 
-    log1 = new Log(ipfs, identity, { logId: 'A' })
-    log2 = new Log(ipfs, identity2, { logId: 'A' })
+    log1 = new Log(ipfs, identity, identityProvider, { logId: 'A' })
+    log2 = new Log(ipfs, identity2, identityProvider, { logId: 'A' })
 
     const amount = 10000
     console.log('log length:', amount)
@@ -91,7 +89,7 @@ let run = (() => {
 
     console.log('Loading log...')
     const st2 = new Date().getTime()
-    const l2 = await Log.fromEntryHash(ipfs, identity, log1.heads[0].hash, { logId: 'A' })
+    const l2 = await Log.fromEntryHash(ipfs, identity, identityProvider, log1.heads[0].hash, { logId: 'A' })
     const et2 = new Date().getTime()
     console.log('load took', (et2 - st2), 'ms')
     console.log('Entry size:', Buffer.from(JSON.stringify(l2.heads)).length, 'bytes')

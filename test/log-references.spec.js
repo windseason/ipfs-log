@@ -15,7 +15,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity
+let ipfs, testIdentity, identities
 
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - References (' + IPFS + ')', function () {
@@ -37,8 +37,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -55,10 +55,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('creates entries with references', async () => {
         const amount = 64
         const maxReferenceDistance = 2
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'B' })
-        let log3 = new Log(ipfs, testIdentity, { logId: 'C' })
-        let log4 = new Log(ipfs, testIdentity, { logId: 'D' })
+        let log1 = new Log(ipfs, testIdentity, identities, { logId: 'A' })
+        let log2 = new Log(ipfs, testIdentity, identities, { logId: 'B' })
+        let log3 = new Log(ipfs, testIdentity, identities, { logId: 'C' })
+        let log4 = new Log(ipfs, testIdentity, identities, { logId: 'D' })
 
         for (let i = 0; i < amount; i++) {
           await log1.append(i.toString(), maxReferenceDistance)
@@ -113,7 +113,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       inputs.forEach(input => {
         it(`has ${input.refLength} references, max distance ${input.referenceCount}, total of ${input.amount} entries`, async () => {
           const test = async (amount, referenceCount, refLength) => {
-            let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+            let log1 = new Log(ipfs, testIdentity, identities, { logId: 'A' })
             for (let i = 0; i < amount; i++) {
               await log1.append((i + 1).toString(), referenceCount)
             }
