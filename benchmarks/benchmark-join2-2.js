@@ -70,7 +70,7 @@ let run = (() => {
     log1 = new Log(ipfs, identity, identityProvider, { logId: 'A' })
     log2 = new Log(ipfs, identity2, identityProvider, { logId: 'A' })
 
-    const amount = 10000
+    const amount = 100000
     console.log('log length:', amount)
 
     console.log('Writing log...')
