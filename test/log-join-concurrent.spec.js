@@ -3,6 +3,7 @@ const assert = require('assert')
 const rmrf = require('rimraf')
 const fs = require('fs-extra')
 const Log = require('../src/log')
+const Keystore = require('orbit-db-keystore')
 const { SortByEntryHash } = Log.Sorting
 const IdentityProvider = require('orbit-db-identity-provider')
 
@@ -14,12 +15,12 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity
+let ipfs, testIdentity, identities
 
 Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - Join Concurrent Entries (' + IPFS + ')', function () {
     this.timeout(config.timeout)
-
+    let keystore, signingKeystore
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-join-concurrent' + new Date().getTime()
@@ -31,14 +32,17 @@ Object.keys(testAPIs).forEach(IPFS => {
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      keystore = new Keystore(identityKeysPath)
+      signingKeystore = new Keystore(signingKeysPath)
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      await testIdentity.provider.keystore.close()
-      await testIdentity.provider.signingKeystore.close()
+      await keystore.close()
+      await signingKeystore.close()
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
@@ -48,8 +52,8 @@ Object.keys(testAPIs).forEach(IPFS => {
       let log1, log2
 
       before(async () => {
-        log1 = new Log(ipfs, testIdentity, { logId: 'A', sortFn: SortByEntryHash })
-        log2 = new Log(ipfs, testIdentity, { logId: 'A', sortFn: SortByEntryHash })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
+        log2 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
       })
 
       it('joins consistently', async () => {

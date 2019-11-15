@@ -25,9 +25,10 @@ class Entry {
    * console.log(entry)
    * // { hash: null, payload: "hello", next: [] }
    */
-  static async create (ipfs, identity, logId, data, next = [], clock) {
+  static async create (ipfs, identity, identityProvider, logId, data, next = [], clock) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
-    if (!isDefined(identity)) throw new Error('Identity is required, cannot create entry')
+    if (!isDefined(identity)) throw new Error('identity is required, cannot create entry')
+    if (!isDefined(identityProvider)) throw new Error('identityProvider is required, cannot create entry')
     if (!isDefined(logId)) throw new Error('Entry requires an id')
     if (!isDefined(data)) throw new Error('Entry requires data')
     if (!isDefined(next) || !Array.isArray(next)) throw new Error("'next' argument is not an array")
@@ -45,13 +46,27 @@ class Entry {
       clock: clock || new Clock(identity.publicKey)
     }
 
-    const signature = await identity.provider.sign(identity, Entry.toBuffer(entry))
-
+    const signature = await identityProvider.sign(identity, Entry.toBuffer(entry))
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
     entry.sig = signature
     entry.hash = await Entry.toMultihash(ipfs, entry)
 
+    return entry
+  }
+
+  static async toEntry (e) {
+    const entry = {
+      hash: null, // "zd...Foo", we'll set the hash after persisting the entry
+      id: e.id, // For determining a unique chain
+      payload: e.payload, // Can be any JSON.stringifyable data
+      next: e.next, // Array of hashes
+      v: e.v, // To tag the version of this data structure
+      clock: e.clock
+    }
+    entry.key = e.key
+    if (e.identity) { entry.identity = e.identity }
+    entry.sig = e.sig
     return entry
   }
 
@@ -62,9 +77,9 @@ class Entry {
    * @param {Entry} entry The entry being verified
    * @return {Promise} A promise that resolves to a boolean value indicating if the signature is valid
    */
-  static async verify (identityProvider, entry) {
-    if (!identityProvider) throw new Error('Identity-provider is required, cannot verify entry')
+  static async verify (entry, identityProvider) {
     if (!Entry.isEntry(entry)) throw new Error('Invalid Log entry')
+    if (!identityProvider) throw new Error('IdentityProvider is required, cannot verify entry')
     if (!entry.key) throw new Error("Entry doesn't have a key")
     if (!entry.sig) throw new Error("Entry doesn't have a signature")
 
@@ -77,7 +92,14 @@ class Entry {
       clock: entry.clock
     }
 
-    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
+    if (entry.v > 0) {
+      const validId = await identityProvider.verifyIdentity(entry.identity)
+      if (!validId) {
+        throw new Error(`Could not append entry, key "${entry.identity.id}" could not be verified`)
+      }
+    }
+
+    return identityProvider.keystore.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
   }
 
   /**

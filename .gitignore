@@ -11,3 +11,4 @@ test/browser/bundle.js.map
 examples/browser/bundle.js.map
 examples/browser/ipfs.min.js
 examples/browser/ipfslog.min.js
+benchmarks/ipfs-log-benchmarks
