@@ -69,7 +69,7 @@ class LogIO {
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    */
   static async fromEntryHash (ipfs, hash,
-    { length = -1, exclude = [], concurrency, onProgressCallback }) {
+    { length = -1, exclude = [], concurrency, sortFn, onProgressCallback }) {
     if (!isDefined(ipfs)) throw LogError.IpfsNotDefinedError()
     if (!isDefined(hash)) throw new Error("'hash' must be defined")
     // Convert input hash(s) to an array
@@ -80,7 +80,8 @@ class LogIO {
       { length, exclude, concurrency, onProgressCallback })
     // Cap the result at the right size by taking the last n entries,
     // or if given length is -1, then take all
-    const entries = length > -1 ? last(all, length) : all
+    sortFn = sortFn || NoZeroes(LastWriteWins)
+    const entries = length > -1 ? last(all.sort(sortFn), length) : all
     return { entries }
   }
 
