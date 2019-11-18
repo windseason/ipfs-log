@@ -272,7 +272,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     describe('serialize', async () => {
-      let log//, testIdentity2, testIdentity3, testIdentity4
+      let log
       const expectedData = {
         id: 'AAA',
         heads: ['zdpuApASvEM59JKWn7Y39JWVSoiQ2CoJWpWseNTzqWvX1dRtC']
