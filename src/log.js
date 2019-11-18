@@ -733,4 +733,5 @@ class Log extends GSet {
 
 module.exports = Log
 module.exports.Sorting = Sorting
+module.exports.Entry = Entry
 module.exports.AccessController = AccessController

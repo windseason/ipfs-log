@@ -119,7 +119,7 @@ class Entry {
     if (presigned) {
       return e // don't include key/sig information
     }
-    
+
     e.key = entry.key
     if (v > 0) {
       e.identity = entry.identity // added in v1
@@ -218,3 +218,4 @@ class Entry {
 }
 
 module.exports = Entry
+module.exports.IPLD_LINKS = IPLD_LINKS
