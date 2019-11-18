@@ -3,7 +3,7 @@
 const Clock = require('./lamport-clock')
 const { isDefined, io } = require('./utils')
 const stringify = require('json-stringify-deterministic')
-const IPLD_LINKS = ['next']
+const IPLD_LINKS = ['next', 'refs']
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
 const writeFormats = {
   0: 'dag-pb',
