@@ -58,32 +58,34 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('create', () => {
       it('creates a an empty entry', async () => {
-        const expectedHash = 'zdpuAvxsDjLGbLsS2oW5Tv7BaTy957rVnuKE8QRkdgYJF7LZx'
+        const expectedHash = 'zdpuAsPdzSyeux5mFsFV1y3WeHAShGNi4xo22cYBYWUdPtxVB'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello')
         assert.strictEqual(entry.hash, expectedHash)
         assert.strictEqual(entry.id, 'A')
         assert.strictEqual(entry.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry.clock.time, 0)
-        assert.strictEqual(entry.v, 1)
+        assert.strictEqual(entry.v, 2)
         assert.strictEqual(entry.payload, 'hello')
         assert.strictEqual(entry.next.length, 0)
+        assert.strictEqual(entry.refs.length, 0)
       })
 
       it('creates a entry with payload', async () => {
-        const expectedHash = 'zdpuAsUhje1scJtdCNHpbtGRsJGeU79kYfJUXXhBXfsfCF6jh'
+        const expectedHash = 'zdpuAyvJU3TS7LUdfRxwAnJorkz6NfpAWHGypsQEXLZxcCCRC'
         const payload = 'hello world'
         const entry = await Entry.create(ipfs, testIdentity, 'A', payload, [])
         assert.strictEqual(entry.payload, payload)
         assert.strictEqual(entry.id, 'A')
         assert.strictEqual(entry.clock.id, testIdentity.publicKey)
         assert.strictEqual(entry.clock.time, 0)
-        assert.strictEqual(entry.v, 1)
+        assert.strictEqual(entry.v, 2)
         assert.strictEqual(entry.next.length, 0)
+        assert.strictEqual(entry.refs.length, 0)
         assert.strictEqual(entry.hash, expectedHash)
       })
 
       it('creates a entry with payload and next', async () => {
-        const expectedHash = 'zdpuB2gUiMFQt5Si56h8PLF54Mdg2Lr2XGLSMkbseHB3AVzVx'
+        const expectedHash = 'zdpuAqsN9Py4EWSfrGYZS8tuokWuiTd9zhS8dhr9XpSGQajP2'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -167,14 +169,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('toMultihash', () => {
       it('returns an ipfs multihash', async () => {
-        const expectedMultihash = 'zdpuAvxsDjLGbLsS2oW5Tv7BaTy957rVnuKE8QRkdgYJF7LZx'
+        const expectedMultihash = 'zdpuAsPdzSyeux5mFsFV1y3WeHAShGNi4xo22cYBYWUdPtxVB'
         const entry = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const multihash = await Entry.toMultihash(ipfs, entry)
         assert.strictEqual(multihash, expectedMultihash)
       })
 
       it('returns the correct ipfs multihash for a v0 entry', async () => {
-        const expectedMultihash = 'QmV5NpvViHHouBfo7CSnfX2iB4t5PVWNJG8doKt5cwwnxY'
+        const expectedMultihash = 'Qmc2DEiLirMH73kHpuFPbt3V65sBrnDWkJYSjUQHXXvghT'
         const entry = v0Entries.hello
         const multihash = await Entry.toMultihash(ipfs, entry)
         assert.strictEqual(multihash, expectedMultihash)
@@ -213,7 +215,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('fromMultihash', () => {
       it('creates a entry from ipfs hash', async () => {
-        const expectedHash = 'zdpuAzJZ4Py1YrnychXjWhS3dNJmpYLmRXMVPnWsGsV5wvTaY'
+        const expectedHash = 'zdpuAnRGWKPkMHqumqdkRJtzbyW6qAGEiBRv61Zj3Ts4j9tQF'
         const payload1 = 'hello world'
         const payload2 = 'hello again'
         const entry1 = await Entry.create(ipfs, testIdentity, 'A', payload1, [])
@@ -229,9 +231,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates a entry from ipfs multihash of v0 entries', async () => {
-        const expectedHash = 'QmTLLKuNVXC95rGcnrL1M3xKf4dWYuu3MeAM3LUh3YNDJ7'
-        const entry1Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
-        const entry2Hash = await io.write(ipfs, 'dag-pb', v0Entries.helloAgain)
+        const expectedHash = 'QmZ8va2fSjRufV1sD6x5mwi6E5GrSjXHx7RiKFVBzkiUNZ'
+        const entry1Hash = await io.write(ipfs, 'dag-pb', Entry.toEntry(v0Entries.helloWorld))
+        const entry2Hash = await io.write(ipfs, 'dag-pb', Entry.toEntry(v0Entries.helloAgain))
         const final = await Entry.fromMultihash(ipfs, entry2Hash)
 
         assert.strictEqual(final.id, 'A')
@@ -245,13 +247,13 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('should return an entry interopable with older and newer versions', async () => {
-        const expectedHashV1 = 'zdpuAvxsDjLGbLsS2oW5Tv7BaTy957rVnuKE8QRkdgYJF7LZx'
+        const expectedHashV1 = 'zdpuAsPdzSyeux5mFsFV1y3WeHAShGNi4xo22cYBYWUdPtxVB'
         const entryV1 = await Entry.create(ipfs, testIdentity, 'A', 'hello', [])
         const finalV1 = await Entry.fromMultihash(ipfs, entryV1.hash)
         assert.strictEqual(finalV1.hash, expectedHashV1)
         assert.strictEqual(Object.assign({}, finalV1).hash, expectedHashV1)
 
-        const expectedHashV0 = 'QmderYccue9XqB7V4EYf71ZygWELdzdbVqo1oxR4nMRrCh'
+        const expectedHashV0 = 'QmUKMoRrmsYAzQg1nQiD7Fzgpo24zXky7jVJNcZGiSAdhc'
         const entryHashV0 = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
         const finalV0 = await Entry.fromMultihash(ipfs, entryHashV0)
         assert.strictEqual(finalV0.hash, expectedHashV0)
