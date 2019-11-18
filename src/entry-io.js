@@ -104,7 +104,7 @@ class EntryIO {
           if (length < 0) {
             // If we're fetching all entries (length === -1), adds nexts and refs to the queue
             entry.next.forEach(addToLoadingQueue)
-            entry.refs.forEach(addToLoadingQueue)
+            if (entry.refs) entry.refs.forEach(addToLoadingQueue)
           } else {
             // If we're fetching entries up to certain length,
             // fetch the next if result is filled up, to make sure we "check"
@@ -120,7 +120,7 @@ class EntryIO {
       }
 
       if (onStartProgressCallback) {
-        onStartProgressCallback(hash, null, result.length, result, loadingQueue)
+        onStartProgressCallback(hash, null, 0, result.length)
       }
 
       // Load the entry
@@ -130,7 +130,7 @@ class EntryIO {
       addToResults(entry)
 
       if (onProgressCallback) {
-        onProgressCallback(hash, entry, result.length, result, loadingQueue)
+        onProgressCallback(hash, entry, result.length, result.length)
       }
 
       // Simulate network latency (for debugging purposes)
