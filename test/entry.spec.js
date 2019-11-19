@@ -9,6 +9,7 @@ const { io } = require('../src/utils')
 const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 const v0Entries = require('./fixtures/v0-entries.fixture')
+const v1Entries = require('./fixtures/v1-entries.fixture')
 const Keystore = require('orbit-db-keystore')
 
 // Test utils
@@ -182,6 +183,14 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(multihash, expectedMultihash)
       })
 
+      it('returns the correct ipfs multihash for a v1 entry', async () => {
+        const entry = v1Entries[0]
+        const expectedMultihash = entry.hash
+        const e = Entry.toEntry(entry)
+        const multihash = await Entry.toMultihash(ipfs, e)
+        assert.strictEqual(multihash, expectedMultihash)
+      })
+
       it('throws an error if ipfs is not defined', async () => {
         let err
         try {
@@ -244,6 +253,23 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(final.v, 0)
         assert.strictEqual(final.hash, entry2Hash)
         assert.strictEqual(final.hash, expectedHash)
+      })
+
+      it('creates a entry from ipfs multihash of v1 entries', async () => {
+        const expectedHash = 'zdpuAxgKyiM9qkP9yPKCCqrHer9kCqYyr7KbhucsPwwfh6JB3'
+        const e1 = v1Entries[0]
+        const e2 = v1Entries[1]
+        const entry1Hash = await io.write(ipfs, 'dag-cbor', Entry.toEntry(e1), { links: Entry.IPLD_LINKS })
+        const entry2Hash = await io.write(ipfs, 'dag-cbor', Entry.toEntry(e2), { links: Entry.IPLD_LINKS })
+        const final = await Entry.fromMultihash(ipfs, entry2Hash)
+        assert.strictEqual(final.id, 'A')
+        assert.strictEqual(final.payload, e2.payload)
+        assert.strictEqual(final.next.length, 1)
+        assert.strictEqual(final.next[0], e2.next[0])
+        assert.strictEqual(final.next[0], entry1Hash)
+        assert.strictEqual(final.v, 1)
+        assert.strictEqual(final.hash, entry2Hash)
+        assert.strictEqual(entry2Hash, expectedHash)
       })
 
       it('should return an entry interopable with older and newer versions', async () => {
