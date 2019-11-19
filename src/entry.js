@@ -101,9 +101,9 @@ class Entry {
     return io.write(ipfs, getWriteFormat(e.v), e, { links: IPLD_LINKS })
   }
 
-  static toEntry (entry, { presigned = false } = {}) {
+  static toEntry (entry, { presigned = false, includeHash = false } = {}) {
     const e = {
-      hash: null,
+      hash: includeHash ? entry.hash : null,
       id: entry.id,
       payload: entry.payload,
       next: entry.next
