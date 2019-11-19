@@ -185,9 +185,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('returns the correct ipfs multihash for a v1 entry', async () => {
         const entry = v1Entries[0]
-        const expectedMultihash = entry.hash
+        const expectedMultihash = 'zdpuAsJDrLKrAiU8M518eu6mgv9HzS3e1pfH5XC7LUsFgsK5c'
         const e = Entry.toEntry(entry)
         const multihash = await Entry.toMultihash(ipfs, e)
+        assert.strictEqual(expectedMultihash, entry.hash)
         assert.strictEqual(multihash, expectedMultihash)
       })
 
