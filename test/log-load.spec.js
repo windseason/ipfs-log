@@ -94,7 +94,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let data = fixture.log
         let json = fixture.json
 
-          json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
 
         let log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'X' })
 
@@ -842,10 +842,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     describe.only('Backwards-compatibility v0', () => {
-      let entries, hashes
+      const entries = [v0Entries.hello, v0Entries.helloWorld, v0Entries.helloAgain]
       before(async () => {
-        entries = [v0Entries.hello, v0Entries.helloWorld, v0Entries.helloAgain]
-        hashes = await Promise.all(entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+        await Promise.all(entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
       })
 
       it('creates a log from v0 json', async () => {
@@ -876,9 +875,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     describe.only('Backwards-compatibility v1', () => {
-      let hashes
       before(async () => {
-        hashes = await Promise.all(v1Entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+        await Promise.all(v1Entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
       })
 
       it('creates a log from v1 json', async () => {
@@ -887,7 +885,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
         json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
         const log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
         assert.strictEqual(log.length, 5)
-        assert.deepStrictEqual(log.values.map(e => e.hash), hashes)
         assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
       })
 
