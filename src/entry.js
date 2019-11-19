@@ -5,7 +5,8 @@ const { isDefined, io } = require('./utils')
 const stringify = require('json-stringify-deterministic')
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
 const IPLD_LINKS = ['next', 'refs']
-const getWriteFormat = v => v === 0 ? 'dag-pb' : 'dag-cbor'
+const getWriteFormatForVersion = v => v === 0 ? 'dag-pb' : 'dag-cbor'
+const getWriteFormat = e => Entry.isEntry(e) ? getWriteFormatForVersion(e.v) : getWriteFormatForVersion(e)
 
 class Entry {
   /**
@@ -219,3 +220,4 @@ class Entry {
 
 module.exports = Entry
 module.exports.IPLD_LINKS = IPLD_LINKS
+module.exports.getWriteFormat = getWriteFormat
