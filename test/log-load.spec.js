@@ -7,9 +7,11 @@ const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
+const { io } = require('../src/utils')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 const LogCreator = require('./utils/log-creator')
+const v1Entries = require('./fixtures/v1-entries.fixture')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
 const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
@@ -91,7 +93,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let data = fixture.log
         let json = fixture.json
 
-        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+          json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
 
         let log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'X' })
 
@@ -114,6 +116,23 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log.length, 16)
         assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
       })
+
+      it.only('creates a log from v1 json', async () => {
+        let json = { id: 'A' }
+
+        const aa = await Promise.all(v1Entries, e => io.write(ipfs, 'dag-pb', Entry.toEntry(e), { links: Entry.IPLD_LINKS }))
+        // const headHash = await io.write(ipfs, 'dag-pb', Entry.toEntry(v1Entries[v1Entries.length - 1], { links: Entry.IPLD_LINKS }))
+        // json.heads = await Promise.all([Entry.fromMultihash(ipfs, headHash)])
+
+        // let log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
+        // const e = Entry.toEntry(v1Entries[v1Entries.length - 1])
+        console.log(aa)
+        const e = await io.read(ipfs, v1Entries[v1Entries.length - 1].hash, { links: Entry.IPLD_LINKS })
+        console.log(e)
+        let log = await Log.fromEntry(ipfs, testIdentity, v1Entries[v1Entries.length - 1])
+        assert.strictEqual(log.length, 5)
+      })
+
     })
 
     describe('fromEntryHash', () => {

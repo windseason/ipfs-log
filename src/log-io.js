@@ -98,8 +98,10 @@ class LogIO {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     const { id, heads } = json
     const headHashes = heads.map(e => e.hash)
+    console.log("!!!", heads, id)
     const all = await EntryIO.fetchParallel(ipfs, headHashes,
       { length, concurrency, onProgressCallback })
+    console.log("!!!22")
     const entries = all.sort(Entry.compare)
     return { logId: id, entries, heads }
   }
@@ -133,10 +135,12 @@ class LogIO {
     // Make sure we pass hashes instead of objects to the fetcher function
     const hashes = sourceEntries.map(e => e.hash)
 
+    console.log("AALLLL", hashes)
     // Fetch the entries
     const all = await EntryIO.fetchParallel(ipfs, hashes,
       { length, exclude, concurrency, onProgressCallback })
 
+    console.log("AALLLL", all, hashes)
     // Combine the fetches with the source entries and take only uniques
     const combined = sourceEntries.concat(all).concat(exclude)
     const uniques = findUniques(combined, 'hash').sort(Entry.compare)
