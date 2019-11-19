@@ -106,7 +106,7 @@ class Entry {
       hash: null,
       id: entry.id,
       payload: entry.payload,
-      next: entry.next,
+      next: entry.next
     }
 
     const v = entry.v
