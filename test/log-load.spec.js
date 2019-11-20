@@ -120,7 +120,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       it('respects timeout parameter', async () => {
         let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
-        let data = fixture.log
         let json = fixture.json
         json.heads = [{ hash: 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus' }]
 
@@ -875,7 +874,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(log.length, 1)
           assert.deepStrictEqual(log.values.map(e => e.payload), [e.payload])
         })
-
       })
     })
 
