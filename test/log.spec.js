@@ -22,7 +22,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity, identities, testIdentity2, testIdentity3
+let ipfs, testIdentity, testIdentity2, testIdentity3
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)

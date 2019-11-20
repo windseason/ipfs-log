@@ -5,7 +5,10 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
 
+const leveldown = require('leveldown')
+const storage = require('orbit-db-storage-adapter')(leveldown)
 // State
 let ipfs
 let log

@@ -24,27 +24,22 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Entry - Persistency (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
+    const { signingKeyFixtures, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-entry-io' + new Date().getTime()
     })
 
-    let options, keystore, signingKeystore
+    let options, keystore
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
-      rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
-      await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
-      const defaultOptions = { identityKeysPath, signingKeysPath }
-
       keystore = new Keystore(signingKeysPath)
-      // signingKeystore = new Keystore(signingKeysPath)
 
       const users = ['userA', 'userB', 'userC', 'userD']
       options = users.map((user) => {
-        return Object.assign({}, defaultOptions, { id: user })
+        return Object.assign({}, { id: user })
       })
       identities = new IdentityProvider({ keystore })
       testIdentity = await identities.createIdentity(options[0])
@@ -57,7 +52,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfs)
       rmrf.sync(ipfsConfig.repo)
-      rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
 
       await keystore.close()
