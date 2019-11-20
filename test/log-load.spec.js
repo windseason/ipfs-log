@@ -7,9 +7,12 @@ const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
+const { io } = require('../src/utils')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 const LogCreator = require('./utils/log-creator')
+const v0Entries = require('./fixtures/v0-entries.fixture')
+const v1Entries = require('./fixtures/v1-entries.fixture')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
 const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
@@ -835,6 +838,74 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(b.length, amount)
           assert.strictEqual(b.values[0].hash, items1[0].hash)
         })
+      })
+    })
+
+    describe.only('Backwards-compatibility v0', () => {
+      const entries = [v0Entries.hello, v0Entries.helloWorld, v0Entries.helloAgain]
+      before(async () => {
+        await Promise.all(entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+      })
+
+      it('creates a log from v0 json', async () => {
+        const headHash = await io.write(ipfs, 'dag-pb', Entry.toEntry(v0Entries.helloAgain), { links: Entry.IPLD_LINKS })
+        const json = { id: 'A', heads: [headHash] }
+        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+        const log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from v0 entry', async () => {
+        const log = await Log.fromEntry(ipfs, testIdentity, [Entry.toEntry(v0Entries.helloAgain, { includeHash: true })], { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from v0 entry hash', async () => {
+        const log = await Log.fromEntryHash(ipfs, testIdentity, v0Entries.helloAgain.hash, { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from log hash of v0 entries', async () => {
+        const log1 = new Log(ipfs, testIdentity, { entries: entries })
+        const hash = await log1.toMultihash()
+        const log = await Log.fromMultihash(ipfs, testIdentity, hash, { logId: 'A' })
+        assert.strictEqual(log.length, 3)
+        assert.strictEqual(log.heads.length, 2)
+      })
+    })
+
+    describe.only('Backwards-compatibility v1', () => {
+      before(async () => {
+        await Promise.all(v1Entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+      })
+
+      it('creates a log from v1 json', async () => {
+        const headHash = await io.write(ipfs, 'dag-cbor', Entry.toEntry(v1Entries[v1Entries.length - 1]), { links: Entry.IPLD_LINKS })
+        const json = { id: 'A', heads: [headHash] }
+        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+        const log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from v1 entry', async () => {
+        const log = await Log.fromEntry(ipfs, testIdentity, v1Entries[v1Entries.length - 1], { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from v1 entry hash', async () => {
+        const log = await Log.fromEntryHash(ipfs, testIdentity, v1Entries[v1Entries.length - 1].hash, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from log hash of v1 entries', async () => {
+        const log1 = new Log(ipfs, testIdentity, { entries: v1Entries })
+        const hash = await log1.toMultihash()
+        const log = await Log.fromMultihash(ipfs, testIdentity, hash, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
       })
     })
   })

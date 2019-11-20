@@ -3,12 +3,10 @@
 const Clock = require('./lamport-clock')
 const { isDefined, io } = require('./utils')
 const stringify = require('json-stringify-deterministic')
-const IPLD_LINKS = ['next', 'refs']
 const IpfsNotDefinedError = () => new Error('Ipfs instance not defined')
-const writeFormats = {
-  0: 'dag-pb',
-  1: 'dag-cbor'
-}
+const IPLD_LINKS = ['next', 'refs']
+const getWriteFormatForVersion = v => v === 0 ? 'dag-pb' : 'dag-cbor'
+const getWriteFormat = e => Entry.isEntry(e) ? getWriteFormatForVersion(e.v) : getWriteFormatForVersion(e)
 
 class Entry {
   /**
@@ -42,7 +40,7 @@ class Entry {
       payload: data, // Can be any JSON.stringifyable data
       next: nexts, // Array of hashes
       refs: refs,
-      v: 1, // To tag the version of this data structure
+      v: 2, // To tag the version of this data structure
       clock: clock || new Clock(identity.publicKey)
     }
 
@@ -69,17 +67,9 @@ class Entry {
     if (!entry.key) throw new Error("Entry doesn't have a key")
     if (!entry.sig) throw new Error("Entry doesn't have a signature")
 
-    const e = {
-      hash: null,
-      id: entry.id,
-      payload: entry.payload,
-      next: entry.next,
-      refs: entry.refs,
-      v: entry.v,
-      clock: entry.clock
-    }
-
-    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e), 'v' + entry.v)
+    const e = Entry.toEntry(entry, { presigned: true })
+    const verifier = entry.v < 1 ? 'v0' : 'v1'
+    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e), verifier)
   }
 
   /**
@@ -107,21 +97,36 @@ class Entry {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!Entry.isEntry(entry)) throw new Error('Invalid object format, cannot generate entry hash')
 
-    // Ensure `entry` follows the correct format
+    // // Ensure `entry` follows the correct format
+    const e = Entry.toEntry(entry)
+    return io.write(ipfs, getWriteFormat(e.v), e, { links: IPLD_LINKS })
+  }
+
+  static toEntry (entry, { presigned = false, includeHash = false } = {}) {
     const e = {
-      hash: null,
+      hash: includeHash ? entry.hash : null,
       id: entry.id,
       payload: entry.payload,
-      next: entry.next,
-      refs: entry.refs,
-      v: entry.v,
-      clock: entry.clock
+      next: entry.next
     }
 
-    if (entry.key) Object.assign(e, { key: entry.key })
-    if (entry.identity) Object.assign(e, { identity: entry.identity })
-    if (entry.sig) Object.assign(e, { sig: entry.sig })
-    return io.write(ipfs, writeFormats[e.v], e, { links: IPLD_LINKS })
+    const v = entry.v
+    if (v > 1) {
+      e.refs = entry.refs // added in v2
+    }
+    e.v = entry.v
+    e.clock = new Clock(entry.clock.id, entry.clock.time)
+
+    if (presigned) {
+      return e // don't include key/sig information
+    }
+
+    e.key = entry.key
+    if (v > 0) {
+      e.identity = entry.identity // added in v1
+    }
+    e.sig = entry.sig
+    return e
   }
 
   /**
@@ -137,22 +142,10 @@ class Entry {
   static async fromMultihash (ipfs, hash) {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!hash) throw new Error(`Invalid hash: ${hash}`)
-
     const e = await io.read(ipfs, hash, { links: IPLD_LINKS })
 
-    let entry = {
-      hash: hash,
-      id: e.id,
-      payload: e.payload,
-      next: e.next,
-      refs: e.refs,
-      v: e.v,
-      clock: new Clock(e.clock.id, e.clock.time)
-    }
-
-    if (e.key) Object.assign(entry, { key: e.key })
-    if (e.identity) Object.assign(entry, { identity: e.identity })
-    if (e.sig) Object.assign(entry, { sig: e.sig })
+    const entry = Entry.toEntry(e)
+    entry.hash = hash
 
     return entry
   }
@@ -168,7 +161,8 @@ class Entry {
       obj.payload !== undefined &&
       obj.v !== undefined &&
       obj.hash !== undefined &&
-      obj.clock !== undefined
+      obj.clock !== undefined &&
+      (obj.refs !== undefined || obj.v < 2) // 'refs' added in v2
   }
 
   /**
@@ -225,3 +219,5 @@ class Entry {
 }
 
 module.exports = Entry
+module.exports.IPLD_LINKS = IPLD_LINKS
+module.exports.getWriteFormat = getWriteFormat
