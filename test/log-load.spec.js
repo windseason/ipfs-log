@@ -117,6 +117,21 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log.length, 16)
         assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
       })
+
+      it('respects timeout parameter', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
+        let data = fixture.log
+        let json = fixture.json
+        json.heads = [{ hash: 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus' }]
+
+        const timeout = 500
+        const st = new Date().getTime()
+        let log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'X', timeout })
+        const et = new Date().getTime()
+        assert.strictEqual((et - st) > timeout, true)
+        assert.strictEqual(log.length, 0)
+        assert.deepStrictEqual(log.values.map(e => e.payload), [])
+      })
     })
 
     describe('fromEntryHash', () => {
@@ -157,6 +172,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log1.id, data.heads[0].id)
         assert.strictEqual(log1.length, 16)
         assert.deepStrictEqual(log1.values.map(e => e.payload), firstWriteExpectedData)
+      })
+
+      it('respects timeout parameter', async () => {
+        const timeout = 500
+        const st = new Date().getTime()
+        let log = await Log.fromEntryHash(ipfs, testIdentity, 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus', { logId: 'X', timeout })
+        const et = new Date().getTime()
+        assert.strictEqual((et - st) > timeout, true)
+        assert.strictEqual(log.length, 0)
+        assert.deepStrictEqual(log.values.map(e => e.payload), [])
       })
     })
 
@@ -838,10 +863,23 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(b.length, amount)
           assert.strictEqual(b.values[0].hash, items1[0].hash)
         })
+
+        it('respects timeout parameter', async () => {
+          let e = last(items1)
+          e.hash = 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus'
+          const timeout = 500
+          const st = new Date().getTime()
+          const log = await Log.fromEntry(ipfs, testIdentity, e, { timeout })
+          const et = new Date().getTime()
+          assert.strictEqual((et - st) > timeout, true)
+          assert.strictEqual(log.length, 1)
+          assert.deepStrictEqual(log.values.map(e => e.payload), [e.payload])
+        })
+
       })
     })
 
-    describe.only('Backwards-compatibility v0', () => {
+    describe('Backwards-compatibility v0', () => {
       const entries = [v0Entries.hello, v0Entries.helloWorld, v0Entries.helloAgain]
       before(async () => {
         await Promise.all(entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
@@ -874,7 +912,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
     })
 
-    describe.only('Backwards-compatibility v1', () => {
+    describe('Backwards-compatibility v1', () => {
       before(async () => {
         await Promise.all(v1Entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
       })

@@ -280,7 +280,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(finalV1.hash, expectedHashV1)
         assert.strictEqual(Object.assign({}, finalV1).hash, expectedHashV1)
 
-        const expectedHashV0 = 'QmUKMoRrmsYAzQg1nQiD7Fzgpo24zXky7jVJNcZGiSAdhc'
+        const expectedHashV0 = 'QmenUDpFksTa3Q9KmUJYjebqvHJcTF2sGQaCH7orY7bXKC'
         const entryHashV0 = await io.write(ipfs, 'dag-pb', v0Entries.helloWorld)
         const finalV0 = await Entry.fromMultihash(ipfs, entryHashV0)
         assert.strictEqual(finalV0.hash, expectedHashV0)

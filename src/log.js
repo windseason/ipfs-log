@@ -546,10 +546,10 @@ class Log extends GSet {
    * @returns {Promise<Log>}
    */
   static async fromMultihash (ipfs, identity, hash,
-    { access, length = -1, exclude = [], concurrency, sortFn, onProgressCallback } = {}) {
+    { access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const { logId, entries, heads } = await LogIO.fromMultihash(ipfs, hash,
-      { length, exclude, onProgressCallback, concurrency, sortFn })
+      { length, exclude, timeout, onProgressCallback, concurrency, sortFn })
     return new Log(ipfs, identity, { logId, access, entries, heads, sortFn })
   }
 
@@ -568,10 +568,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromEntryHash (ipfs, identity, hash,
-    { logId, access, length = -1, exclude = [], concurrency, sortFn, onProgressCallback } = {}) {
+    { logId, access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const { entries } = await LogIO.fromEntryHash(ipfs, hash,
-      { length, exclude, concurrency, onProgressCallback })
+      { length, exclude, timeout, concurrency, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
@@ -588,9 +588,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromJSON (ipfs, identity, json,
-    { access, length = -1, sortFn, onProgressCallback } = {}) {
+    { access, length = -1, timeout, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const { logId, entries } = await LogIO.fromJSON(ipfs, json, { length, onProgressCallback })
+    const { logId, entries } = await LogIO.fromJSON(ipfs, json, 
+      { length, timeout, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
@@ -608,10 +609,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromEntry (ipfs, identity, sourceEntries,
-    { access, length = -1, exclude = [], concurrency, sortFn, onProgressCallback } = {}) {
+    { access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const { logId, entries } = await LogIO.fromEntry(ipfs, sourceEntries,
-      { length, exclude, concurrency, onProgressCallback })
+      { length, exclude, timeout, concurrency, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
