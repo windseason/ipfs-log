@@ -76,11 +76,13 @@ let run = (() => {
     const store2 = await storage.createStore(signingKeysPath2)
     const keystore1 = new Keystore(store1)
     const keystore2 = new Keystore(store2)
-    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore: keystore1 })
-    const identity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore: keystore2 })
 
-    log1 = new Log(ipfs, identity, { logId: 'A' })
-    log2 = new Log(ipfs, identity2, { logId: 'A' })
+    const identities = new IdentityProvider({ keystore: keystore1 })
+    const identity = await identities.createIdentity({ id: 'userA' })
+    const identity2 = await identities.createIdentity({ id: 'userB', keystore: keystore2 })
+
+    log1 = new Log(ipfs, identity, identities, { logId: 'A' })
+    log2 = new Log(ipfs, identity2, identities, { logId: 'A' })
 
     // Output metrics at 1 second interval
     setInterval(() => {

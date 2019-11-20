@@ -85,11 +85,11 @@
             outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (log1: ${log1.length}, log2: ${log2.length})<br>` + outputElm.innerHTML
             queriesPerSecond = 0
           }, 1000)
+          const identities = new Identities()
+          const identity = await identities.createIdentity({ id: 'userA' })
 
-          const identity = await Identities.createIdentity({ id: 'userA' })
-
-          log1 = new Log(ipfs, identity, { logId: 'browser-benchmark-join-signed' })
-          log2 = new Log(ipfs, identity, { logId: 'browser-benchmark-join-signed' })
+          log1 = new Log(ipfs, identity, identities, { logId: 'browser-benchmark-join-signed' })
+          log2 = new Log(ipfs, identity, identities, { logId: 'browser-benchmark-join-signed' })
           queryLoop()
         })
 

@@ -23,7 +23,7 @@
     "ipld-dag-pb": "^0.17.4",
     "json-stringify-deterministic": "^1.0.1",
     "multihashing-async": "^0.7.0",
-    "orbit-db-identity-provider": "~0.2.0",
+    "orbit-db-identity-provider": "orbitdb/orbit-db-identity-provider#feat/keystore",
     "orbit-db-io": "orbitdb/orbit-db-io",
     "p-do-whilst": "^1.1.0",
     "p-each-series": "^2.1.0",

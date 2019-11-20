@@ -15,7 +15,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity
+let ipfs, testIdentity, identities
 
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Append (' + IPFS + ')', function () {
@@ -37,8 +37,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -57,7 +57,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log
 
         before(async () => {
-          log = new Log(ipfs, testIdentity, 'A')
+          log = new Log(ipfs, testIdentity, identities, 'A')
           await log.append('hello1')
         })
 
@@ -98,7 +98,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let log
 
         before(async () => {
-          log = new Log(ipfs, testIdentity, 'A')
+          log = new Log(ipfs, testIdentity, identities, 'A')
           for (let i = 0; i < amount; i++) {
             await log.append('hello' + i, nextPointerAmount)
             // Make sure the log has the right heads after each append

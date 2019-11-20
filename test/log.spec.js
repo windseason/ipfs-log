@@ -22,7 +22,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity, testIdentity2, testIdentity3
+let ipfs, testIdentity, identities, testIdentity2, testIdentity3
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log (' + IPFS + ')', function () {
     this.timeout(config.timeout)
@@ -32,7 +32,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-log' + new Date().getTime()
     })
 
-    let keystore, signingKeystore
+    let keystore, signingKeystore, identities
 
     before(async () => {
       await fs.copy(identityKeyFixtures, identityKeysPath)
@@ -41,10 +41,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userA', signingKeystore })
+      testIdentity2 = await identities.createIdentity({ id: 'userB', signingKeystore })
+      testIdentity3 = await identities.createIdentity({ id: 'userC', signingKeystore })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
@@ -60,7 +60,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('constructor', async () => {
       it('creates an empty log with default params', () => {
-        const log = new Log(ipfs, testIdentity)
+        const log = new Log(ipfs, testIdentity, identities)
         assert.notStrictEqual(log._entryIndex, null)
         assert.notStrictEqual(log._headsIndex, null)
         assert.notStrictEqual(log._id, null)
@@ -86,26 +86,26 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('sets an id', () => {
-        const log = new Log(ipfs, testIdentity, { logId: 'ABC' })
+        const log = new Log(ipfs, testIdentity, identities, { logId: 'ABC' })
         assert.strictEqual(log.id, 'ABC')
       })
 
       it('sets the clock id', () => {
-        const log = new Log(ipfs, testIdentity, { logId: 'ABC' })
+        const log = new Log(ipfs, testIdentity, identities, { logId: 'ABC' })
         assert.strictEqual(log.id, 'ABC')
         assert.strictEqual(log.clock.id, testIdentity.publicKey)
       })
 
       it('generates id string if id is not passed as an argument', () => {
-        const log = new Log(ipfs, testIdentity)
+        const log = new Log(ipfs, testIdentity, identities)
         assert.strictEqual(typeof log.id === 'string', true)
       })
 
       it('sets items if given as params', async () => {
-        const one = await Entry.create(ipfs, testIdentity, 'A', 'entryA', [], new Clock('A', 0))
-        const two = await Entry.create(ipfs, testIdentity, 'A', 'entryB', [], new Clock('B', 0))
-        const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [], new Clock('C', 0))
-        const log = new Log(ipfs, testIdentity,
+        const one = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryA', [], new Clock('A', 0))
+        const two = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryB', [], new Clock('B', 0))
+        const three = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryC', [], new Clock('C', 0))
+        const log = new Log(ipfs, testIdentity, identities,
           { logId: 'A', entries: [one, two, three] })
         assert.strictEqual(log.length, 3)
         assert.strictEqual(log.values[0].payload, 'entryA')
@@ -114,20 +114,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('sets heads if given as params', async () => {
-        const one = await Entry.create(ipfs, testIdentity, 'A', 'entryA', [])
-        const two = await Entry.create(ipfs, testIdentity, 'A', 'entryB', [])
-        const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
-        const log = new Log(ipfs, testIdentity,
+        const one = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryA', [])
+        const two = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryB', [])
+        const three = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryC', [])
+        const log = new Log(ipfs, testIdentity, identities,
           { logId: 'B', entries: [one, two, three], heads: [three] })
         assert.strictEqual(log.heads.length, 1)
         assert.strictEqual(log.heads[0].hash, three.hash)
       })
 
       it('finds heads if heads not given as params', async () => {
-        const one = await Entry.create(ipfs, testIdentity, 'A', 'entryA', [])
-        const two = await Entry.create(ipfs, testIdentity, 'A', 'entryB', [])
-        const three = await Entry.create(ipfs, testIdentity, 'A', 'entryC', [])
-        const log = new Log(ipfs, testIdentity,
+        const one = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryA', [])
+        const two = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryB', [])
+        const three = await Entry.create(ipfs, testIdentity, identities, 'A', 'entryC', [])
+        const log = new Log(ipfs, testIdentity, identities,
           { logId: 'A', entries: [one, two, three] })
         assert.strictEqual(log.heads.length, 3)
         assert.strictEqual(log.heads[2].hash, one.hash)
@@ -138,7 +138,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if entries is not an array', () => {
         let err
         try {
-          let log = new Log(ipfs, testIdentity, { logId: 'A', entries: {} }) // eslint-disable-line no-unused-vars
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A', entries: {} }) // eslint-disable-line no-unused-vars
         } catch (e) {
           err = e
         }
@@ -149,7 +149,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if heads is not an array', () => {
         let err
         try {
-          let log = new Log(ipfs, testIdentity, { logId: 'A', entries: [], heads: {} }) // eslint-disable-line no-unused-vars
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A', entries: [], heads: {} }) // eslint-disable-line no-unused-vars
         } catch (e) {
           err = e
         }
@@ -158,7 +158,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('creates default public AccessController if not defined', async () => {
-        const log = new Log(ipfs, testIdentity) // eslint-disable-line no-unused-vars
+        const log = new Log(ipfs, testIdentity, identities) // eslint-disable-line no-unused-vars
         const anyoneCanAppend = await log._access.canAppend('any')
         assert.notStrictEqual(log._access, undefined)
         assert.strictEqual(anyoneCanAppend, true)
@@ -174,6 +174,17 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.notStrictEqual(err, undefined)
         assert.strictEqual(err.message, 'Identity is required')
       })
+
+      it('throws an error if identities is not defined', () => {
+        let err
+        try {
+          const log = new Log(ipfs, testIdentity) // eslint-disable-line no-unused-vars
+        } catch (e) {
+          err = e
+        }
+        assert.notStrictEqual(err, undefined)
+        assert.strictEqual(err.message, 'identities is required')
+      })
     })
 
     describe('toString', async () => {
@@ -181,7 +192,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       const expectedData = 'five\n└─four\n  └─three\n    └─two\n      └─one'
 
       beforeEach(async () => {
-        log = new Log(ipfs, testIdentity, { logId: 'A' })
+        log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
         await log.append('one')
         await log.append('two')
         await log.append('three')
@@ -198,7 +209,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log
 
       beforeEach(async () => {
-        log = new Log(ipfs, testIdentity, { logId: 'AAA' })
+        log = new Log(ipfs, testIdentity, identities, { logId: 'AAA' })
         await log.append('one')
       })
 
@@ -217,7 +228,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log
 
       beforeEach(async () => {
-        log = new Log(ipfs, testIdentity, { logId: 'AAA' })
+        log = new Log(ipfs, testIdentity, identities, { logId: 'AAA' })
         await log.append('one')
       })
 
@@ -249,12 +260,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
           key: testIdentity.toJSON()
         }
 
-        const sig = await testIdentity.provider.sign(testIdentity, Buffer.from(JSON.stringify(expectedData)))
+        const sig = await identities.sign(testIdentity, Buffer.from(JSON.stringify(expectedData)))
         Object.assign(expectedData, { sig })
       })
 
       beforeEach(async () => {
-        log = new Log(ipfs, testIdentity, { logId: 'AAA' })
+        log = new Log(ipfs, testIdentity, identities, { logId: 'AAA' })
         await log.append('one')
       })
 
@@ -279,7 +290,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       }
 
       beforeEach(async () => {
-        log = new Log(ipfs, testIdentity, { logId: 'AAA' })
+        log = new Log(ipfs, testIdentity, identities, { logId: 'AAA' })
         await log.append('one')
         await log.append('two')
         await log.append('three')
@@ -323,7 +334,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       describe('toMultihash - cbor', async () => {
         it('returns the log as ipfs CID', async () => {
           const expectedCid = 'zdpuAwC43AQmYEPAnmidtfuUdBQSWuK95z1446UntBMhrqdto'
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           await log.append('one')
           const hash = await log.toMultihash()
           assert.strictEqual(hash, expectedCid)
@@ -335,7 +346,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             heads: ['zdpuAky58cAEgNyxPGotdCZny1sfk7ima9FJVtPTydDgrCFZw']
           }
           const expectedCid = 'zdpuAwC43AQmYEPAnmidtfuUdBQSWuK95z1446UntBMhrqdto'
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           await log.append('one')
           const hash = await log.toMultihash()
           assert.strictEqual(hash, expectedCid)
@@ -345,7 +356,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error if log items is empty', async () => {
-          const emptyLog = new Log(ipfs, testIdentity)
+          const emptyLog = new Log(ipfs, testIdentity, identities)
           let err
           try {
             await emptyLog.toMultihash()
@@ -360,7 +371,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       describe('toMultihash - pb', async () => {
         it('returns the log as ipfs multihash', async () => {
           const expectedMultihash = 'QmSgYrc2cbLghngrBWJtNvmh282BrUgtGxzjYhEuPgC7Sj'
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           await log.append('one')
           const multihash = await log.toMultihash({ format: 'dag-pb' })
           assert.strictEqual(multihash, expectedMultihash)
@@ -372,7 +383,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
             heads: ['zdpuAky58cAEgNyxPGotdCZny1sfk7ima9FJVtPTydDgrCFZw']
           }
           const expectedMultihash = 'QmSgYrc2cbLghngrBWJtNvmh282BrUgtGxzjYhEuPgC7Sj'
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           await log.append('one')
           const multihash = await log.toMultihash({ format: 'dag-pb' })
           assert.strictEqual(multihash, expectedMultihash)
@@ -382,7 +393,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error if log items is empty', async () => {
-          const emptyLog = new Log(ipfs, testIdentity)
+          const emptyLog = new Log(ipfs, testIdentity, identities)
           let err
           try {
             await emptyLog.toMultihash()
@@ -400,10 +411,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
             id: 'X',
             heads: ['zdpuB23XC5xJBJbfk5d9EfpWjX56VqTu3z4CUzVf2mxVURnEy']
           }
-          let log = new Log(ipfs, testIdentity, { logId: 'X' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'X' })
           await log.append('one')
           const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash, -1)
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, -1)
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
           assert.strictEqual(res.length, 1)
           assert.strictEqual(res.values[0].payload, 'one')
@@ -413,7 +424,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('creates a log from ipfs CID - three entries', async () => {
           const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash, -1)
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, -1)
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.values[0].payload, 'one')
           assert.strictEqual(res.values[0].clock.time, 1)
@@ -428,10 +439,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
             id: 'X',
             heads: ['zdpuB23XC5xJBJbfk5d9EfpWjX56VqTu3z4CUzVf2mxVURnEy']
           }
-          let log = new Log(ipfs, testIdentity, { logId: 'X' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'X' })
           await log.append('one')
           const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, multihash, { length: -1 })
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, multihash, { length: -1 })
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
           assert.strictEqual(res.length, 1)
           assert.strictEqual(res.values[0].payload, 'one')
@@ -441,7 +452,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('has the right sequence number after creation and appending', async () => {
           const hash = await log.toMultihash()
-          let res = await Log.fromMultihash(ipfs, testIdentity, hash, { length: -1 })
+          let res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, { length: -1 })
           assert.strictEqual(res.length, 3)
           await res.append('four')
           assert.strictEqual(res.length, 4)
@@ -450,16 +461,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('creates a log from ipfs CID that has three heads', async () => {
-          let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-          let log2 = new Log(ipfs, testIdentity2, { logId: 'A' })
-          let log3 = new Log(ipfs, testIdentity3, { logId: 'A' })
+          let log1 = new Log(ipfs, testIdentity, identities, { logId: 'A' })
+          let log2 = new Log(ipfs, testIdentity2, identities, { logId: 'A' })
+          let log3 = new Log(ipfs, testIdentity3, identities, { logId: 'A' })
           await log1.append('one') // order is determined by the identity's publicKey
           await log2.append('two')
           await log3.append('three')
           await log1.join(log2)
           await log1.join(log3)
           const hash = await log1.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash, { length: -1 })
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, { length: -1 })
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
           assert.strictEqual(res.heads[2].payload, 'three')
@@ -468,16 +479,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('creates a log from ipfs CID that has three heads w/ custom tiebreaker', async () => {
-          let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-          let log2 = new Log(ipfs, testIdentity2, { logId: 'A' })
-          let log3 = new Log(ipfs, testIdentity3, { logId: 'A' })
+          let log1 = new Log(ipfs, testIdentity, identities, { logId: 'A' })
+          let log2 = new Log(ipfs, testIdentity2, identities, { logId: 'A' })
+          let log3 = new Log(ipfs, testIdentity3, identities, { logId: 'A' })
           await log1.append('one') // order is determined by the identity's publicKey
           await log2.append('two')
           await log3.append('three')
           await log1.join(log2)
           await log1.join(log3)
           const hash = await log1.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash,
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash,
             { sortFn: FirstWriteWins })
           assert.strictEqual(res.length, 3)
           assert.strictEqual(res.heads.length, 3)
@@ -489,23 +500,23 @@ Object.keys(testAPIs).forEach((IPFS) => {
         it('creates a log from ipfs CID up to a size limit', async () => {
           const amount = 100
           const size = amount / 2
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
           const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash, { length: size })
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, { length: size })
           assert.strictEqual(res.length, size)
         })
 
         it('creates a log from ipfs CID up without size limit', async () => {
           const amount = 100
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
           const hash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, hash, { length: -1 })
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, hash, { length: -1 })
           assert.strictEqual(res.length, amount)
         })
 
@@ -540,7 +551,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           let err
           try {
             const hash = cid.toBaseEncodedString()
-            await Log.fromMultihash(ipfs, testIdentity, hash)
+            await Log.fromMultihash(ipfs, testIdentity, identities, hash)
           } catch (e) {
             err = e
           }
@@ -551,7 +562,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           const hash = await ipfs.dag.put({})
           let err
           try {
-            await Log.fromMultihash(ipfs, testIdentity, hash)
+            await Log.fromMultihash(ipfs, testIdentity, identities, hash)
           } catch (e) {
             err = e
           }
@@ -560,7 +571,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         it('onProgress callback is fired for each entry', async () => {
           const amount = 100
-          let log = new Log(ipfs, testIdentity, { logId: 'A' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'A' })
           for (let i = 0; i < amount; i++) {
             await log.append(i.toString())
           }
@@ -577,7 +588,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           }
 
           const hash = await log.toMultihash()
-          const result = await Log.fromMultihash(ipfs, testIdentity, hash,
+          const result = await Log.fromMultihash(ipfs, testIdentity, identities, hash,
             { length: -1, exclude: [], onProgressCallback: loadProgressCallback })
 
           // Make sure the onProgress callback was called for each entry
@@ -602,9 +613,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
             id: 'X',
             heads: ['zdpuB23XC5xJBJbfk5d9EfpWjX56VqTu3z4CUzVf2mxVURnEy']
           }
-          let log = new Log(ipfs, testIdentity, { logId: 'X' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'X' })
           await log.append('one')
-          const res = await Log.fromEntryHash(ipfs, testIdentity, expectedData.heads[0],
+          const res = await Log.fromEntryHash(ipfs, testIdentity, identities, expectedData.heads[0],
             { logId: log.id, length: -1 })
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
@@ -622,10 +633,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
             id: 'X',
             heads: ['zdpuB23XC5xJBJbfk5d9EfpWjX56VqTu3z4CUzVf2mxVURnEy']
           }
-          let log = new Log(ipfs, testIdentity, { logId: 'X' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'X' })
           await log.append('one')
           const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, multihash, { length: -1 })
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, multihash, { length: -1 })
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
 
@@ -634,10 +645,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
             id: 'X',
             heads: ['zdpuB23XC5xJBJbfk5d9EfpWjX56VqTu3z4CUzVf2mxVURnEy']
           }
-          let log = new Log(ipfs, testIdentity, { logId: 'X' })
+          let log = new Log(ipfs, testIdentity, identities, { logId: 'X' })
           await log.append('one')
           const multihash = await log.toMultihash()
-          const res = await Log.fromMultihash(ipfs, testIdentity, multihash,
+          const res = await Log.fromMultihash(ipfs, testIdentity, identities, multihash,
             { length: -1, sortFn: FirstWriteWins })
           assert.strictEqual(JSON.stringify(res.toJSON()), JSON.stringify(expectedData))
         })
@@ -646,7 +657,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     describe('values', () => {
       it('returns all entries in the log', async () => {
-        let log = new Log(ipfs, testIdentity)
+        let log = new Log(ipfs, testIdentity, identities)
         assert.strictEqual(log.values instanceof Array, true)
         assert.strictEqual(log.length, 0)
         await log.append('hello1')

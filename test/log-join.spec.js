@@ -32,7 +32,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       repo: config.defaultIpfsConfig.repo + '-log-join' + new Date().getTime()
     })
 
-    let keystore, signingKeystore
+    let keystore, signingKeystore, identities
 
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
@@ -43,11 +43,11 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
       keystore = new Keystore(identityKeysPath)
       signingKeystore = new Keystore(signingKeysPath)
-
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
-      testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
-      testIdentity3 = await IdentityProvider.createIdentity({ id: 'userD', keystore, signingKeystore })
-      testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
+      identities = new IdentityProvider({ keystore })
+      testIdentity = await identities.createIdentity({ id: 'userC', signingKeystore })
+      testIdentity2 = await identities.createIdentity({ id: 'userB', signingKeystore })
+      testIdentity3 = await identities.createIdentity({ id: 'userD', signingKeystore })
+      testIdentity4 = await identities.createIdentity({ id: 'userA', signingKeystore })
 
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
@@ -66,10 +66,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log1, log2, log3, log4
 
       beforeEach(async () => {
-        log1 = new Log(ipfs, testIdentity, { logId: 'X' })
-        log2 = new Log(ipfs, testIdentity2, { logId: 'X' })
-        log3 = new Log(ipfs, testIdentity3, { logId: 'X' })
-        log4 = new Log(ipfs, testIdentity4, { logId: 'X' })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'X' })
+        log2 = new Log(ipfs, testIdentity2, identities, { logId: 'X' })
+        log3 = new Log(ipfs, testIdentity3, identities, { logId: 'X' })
+        log4 = new Log(ipfs, testIdentity4, identities, { logId: 'X' })
       })
 
       it('joins logs', async () => {
@@ -81,9 +81,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
           const prev1 = last(items1)
           const prev2 = last(items2)
           const prev3 = last(items3)
-          const n1 = await Entry.create(ipfs, testIdentity, 'X', 'entryA' + i, [prev1])
-          const n2 = await Entry.create(ipfs, testIdentity2, 'X', 'entryB' + i, [prev2, n1])
-          const n3 = await Entry.create(ipfs, testIdentity3, 'X', 'entryC' + i, [prev3, n1, n2])
+          const n1 = await Entry.create(ipfs, testIdentity, identities, 'X', 'entryA' + i, [prev1])
+          const n2 = await Entry.create(ipfs, testIdentity2, identities, 'X', 'entryB' + i, [prev2, n1])
+          const n3 = await Entry.create(ipfs, testIdentity3, identities, 'X', 'entryC' + i, [prev3, n1, n2])
           items1.push(n1)
           items2.push(n2)
           items3.push(n3)
@@ -91,10 +91,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
         // Here we're creating a log from entries signed by A and B
         // but we accept entries from C too
-        const logA = await Log.fromEntry(ipfs, testIdentity3, last(items2), -1)
+        const logA = await Log.fromEntry(ipfs, testIdentity3, identities, last(items2), -1)
         // Here we're creating a log from entries signed by peer A, B and C
         // "logA" accepts entries from peer C so we can join logs A and B
-        const logB = await Log.fromEntry(ipfs, testIdentity3, last(items3), -1)
+        const logB = await Log.fromEntry(ipfs, testIdentity3, identities, last(items3), -1)
         assert.strictEqual(logA.length, items2.length + items1.length)
         assert.strictEqual(logB.length, items3.length + items2.length + items1.length)
 
