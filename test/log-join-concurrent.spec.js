@@ -36,7 +36,7 @@ Object.keys(testAPIs).forEach(IPFS => {
 
     after(async () => {
       await stopIpfs(ipfs)
-      await identities.keystore.close()
+      await identities.close()
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
     })

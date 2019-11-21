@@ -55,7 +55,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
       rmrf.sync(signingKeysPath)
 
       await keystore.close()
-      // await signingKeystore.close()
     })
 
     it('log with one entry', async () => {

@@ -74,7 +74,7 @@ class Entry {
     }
     const e = Entry.toEntry(entry, { presigned: true })
     const verifier = entry.v < 1 ? 'v0' : 'v1'
-    return identities.keystore.verify(entry.sig, entry.key, Entry.toBuffer(e), verifier)
+    return identities.verify(entry.sig, entry.key, Entry.toBuffer(e), verifier)
   }
 
   /**
