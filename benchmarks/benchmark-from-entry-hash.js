@@ -5,7 +5,10 @@ const IPFSRepo = require('ipfs-repo')
 const DatastoreLevel = require('datastore-level')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
 
+const leveldown = require('leveldown')
+const storage = require('orbit-db-storage-adapter')(leveldown)
 // State
 let ipfs
 let log
@@ -43,9 +46,12 @@ let run = (() => {
   ipfs.on('ready', async () => {
     // Create a log
     const signingKeysPath = './benchmarks/ipfs-log-benchmarks/keys1'
-    const identity = await IdentityProvider.createIdentity({ id: 'userA', signingKeysPath })
+    const store = await storage.createStore(signingKeysPath)
+    const keystore = new Keystore(store)
+    const identities = new IdentityProvider({ keystore })
+    const identity = await identities.createIdentity({ id: 'userA' })
 
-    log = new Log(ipfs, identity, { logId: 'A' })
+    log = new Log(ipfs, identity, identities, { logId: 'A' })
 
     const count = parseInt(process.argv[2]) || 50000
     const refCount = 64
@@ -97,7 +103,7 @@ let run = (() => {
 
     const m1 = process.memoryUsage()
 
-    await Log.fromEntryHash(ipfs, log._identity, log.heads.map(e => e.hash), {
+    await Log.fromEntryHash(ipfs, log.identity, log.identities, log.heads.map(e => e.hash), {
       logId: log._id,
       length: -1,
       exclude: [],

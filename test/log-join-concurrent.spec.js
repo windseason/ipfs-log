@@ -14,13 +14,13 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity
+let ipfs, testIdentity, identities
 
 Object.keys(testAPIs).forEach(IPFS => {
   describe('Log - Join Concurrent Entries (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
+    const { identityKeyFixtures, identityKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-log-join-concurrent' + new Date().getTime()
     })
@@ -28,28 +28,25 @@ Object.keys(testAPIs).forEach(IPFS => {
     before(async () => {
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
-      rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
-      await fs.copy(signingKeyFixtures, signingKeysPath)
-      testIdentity = await IdentityProvider.createIdentity({ id: 'userA', identityKeysPath, signingKeysPath })
+      identities = new IdentityProvider()
+      testIdentity = await identities.createIdentity({ id: 'userA' })
       ipfs = await startIpfs(IPFS, ipfsConfig)
     })
 
     after(async () => {
       await stopIpfs(ipfs)
-      await testIdentity.provider.keystore.close()
-      await testIdentity.provider.signingKeystore.close()
+      await identities.close()
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
-      rmrf.sync(signingKeysPath)
     })
 
     describe('join ', async () => {
       let log1, log2
 
       before(async () => {
-        log1 = new Log(ipfs, testIdentity, { logId: 'A', sortFn: SortByEntryHash })
-        log2 = new Log(ipfs, testIdentity, { logId: 'A', sortFn: SortByEntryHash })
+        log1 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
+        log2 = new Log(ipfs, testIdentity, identities, { logId: 'A', sortFn: SortByEntryHash })
       })
 
       it('joins consistently', async () => {

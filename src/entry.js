@@ -23,7 +23,7 @@ class Entry {
    * console.log(entry)
    * // { hash: null, payload: "hello", next: [] }
    */
-  static async create (ipfs, identity, logId, data, next = [], clock, refs = []) {
+  static async create (ipfs, identity, identities, logId, data, next = [], clock, refs = []) {
     if (!isDefined(ipfs)) throw IpfsNotDefinedError()
     if (!isDefined(identity)) throw new Error('Identity is required, cannot create entry')
     if (!isDefined(logId)) throw new Error('Entry requires an id')
@@ -44,7 +44,7 @@ class Entry {
       clock: clock || new Clock(identity.publicKey)
     }
 
-    const signature = await identity.provider.sign(identity, Entry.toBuffer(entry))
+    const signature = await identities.sign(identity, Entry.toBuffer(entry))
 
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
@@ -61,15 +61,20 @@ class Entry {
    * @param {Entry} entry The entry being verified
    * @return {Promise} A promise that resolves to a boolean value indicating if the signature is valid
    */
-  static async verify (identityProvider, entry) {
-    if (!identityProvider) throw new Error('Identity-provider is required, cannot verify entry')
+  static async verify (identities, entry) {
+    if (!identities) throw new Error('identities is required, cannot verify entry')
     if (!Entry.isEntry(entry)) throw new Error('Invalid Log entry')
     if (!entry.key) throw new Error("Entry doesn't have a key")
     if (!entry.sig) throw new Error("Entry doesn't have a signature")
 
+    // verify identity if entry-version > 0
+    const validIdentity = entry.v > 0 ? await identities.verifyIdentity(entry.identity) : true
+    if (!validIdentity) {
+      throw new Error(`${entry.identity.id} is invalid`)
+    }
     const e = Entry.toEntry(entry, { presigned: true })
     const verifier = entry.v < 1 ? 'v0' : 'v1'
-    return identityProvider.verify(entry.sig, entry.key, Entry.toBuffer(e), verifier)
+    return identities.verify(entry.sig, entry.key, Entry.toBuffer(e), verifier)
   }
 
   /**
@@ -143,11 +148,8 @@ class Entry {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!hash) throw new Error(`Invalid hash: ${hash}`)
     const e = await io.read(ipfs, hash, { links: IPLD_LINKS })
-
-    const entry = Entry.toEntry(e)
-    entry.hash = hash
-
-    return entry
+    e.hash = hash
+    return Entry.toEntry(e, { includeHash: true })
   }
 
   /**
