@@ -273,10 +273,12 @@ class Log extends GSet {
    * @param {Entry} entry Entry to add
    * @return {Log} New Log containing the appended value
    */
-  async append (data, pointerCount = 1) {
+  async append (data, pointerCount = 1, options = {}) {
+    const identity = options.identity || this.identity
+    const identities = options.identities || this.identities
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
-    this._clock = new Clock(this.clock.id, newTime)
+    this._clock = new Clock(identity.publicKey, newTime)
 
     const all = Object.values(this.traverse(this.heads, pointerCount))
 
@@ -309,8 +311,8 @@ class Log extends GSet {
     // Create the entry and add it to the internal cache
     const entry = await Entry.create(
       this._storage,
-      this.identity,
-      this.identities,
+      identity,
+      identities,
       this.id,
       data,
       nexts,
