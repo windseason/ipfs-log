@@ -95,10 +95,10 @@ Run a simple program:
 const IPFS = require('ipfs')
 const Log  = require('ipfs-log')
 const IdentityProvider = require('orbit-db-identity-provider')
-
-const identity = await IdentityProvider.createIdentity({ id: 'peerid' })
+const identityProvider  = new IdentityProvider()
+const identity = await identityProvider.createIdentity({ id: 'peerid' })
 const ipfs = new IPFS()
-const log  = new Log(ipfs, identity)
+const log  = new Log(ipfs, identity, identityProvider)
 
 ipfs.on('ready' , async () => {
   await log.append({ some: 'data' })
@@ -129,7 +129,7 @@ See [API Documentation](https://github.com/orbitdb/ipfs-log/tree/master/API.md) 
 
 - [Log](https://github.com/orbitdb/ipfs-log/tree/master/API.md#log)
   - [Constructor](https://github.com/orbitdb/ipfs-log/tree/master/API.md##constructor)
-    - [new Log(ipfs, identity, [{ logId, access, entries, heads, clock, sortFn }])](https://github.com/orbitdb/ipfs-log/tree/master/API.md##new-log-ipfs-id)
+    - [new Log(ipfs, identity, identities, [{ logId, access, entries, heads, clock, sortFn }])](https://github.com/orbitdb/ipfs-log/tree/master/API.md##new-log-ipfs-id)
   - [Properties](https://github.com/orbitdb/ipfs-log/tree/master/API.md##properties)
     - [id](https://github.com/orbitdb/ipfs-log/tree/master/API.md##id)
     - [values](https://github.com/orbitdb/ipfs-log/tree/master/API.md##values)

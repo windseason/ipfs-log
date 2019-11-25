@@ -185,12 +185,11 @@ class Log extends GSet {
   /**
    * Set the identity for the log
    * @param {Identity} [identity] The identity to be set
+   * @param {Identities} [identities] The identities holding the corresponding keys
    */
-  setIdentity (identity) {
+  setIdentity (identity, identities) {
     this._identity = identity
-    // Find the latest clock from the heads
-    const time = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0))
-    this._clock = new Clock(this.identity.publicKey, time)
+    this._identities = identities || this.identities
   }
 
   /**
@@ -422,10 +421,10 @@ class Log extends GSet {
         throw new Error(`Could not append entry, key "${entry.identity.id}" is not allowed to write to the log`)
       }
     }
-    const identities = this.identities
+
     // Verify signature for each entry and throws if there's an invalid signature
     const verify = async (entry) => {
-      const isValid = await Entry.verify(identities, entry)
+      const isValid = await Entry.verify(this.identities, entry)
       const publicKey = entry.identity ? entry.identity.publicKey : entry.key
       if (!isValid) throw new Error(`Could not validate signature "${entry.sig}" for entry "${entry.hash}" and key "${publicKey}"`)
     }
