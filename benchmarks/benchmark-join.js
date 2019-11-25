@@ -65,12 +65,11 @@ let run = (() => {
     // ipfs.dag.get = memstore.get.bind(memstore)
     const keystore = new Keystore('./ipfs-log-benchmarks/keys/')
 
-    const identities = new IdentityProvider({ keystore })
-    const identity = await identities.createIdentity({ id: 'userA' })
-    const identity2 = await identities.createIdentity({ id: 'userB' })
+    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
+    const identity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore })
 
-    log1 = new Log(ipfs, identity, identities, { logId: 'A' })
-    log2 = new Log(ipfs, identity2, identities, { logId: 'A' })
+    log1 = new Log(ipfs, identity, { logId: 'A' })
+    log2 = new Log(ipfs, identity2, { logId: 'A' })
 
     // Output metrics at 1 second interval
     setInterval(() => {

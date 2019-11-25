@@ -58,9 +58,8 @@ let run = (() => {
     // ipfs.dag.put = memstore.put.bind(memstore)
     // ipfs.dag.get = memstore.get.bind(memstore)
     const keystore = new Keystore('./benchmarks/ipfs-log-benchmarks/keys')
-    const identities = new IdentityProvider({ keystore })
-    const identity = await identities.createIdentity({ id: 'userA' })
-    const identity2 = await identities.createIdentity({ id: 'userB' })
+    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
+    const identity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore })
 
     log1 = new Log(ipfs, identity, { logId: 'A' })
     log2 = new Log(ipfs, identity2, { logId: 'A' })
