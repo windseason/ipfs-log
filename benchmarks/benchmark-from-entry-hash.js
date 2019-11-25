@@ -7,8 +7,6 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 
-const leveldown = require('leveldown')
-const storage = require('orbit-db-storage-adapter')(leveldown)
 // State
 let ipfs
 let log
@@ -30,7 +28,7 @@ let run = (() => {
   }
 
   ipfs = new IPFS({
-    repo: new IPFSRepo('./ipfs-log-benchmarks/fromEntryHash/ipfs', repoConf),
+    repo: new IPFSRepo('./ipfs-log-benchmarks/ipfs', repoConf),
     start: false,
     EXPERIMENTAL: {
       pubsub: false,
@@ -45,9 +43,7 @@ let run = (() => {
 
   ipfs.on('ready', async () => {
     // Create a log
-    const signingKeysPath = './benchmarks/ipfs-log-benchmarks/keys1'
-    const store = await storage.createStore(signingKeysPath)
-    const keystore = new Keystore(store)
+    const keystore = new Keystore('./ipfs-log-benchmarks/keys/')
     const identities = new IdentityProvider({ keystore })
     const identity = await identities.createIdentity({ id: 'userA' })
 

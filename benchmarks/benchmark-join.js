@@ -7,9 +7,6 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 
-const leveldown = require('leveldown')
-const storage = require('orbit-db-storage-adapter')(leveldown)
-
 // State
 let ipfs
 let log1, log2
@@ -66,20 +63,11 @@ let run = (() => {
     // const memstore = new MemStore()
     // ipfs.dag.put = memstore.put.bind(memstore)
     // ipfs.dag.get = memstore.get.bind(memstore)
+    const keystore = new Keystore('./ipfs-log-benchmarks/keys/')
 
-    const signingKeysPath1 = './benchmarks/ipfs-log-benchmarks/keys1'
-    const signingKeysPath2 = './benchmarks/ipfs-log-benchmarks/keys2'
-    // const identity = await IdentityProvider.createIdentity({ id: 'userA', signingKeysPath1 })
-    // const identity2 = await IdentityProvider.createIdentity({ id: 'userB', signingKeysPath2 })
-
-    const store1 = await storage.createStore(signingKeysPath1)
-    const store2 = await storage.createStore(signingKeysPath2)
-    const keystore1 = new Keystore(store1)
-    const keystore2 = new Keystore(store2)
-
-    const identities = new IdentityProvider({ keystore: keystore1 })
+    const identities = new IdentityProvider({ keystore })
     const identity = await identities.createIdentity({ id: 'userA' })
-    const identity2 = await identities.createIdentity({ id: 'userB', keystore: keystore2 })
+    const identity2 = await identities.createIdentity({ id: 'userB' })
 
     log1 = new Log(ipfs, identity, identities, { logId: 'A' })
     log2 = new Log(ipfs, identity2, identities, { logId: 'A' })
