@@ -7,9 +7,6 @@ const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 
-const leveldown = require('leveldown')
-const storage = require('orbit-db-storage-adapter')(leveldown)
-
 // State
 let ipfs
 let log1, log2
@@ -60,12 +57,10 @@ let run = (() => {
     // const memstore = new MemStore()
     // ipfs.dag.put = memstore.put.bind(memstore)
     // ipfs.dag.get = memstore.get.bind(memstore)
-
-    const signingKeysPath = './test/fixtures/keys/signing-keys'
-    const store = await storage.createStore(signingKeysPath)
-    const keystore = new Keystore(store)
-    const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
-    const identity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore })
+    const keystore = new Keystore('./benchmarks/ipfs-log-benchmarks/keys')
+    const identities = new IdentityProvider({ keystore })
+    const identity = await identities.createIdentity({ id: 'userA' })
+    const identity2 = await identities.createIdentity({ id: 'userB' })
 
     log1 = new Log(ipfs, identity, { logId: 'A' })
     log2 = new Log(ipfs, identity2, { logId: 'A' })

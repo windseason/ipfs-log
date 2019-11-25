@@ -27,7 +27,7 @@ let run = (() => {
   }
 
   ipfs = new IPFS({
-    repo: new IPFSRepo('./ipfs-log-benchmarks/fromEntryHash/ipfs', repoConf),
+    repo: new IPFSRepo('./ipfs-log-benchmarks/ipfs', repoConf),
     start: false,
     EXPERIMENTAL: {
       pubsub: false,
@@ -42,8 +42,9 @@ let run = (() => {
 
   ipfs.on('ready', async () => {
     // Create a log
-    const signingKeysPath = './benchmarks/ipfs-log-benchmarks/keys1'
-    const identity = await IdentityProvider.createIdentity({ id: 'userA', signingKeysPath })
+    const keystore = new Keystore('./ipfs-log-benchmarks/keys/')
+    const identities = new IdentityProvider({ keystore })
+    const identity = await identities.createIdentity({ id: 'userA' })
 
     log = new Log(ipfs, identity, { logId: 'A' })
 
