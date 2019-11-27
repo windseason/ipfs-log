@@ -24,7 +24,7 @@
     "json-stringify-deterministic": "^1.0.1",
     "multihashing-async": "^0.7.0",
     "orbit-db-identity-provider": "orbitdb/orbit-db-identity-provider#feat/cache",
-    "orbit-db-io": "orbitdb/orbit-db-io",
+    "orbit-db-io": "github:orbitdb/orbit-db-io#feat/pin",
     "p-do-whilst": "^1.1.0",
     "p-each-series": "^2.1.0",
     "p-map": "^1.1.1",
