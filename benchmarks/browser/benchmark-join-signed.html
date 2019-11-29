@@ -28,7 +28,6 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/orbit-db-identity-provider/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
@@ -42,26 +41,25 @@
       let lastTenSeconds = 0
       let log1, log2
 
-      const { AccessController } = Log
-      const queryLoop = () => {
-        const add1 = log1.append("a" + totalQueries)
-        const add2 = log2.append("b" + totalQueries)
-
-        Promise.all([add1, add2])
-          .then((res) => {
-            log1.join(log2)
-            log2.join(log1)
-            totalQueries ++
-            lastTenSeconds ++
-            queriesPerSecond ++
-            setImmediate(queryLoop)
-          })
-          .catch((e) => console.error(e))
+      const queryLoop = async () => {
+        try {
+          const add1 = log1.append("a" + totalQueries)
+          const add2 = log2.append("b" + totalQueries)
+          await Promise.all([add1, add2])
+          log1.join(log2)
+          log2.join(log1)
+          totalQueries ++
+          lastTenSeconds ++
+          queriesPerSecond ++
+          setImmediate(queryLoop)
+        } catch(e) {
+          console.error(e)
+        }
       }
 
       let run = (() => {
         ipfs = new Ipfs({
-          repo: './ipfs-log/examples/browser/benchmark-join/new/0.33.1',
+          repo: './ipfs-log/examples/browser/benchmark-join-signed',
           start: false,
           EXPERIMENTAL: {
             pubsub: false,
@@ -88,9 +86,7 @@
             queriesPerSecond = 0
           }, 1000)
 
-          const testKeyPath = '../test/fixtures/keys'
-          const keystore = Keystore.create(testKeyPath)
-          const identity = await Identities.createIdentity({ id: 'userA', keystore })
+          const identity = await Identities.createIdentity({ id: 'userA' })
 
           log1 = new Log(ipfs, identity, { logId: 'browser-benchmark-join-signed' })
           log2 = new Log(ipfs, identity, { logId: 'browser-benchmark-join-signed' })

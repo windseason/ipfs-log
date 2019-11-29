@@ -1,6 +1,6 @@
 'use strict'
 
-const pEachSeries = require('p-each-series')
+const pMap = require('p-map')
 const GSet = require('./g-set')
 const Entry = require('./entry')
 const LogIO = require('./log-io')
@@ -83,8 +83,9 @@ class Log extends GSet {
     this._identity = identity
 
     // Add entries to the internal cache
-    entries = entries || []
-    this._entryIndex = new EntryIndex(entries.reduce(uniqueEntriesReducer, {}))
+    const uniqueEntries = (entries || []).reduce(uniqueEntriesReducer, {})
+    this._entryIndex = new EntryIndex(uniqueEntries)
+    entries = Object.values(uniqueEntries) || []
 
     // Set heads if not passed as an argument
     heads = heads || Log.findHeads(entries)
@@ -195,14 +196,13 @@ class Log extends GSet {
 
   traverse (rootEntries, amount = -1, endHash) {
     // Sort the given given root entries and use as the starting stack
-    var stack = rootEntries.sort(this._sortFn).reverse()
+    let stack = rootEntries.sort(this._sortFn).reverse()
+
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
     let result = {}
-    // We keep a counter to check if we have traversed requested amount of entries
     let count = 0
-
     // Named function for getting an entry from the log
     const getEntry = e => this.get(e)
 
@@ -217,31 +217,37 @@ class Log extends GSet {
       stack = [entry, ...stack]
         .sort(this._sortFn)
         .reverse()
-
       // Add to the cache of processed entries
       traversed[entry.hash] = true
+    }
+
+    const addEntry = rootEntry => {
+      result[rootEntry.hash] = rootEntry
+      traversed[rootEntry.hash] = true
+      count++
     }
 
     // Start traversal
     // Process stack until it's empty (traversed the full log)
     // or when we have the requested amount of entries
     // If requested entry amount is -1, traverse all
-    while (stack.length > 0) { // eslint-disable-line no-unmodified-loop-condition
+    while (stack.length > 0 && (count < amount || amount < 0)) { // eslint-disable-line no-unmodified-loop-condition
       // Get the next element from the stack
       const entry = stack.shift()
-
       // Add to the result
-      result[entry.hash] = entry
-      if ((amount !== -1) && (++count >= amount)) break
-      if (entry.hash === endHash) break
+      addEntry(entry)
+      // If it is the specified end hash, break out of the while loop
+      if (endHash && endHash === entry.hash) break
 
       // Add entry's next references to the stack
       const entries = entry.next.map(getEntry)
       const defined = entries.filter(isDefined)
       defined.forEach(addToStack)
-      // If it is the specified end hash, break out of the while loop
     }
 
+    stack = []
+    traversed = {}
+    // End result
     return result
   }
 
@@ -250,15 +256,38 @@ class Log extends GSet {
    * @param {Entry} entry Entry to add
    * @return {Log} New Log containing the appended value
    */
-  async append (data, pointerCount = 1) {
+  async append (data, pointerCount = 1, pin = false) {
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
-    const references = this.traverse(this.heads, Math.max(pointerCount, this.heads.length))
+    const all = Object.values(this.traverse(this.heads, Math.max(pointerCount, this.heads.length)))
 
-    const sortedHeadIndex = this.heads.reverse().reduce(uniqueEntriesReducer, {})
-    const nexts = Object.keys(Object.assign({}, sortedHeadIndex, references))
+    // If pointer count is 4, returns 2
+    // If pointer count is 8, returns 3 references
+    // If pointer count is 512, returns 9 references
+    // If pointer count is 2048, returns 11 references
+    const getEveryPow2 = (maxDistance) => {
+      let entries = new Set()
+      for (let i = 1; i <= maxDistance; i *= 2) {
+        const index = Math.min(i - 1, all.length - 1)
+        entries.add(all[index])
+      }
+      return entries
+    }
+    const references = getEveryPow2(Math.min(pointerCount, all.length))
+
+    // Always include the last known reference
+    if (all.length < pointerCount && all[all.length - 1]) {
+      references.add(all[all.length - 1])
+    }
+
+    // Create the next pointers from heads
+    const nexts = Object.keys(this.heads.reverse().reduce(uniqueEntriesReducer, {}))
+    const isNext = e => !nexts.includes(e)
+    // Delete the heads from the refs
+    const refs = Array.from(references).map(getHash).filter(isNext)
+
     // @TODO: Split Entry.create into creating object, checking permission, signing and then posting to IPFS
     // Create the entry and add it to the internal cache
     const entry = await Entry.create(
@@ -267,7 +296,9 @@ class Log extends GSet {
       this.id,
       data,
       nexts,
-      this.clock
+      this.clock,
+      refs,
+      pin
     )
 
     const canAppend = await this._access.canAppend(entry, this._identity.provider)
@@ -323,7 +354,7 @@ class Log extends GSet {
     if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
     if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let start = lte || (lt || this.heads)
+    let start = (lte || (lt || this.heads)).filter(isDefined)
     let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
     let count = endHash ? -1 : amount || -1
 
@@ -382,10 +413,10 @@ class Log extends GSet {
     }
 
     const entriesToJoin = Object.values(newItems)
-    await pEachSeries(entriesToJoin, async e => {
+    await pMap(entriesToJoin, async e => {
       await permitted(e)
       await verify(e)
-    })
+    }, { concurrency: 100 })
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
@@ -496,7 +527,7 @@ class Log extends GSet {
 
   /**
    * Get the log's multihash.
-   * @returns {Promise<string>} Multihash of the Log as Base58 encoded stringx
+   * @returns {Promise<string>} Multihash of the Log as Base58 encoded string.
    */
   toMultihash ({ format } = {}) {
     return LogIO.toMultihash(this._storage, this, { format })
@@ -516,17 +547,11 @@ class Log extends GSet {
    * @returns {Promise<Log>}
    */
   static async fromMultihash (ipfs, identity, hash,
-    { access, length = -1, exclude, onProgressCallback, sortFn, timeout, format } = {}) {
+    { access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromMultihash(ipfs, hash, { length, exclude, onProgressCallback, timeout, format })
-    return new Log(ipfs, identity, {
-      logId: data.id,
-      access: access,
-      entries: data.values,
-      heads: data.heads,
-      clock: new Clock(data.clock.id, data.clock.time),
-      sortFn: sortFn
-    })
+    const { logId, entries, heads } = await LogIO.fromMultihash(ipfs, hash,
+      { length, exclude, timeout, onProgressCallback, concurrency, sortFn })
+    return new Log(ipfs, identity, { logId, access, entries, heads, sortFn })
   }
 
   /**
@@ -541,14 +566,14 @@ class Log extends GSet {
    * @param {Array<Entry>} options.exclude Entries to not fetch (cached)
    * @param {function(hash, entry, parent, depth)} options.onProgressCallback
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
-   * @param {number} options.timeout Timeout for fetching a log entry from IPFS
    * @return {Promise<Log>} New Log
    */
   static async fromEntryHash (ipfs, identity, hash,
-    { logId, access, length = -1, exclude, onProgressCallback, sortFn, timeout }) {
+    { logId, access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntryHash(ipfs, hash, { length, exclude, onProgressCallback, timeout })
-    return new Log(ipfs, identity, { logId, access, entries: data.values, sortFn })
+    const { entries } = await LogIO.fromEntryHash(ipfs, hash,
+      { length, exclude, timeout, concurrency, onProgressCallback })
+    return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
   /**
@@ -559,16 +584,16 @@ class Log extends GSet {
    * @param {Object} options
    * @param {AccessController} options.access The access controller instance
    * @param {number} options.length How many entries to include in the log
-   * @param {number} options.timeout Maximum time to wait for each fetch operation, in ms
    * @param {function(hash, entry, parent, depth)} [options.onProgressCallback]
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Promise<Log>} New Log
    */
   static async fromJSON (ipfs, identity, json,
-    { access, length = -1, timeout, onProgressCallback, sortFn } = {}) {
+    { access, length = -1, timeout, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromJSON(ipfs, json, { length, timeout, onProgressCallback })
-    return new Log(ipfs, identity, { logId: data.id, access, entries: data.values, sortFn })
+    const { logId, entries } = await LogIO.fromJSON(ipfs, json,
+      { length, timeout, onProgressCallback })
+    return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
   /**
@@ -585,11 +610,11 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromEntry (ipfs, identity, sourceEntries,
-    { access, length = -1, exclude, onProgressCallback, timeout, sortFn } = {}) {
+    { access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
-    const data = await LogIO.fromEntry(ipfs, sourceEntries,
-      { length, exclude, onProgressCallback, timeout })
-    return new Log(ipfs, identity, { logId: data.id, access, entries: data.values, sortFn })
+    const { logId, entries } = await LogIO.fromEntry(ipfs, sourceEntries,
+      { length, exclude, timeout, concurrency, onProgressCallback })
+    return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
   /**
@@ -710,4 +735,5 @@ class Log extends GSet {
 
 module.exports = Log
 module.exports.Sorting = Sorting
+module.exports.Entry = Entry
 module.exports.AccessController = AccessController

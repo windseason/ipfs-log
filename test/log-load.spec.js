@@ -7,9 +7,12 @@ const { LastWriteWins } = require('../src/log-sorting')
 const bigLogString = require('./fixtures/big-log.fixture.js')
 const Entry = require('../src/entry')
 const Log = require('../src/log')
+const { io } = require('../src/utils')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Keystore = require('orbit-db-keystore')
 const LogCreator = require('./utils/log-creator')
+const v0Entries = require('./fixtures/v0-entries.fixture')
+const v1Entries = require('./fixtures/v1-entries.fixture')
 
 // Alternate tiebreaker. Always does the opposite of LastWriteWins
 const FirstWriteWins = (a, b) => LastWriteWins(a, b) * -1
@@ -114,6 +117,20 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log.length, 16)
         assert.deepStrictEqual(log.values.map(e => e.payload), firstWriteExpectedData)
       })
+
+      it('respects timeout parameter', async () => {
+        let fixture = await LogCreator.createLogWithSixteenEntries(Log, ipfs, identities)
+        let json = fixture.json
+        json.heads = [{ hash: 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus' }]
+
+        const timeout = 500
+        const st = new Date().getTime()
+        let log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'X', timeout })
+        const et = new Date().getTime()
+        assert.strictEqual((et - st) >= timeout, true, '' + (et - st) + ' should be greater than timeout ' + timeout)
+        assert.strictEqual(log.length, 0)
+        assert.deepStrictEqual(log.values.map(e => e.payload), [])
+      })
     })
 
     describe('fromEntryHash', () => {
@@ -154,6 +171,16 @@ Object.keys(testAPIs).forEach((IPFS) => {
         assert.strictEqual(log1.id, data.heads[0].id)
         assert.strictEqual(log1.length, 16)
         assert.deepStrictEqual(log1.values.map(e => e.payload), firstWriteExpectedData)
+      })
+
+      it('respects timeout parameter', async () => {
+        const timeout = 500
+        const st = new Date().getTime()
+        let log = await Log.fromEntryHash(ipfs, testIdentity, 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus', { logId: 'X', timeout })
+        const et = new Date().getTime()
+        assert.strictEqual((et - st) >= timeout, true, '' + (et - st) + ' should be greater than timeout ' + timeout)
+        assert.strictEqual(log.length, 0)
+        assert.deepStrictEqual(log.values.map(e => e.payload), [])
       })
     })
 
@@ -673,7 +700,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         let res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 5 })
 
         const first5 = [
-          'entryA5', 'entryB5', 'entryC0', 'entryA9', 'entryA10'
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepStrictEqual(res.values.map(e => e.payload), first5)
@@ -682,10 +709,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 11 })
 
         const first11 = [
-          'entryA3', 'entryB3', 'entryA4', 'entryB4',
+          'entryB3', 'entryA4', 'entryB4',
           'entryA5', 'entryB5',
-          'entryC0',
-          'entryA7', 'entryA8', 'entryA9', 'entryA10'
+          'entryA6',
+          'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
 
         assert.deepStrictEqual(res.values.map(e => e.payload), first11)
@@ -694,7 +721,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 16 - 1 })
 
         const all = [
-          'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
+          /* excl */ 'entryB1', 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
           'entryA6',
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
@@ -746,8 +773,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 11 })
 
         const first11 = [
-          'entryA1', 'entryA2', 'entryA3', 'entryA4',
-          'entryA5', 'entryA6',
+          'entryB3', 'entryA4', 'entryB4', 'entryA5',
+          'entryB5', 'entryA6',
           'entryC0',
           'entryA7', 'entryA8', 'entryA9', 'entryA10'
         ]
@@ -758,7 +785,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         res = await Log.fromMultihash(ipfs, testIdentity2, hash, { length: 16 - 1 })
 
         const all = [
-          'entryA1', /* excl */ 'entryA2', 'entryB2', 'entryA3', 'entryB3',
+          /* excl */ 'entryB1', 'entryA2', 'entryB2', 'entryA3', 'entryB3',
           'entryA4', 'entryB4', 'entryA5', 'entryB5',
           'entryA6',
           'entryC0', 'entryA7', 'entryA8', 'entryA9', 'entryA10'
@@ -835,6 +862,86 @@ Object.keys(testAPIs).forEach((IPFS) => {
           assert.strictEqual(b.length, amount)
           assert.strictEqual(b.values[0].hash, items1[0].hash)
         })
+
+        it('respects timeout parameter', async () => {
+          let e = last(items1)
+          e.hash = 'zdpuAwNuRc2Kc1aNDdcdSWuxfNpHRJQw8L8APBNHCEFXbogus'
+          const timeout = 500
+          const st = new Date().getTime()
+          const log = await Log.fromEntry(ipfs, testIdentity, e, { timeout })
+          const et = new Date().getTime()
+          assert.strictEqual((et - st) >= timeout, true, '' + (et - st) + ' should be greater than timeout ' + timeout)
+          assert.strictEqual(log.length, 1)
+          assert.deepStrictEqual(log.values.map(e => e.payload), [e.payload])
+        })
+      })
+    })
+
+    describe('Backwards-compatibility v0', () => {
+      const entries = [v0Entries.hello, v0Entries.helloWorld, v0Entries.helloAgain]
+      before(async () => {
+        await Promise.all(entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+      })
+
+      it('creates a log from v0 json', async () => {
+        const headHash = await io.write(ipfs, 'dag-pb', Entry.toEntry(v0Entries.helloAgain), { links: Entry.IPLD_LINKS })
+        const json = { id: 'A', heads: [headHash] }
+        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+        const log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from v0 entry', async () => {
+        const log = await Log.fromEntry(ipfs, testIdentity, [Entry.toEntry(v0Entries.helloAgain, { includeHash: true })], { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from v0 entry hash', async () => {
+        const log = await Log.fromEntryHash(ipfs, testIdentity, v0Entries.helloAgain.hash, { logId: 'A' })
+        assert.strictEqual(log.length, 2)
+      })
+
+      it('creates a log from log hash of v0 entries', async () => {
+        const log1 = new Log(ipfs, testIdentity, { entries: entries })
+        const hash = await log1.toMultihash()
+        const log = await Log.fromMultihash(ipfs, testIdentity, hash, { logId: 'A' })
+        assert.strictEqual(log.length, 3)
+        assert.strictEqual(log.heads.length, 2)
+      })
+    })
+
+    describe('Backwards-compatibility v1', () => {
+      before(async () => {
+        await Promise.all(v1Entries.map(e => io.write(ipfs, Entry.getWriteFormat(e), Entry.toEntry(e), { links: Entry.IPLD_LINKS })))
+      })
+
+      it('creates a log from v1 json', async () => {
+        const headHash = await io.write(ipfs, 'dag-cbor', Entry.toEntry(v1Entries[v1Entries.length - 1]), { links: Entry.IPLD_LINKS })
+        const json = { id: 'A', heads: [headHash] }
+        json.heads = await Promise.all(json.heads.map(headHash => Entry.fromMultihash(ipfs, headHash)))
+        const log = await Log.fromJSON(ipfs, testIdentity, json, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from v1 entry', async () => {
+        const log = await Log.fromEntry(ipfs, testIdentity, v1Entries[v1Entries.length - 1], { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from v1 entry hash', async () => {
+        const log = await Log.fromEntryHash(ipfs, testIdentity, v1Entries[v1Entries.length - 1].hash, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
+      })
+
+      it('creates a log from log hash of v1 entries', async () => {
+        const log1 = new Log(ipfs, testIdentity, { entries: v1Entries })
+        const hash = await log1.toMultihash()
+        const log = await Log.fromMultihash(ipfs, testIdentity, hash, { logId: 'A' })
+        assert.strictEqual(log.length, 5)
+        assert.deepStrictEqual(log.values, v1Entries.map(e => Entry.toEntry(e, { includeHash: true })))
       })
     })
   })

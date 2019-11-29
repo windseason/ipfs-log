@@ -125,9 +125,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
           })
         })
 
-        it('added the correct amount of next pointers', async () => {
+        it('added the correct amount of refs pointers', async () => {
           log.values.forEach((entry, index) => {
-            assert.strictEqual(entry.next.length, Math.min(index, nextPointerAmount))
+            assert.strictEqual(entry.refs.length, index > 0 ? Math.ceil(Math.log2(Math.min(nextPointerAmount, index))) : 0)
           })
         })
       })

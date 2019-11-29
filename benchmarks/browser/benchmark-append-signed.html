@@ -19,7 +19,6 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/orbit-db-identity-provider/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
@@ -32,20 +31,21 @@
       let queriesPerSecond = 0
       let lastTenSeconds = 0
 
-      const queryLoop = () => {
-        return log.append(totalQueries.toString())
-          .then((res) => {
-            totalQueries ++
-            lastTenSeconds ++
-            queriesPerSecond ++
-            setImmediate(queryLoop)
-          })
-          .catch((e) => console.error(e))
+      const queryLoop = async () => {
+        try {
+          await log.append(totalQueries.toString())
+          totalQueries ++
+          lastTenSeconds ++
+          queriesPerSecond ++
+          setImmediate(queryLoop)
+        } catch (e) {
+          console.error(e)
+        }
       }
 
       let run = (() => {
         ipfs = new Ipfs({
-          repo: './ipfs-log/examples/browser/benchmark-append/0.34.4',
+          repo: './ipfs-log/examples/browser/benchmark-append-signed',
           start: false,
           EXPERIMENTAL: {
             pubsub: false,
@@ -72,9 +72,9 @@
             queriesPerSecond = 0
           }, 1000)
 
-          const signingKeysPath = '../test/fixtures/keys'
-          const identity = await Identities.createIdentity({ id: 'userA', signingKeysPath })
+          const identity = await Identities.createIdentity({ id: 'userA' })
           log = new Log(ipfs, identity, { logId: 'browser-benchmark-append-signed' })
+
           queryLoop()
         })
 

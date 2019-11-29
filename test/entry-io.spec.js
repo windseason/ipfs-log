@@ -68,7 +68,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       let log = new Log(ipfs, testIdentity, { logId: 'X' })
       await log.append('one')
       const hash = log.values[0].hash
-      const res = await EntryIO.fetchAll(ipfs, hash, 1)
+      const res = await EntryIO.fetchAll(ipfs, hash, { length: 1 })
       assert.strictEqual(res.length, 1)
     })
 
@@ -77,7 +77,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       await log.append('one')
       await log.append('two')
       const hash = last(log.values).hash
-      const res = await EntryIO.fetchAll(ipfs, hash, 2)
+      const res = await EntryIO.fetchAll(ipfs, hash, { length: 2 })
       assert.strictEqual(res.length, 2)
     })
 
@@ -96,9 +96,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       for (let i = 0; i < count; i++) {
         await log.append('hello' + i)
       }
-
       const hash = await log.toMultihash()
-      const result = await Log.fromMultihash(ipfs, testIdentity, hash, -1)
+      const result = await Log.fromMultihash(ipfs, testIdentity, hash)
       assert.strictEqual(result.length, count)
     })
 

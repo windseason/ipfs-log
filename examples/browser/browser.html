@@ -7,14 +7,13 @@
     <pre id="output"></pre>
 
     <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="../../node_modules/orbit-db-keystore/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/orbit-db-identity-provider/dist/index-browser.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../../node_modules/ipfs/dist/index.min.js" charset="utf-8"></script>
 
     <script type="text/javascript">
-      const dataPath = './ipfs-log/examples/browser/ipfs-0.34.4'
+      const dataPath = './ipfs-log/examples/browser/ipfs/browser.html'
       const ipfs = new Ipfs({
-        repo: dataPath + '/index.js',
+        repo: dataPath,
         start: false,
         EXPERIMENTAL: {
           pubsub: true

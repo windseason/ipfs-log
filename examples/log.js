@@ -3,6 +3,7 @@
 const IPFS = require('ipfs')
 const Log = require('../src/log')
 const IdentityProvider = require('orbit-db-identity-provider')
+const Keystore = require('orbit-db-keystore')
 
 const dataPath = './ipfs/examples/log'
 
@@ -17,11 +18,11 @@ const ipfs = new IPFS({
 ipfs.on('error', (err) => console.error(err))
 ipfs.on('ready', async () => {
   let identityA, identityB, identityC
-
   try {
-    identityA = await IdentityProvider.createIdentity({ id: 'identityA' })
-    identityB = await IdentityProvider.createIdentity({ id: 'identityB' })
-    identityC = await IdentityProvider.createIdentity({ id: 'identityC' })
+    const keystore = new Keystore()
+    identityA = await IdentityProvider.createIdentity({ id: 'identityA', keystore })
+    identityB = await IdentityProvider.createIdentity({ id: 'identityB', keystore })
+    identityC = await IdentityProvider.createIdentity({ id: 'identityC', keystore })
   } catch (e) {
     console.error(e)
   }

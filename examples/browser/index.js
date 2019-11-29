@@ -4,9 +4,9 @@ const IPFS = require('ipfs')
 const IdentityProvider = require('orbit-db-identity-provider')
 const Log = require('../../src/log')
 
-const dataPath = './ipfs-log/examples/browser/ipfs-0.34.4'
+const dataPath = './ipfs-log/examples/browser/ipfs/index.html'
 const ipfs = new IPFS({
-  repo: dataPath + '/index.js',
+  repo: dataPath,
   start: false,
   EXPERIMENTAL: {
     pubsub: true
