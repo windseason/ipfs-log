@@ -18,7 +18,7 @@ let queriesPerSecond = 0
 let lastTenSeconds = 0
 
 const queryLoop = async () => {
-  await log.append(totalQueries.toString())
+  await log.append(totalQueries.toString(), 1, false)
   totalQueries++
   lastTenSeconds++
   queriesPerSecond++

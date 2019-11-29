@@ -256,7 +256,7 @@ class Log extends GSet {
    * @param {Entry} entry Entry to add
    * @return {Log} New Log containing the appended value
    */
-  async append (data, pointerCount = 1) {
+  async append (data, pointerCount = 1, pin = false) {
     // Update the clock (find the latest clock)
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
@@ -297,7 +297,8 @@ class Log extends GSet {
       data,
       nexts,
       this.clock,
-      refs
+      refs,
+      pin
     )
 
     const canAppend = await this._access.canAppend(entry, this._identity.provider)
