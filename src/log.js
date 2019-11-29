@@ -261,7 +261,7 @@ class Log extends GSet {
     const newTime = Math.max(this.clock.time, this.heads.reduce(maxClockTimeReducer, 0)) + 1
     this._clock = new Clock(this.clock.id, newTime)
 
-    const all = Object.values(this.traverse(this.heads, pointerCount))
+    const all = Object.values(this.traverse(this.heads, Math.max(pointerCount, this.heads.length)))
 
     // If pointer count is 4, returns 2
     // If pointer count is 8, returns 3 references
