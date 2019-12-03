@@ -532,7 +532,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         })
 
         it('throws an error if data from hash is not valid JSON', async () => {
-          const dagNode = dagPB.DAGNode.create(Buffer.from('hello'))
+          const dagNode = new dagPB.DAGNode(Buffer.from('hello'))
           let cid = await ipfs.dag.put(dagNode, {
             hashAlg: 'sha2-256',
             format: 'dag-pb'
