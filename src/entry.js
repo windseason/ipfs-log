@@ -49,7 +49,7 @@ class Entry {
     entry.key = identity.publicKey
     entry.identity = identity.toJSON()
     entry.sig = signature
-    entry.hash = await Entry.toMultihash(ipfs, entry, pin)
+    entry.hash = await Entry.toMultihash(ipfs, entry, { pin })
 
     return entry
   }
@@ -93,13 +93,13 @@ class Entry {
    * // "Qm...Foo"
    * @deprecated
    */
-  static async toMultihash (ipfs, entry, pin = false) {
+  static async toMultihash (ipfs, entry, { pin = false, onlyHash = false } = {}) {
     if (!ipfs) throw IpfsNotDefinedError()
     if (!Entry.isEntry(entry)) throw new Error('Invalid object format, cannot generate entry hash')
 
     // // Ensure `entry` follows the correct format
     const e = Entry.toEntry(entry)
-    return io.write(ipfs, getWriteFormat(e.v), e, { links: IPLD_LINKS, pin })
+    return io.write(ipfs, getWriteFormat(e.v), e, { links: IPLD_LINKS, pin, onlyHash })
   }
 
   static toEntry (entry, { presigned = false, includeHash = false } = {}) {

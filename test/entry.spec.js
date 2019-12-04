@@ -4,9 +4,7 @@ const assert = require('assert')
 const rmrf = require('rimraf')
 const fs = require('fs-extra')
 const Entry = require('../src/entry')
-const Log = require('../src/log')
 const { io } = require('../src/utils')
-const AccessController = Log.AccessController
 const IdentityProvider = require('orbit-db-identity-provider')
 const v0Entries = require('./fixtures/v0-entries.fixture')
 const v1Entries = require('./fixtures/v1-entries.fixture')
@@ -26,7 +24,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
   describe('Entry (' + IPFS + ')', function () {
     this.timeout(config.timeout)
 
-    const testACL = new AccessController()
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
     const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
       repo: config.defaultIpfsConfig.repo + '-entry' + new Date().getTime()
@@ -205,7 +202,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('throws an error if the object being passed is invalid', async () => {
         let err1, err2
         try {
-          await Entry.toMultihash(ipfs, testACL, testIdentity, { hash: 'deadbeef' })
+          await Entry.toMultihash(ipfs, { hash: 'deadbeef' })
         } catch (e) {
           err1 = e
         }
