@@ -123,7 +123,7 @@ class EntryIO {
               // If we're fetching entries up to certain length,
               // fetch the next if result is filled up, to make sure we "check"
               // the next entry if its clock is later than what we have in the result
-              if (result.length < length || ts >= minClock) {
+              if (result.length < length || ts > minClock || (ts === minClock && !cache[entry.hash])) {
                 entry.next.forEach(e => addToLoadingQueue(e, calculateIndex(0)))
               }
               if ((result.length + entry.refs.length) <= length) {
