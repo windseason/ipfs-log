@@ -45,7 +45,7 @@ class Log extends GSet {
    * @param {Function} options.sortFn The sort function - by default LastWriteWins
    * @return {Log} The log instance
    */
-  constructor (ipfs, identity, { logId, access, entries, heads, clock, sortFn } = {}) {
+  constructor (ipfs, identity, { logId, access, entries, heads, clock, sortFn, concurrency } = {}) {
     if (!isDefined(ipfs)) {
       throw LogError.IPFSNotDefinedError()
     }
@@ -105,6 +105,8 @@ class Log extends GSet {
     // otherwise if key was given, take whatever it is,
     // and if it was null, take the given id as the clock id
     this._clock = new Clock(this._identity.publicKey, maxTime)
+
+    this.joinConcurrency = concurrency || 16
   }
 
   /**
@@ -416,7 +418,7 @@ class Log extends GSet {
     await pMap(entriesToJoin, async e => {
       await permitted(e)
       await verify(e)
-    }, { concurrency: 100 })
+    }, { concurrency: this.joinConcurrency })
 
     // Update the internal next pointers index
     const addToNextsIndex = e => {
