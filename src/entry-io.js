@@ -126,7 +126,7 @@ class EntryIO {
               if (result.length < length || ts > minClock || (ts === minClock && !cache[entry.hash])) {
                 entry.next.forEach(e => addToLoadingQueue(e, calculateIndex(0)))
               }
-              if ((result.length + entry.refs.length) <= length) {
+              if (entry.refs && (result.length + entry.refs.length <= length)) {
                 entry.refs.forEach((e, i) => addToLoadingQueue(e, calculateIndex(i)))
               }
             }
