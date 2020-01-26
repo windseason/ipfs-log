@@ -571,10 +571,10 @@ class Log extends GSet {
    * @return {Promise<Log>} New Log
    */
   static async fromEntryHash (ipfs, identity, hash,
-    { logId, access, length = -1, exclude = [], timeout, concurrency, sortFn, onProgressCallback } = {}) {
+    { logId, access, length = -1, exclude = [], shouldExclude, timeout, concurrency, sortFn, onProgressCallback } = {}) {
     // TODO: need to verify the entries with 'key'
     const { entries } = await LogIO.fromEntryHash(ipfs, hash,
-      { length, exclude, timeout, concurrency, onProgressCallback })
+      { length, exclude, shouldExclude, timeout, concurrency, onProgressCallback })
     return new Log(ipfs, identity, { logId, access, entries, sortFn })
   }
 
