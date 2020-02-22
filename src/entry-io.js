@@ -8,12 +8,12 @@ const hasItems = arr => arr && arr.length > 0
 
 class EntryIO {
   // Fetch log graphs in parallel
-  static async fetchParallel (ipfs, hashes, { length, exclude = [], timeout, concurrency, onProgressCallback }) {
-    concurrency = Math.max(concurrency || hashes.length, 1)
+  static async fetchParallel (ipfs, hashes, { length, exclude = [], timeout, concurrency, logConcurrency, onProgressCallback }) {
     const fetchOne = async (hash) => EntryIO.fetchAll(ipfs, hash, { length, exclude, timeout, onProgressCallback, concurrency })
+    logConcurrency = Math.max(logConcurrency || hashes.length, 1)
     const concatArrays = (arr1, arr2) => arr1.concat(arr2)
     const flatten = (arr) => arr.reduce(concatArrays, [])
-    const res = await pMap(hashes, fetchOne, { concurrency })
+    const res = await pMap(hashes, fetchOne, { concurrency: logConcurrency })
     return flatten(res)
   }
 
