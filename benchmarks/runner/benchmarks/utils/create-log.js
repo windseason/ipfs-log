@@ -6,10 +6,15 @@ const storage = require('orbit-db-storage-adapter')(leveldown)
 const Log = require('../../../../src/log')
 const AccessController = Log.AccessController
 
+let store
+
 const createLog = async (ipfs, logId) => {
+  if (!store) {
+    const keysPath = './ipfs-log-benchmarks/keys'
+    store = await storage.createStore(keysPath)
+  }
+
   const access = new AccessController()
-  const keysPath = './ipfs-log-benchmarks/keys'
-  const store = await storage.createStore(keysPath)
   const keystore = new Keystore(store)
   const identity = await IdentityProvider.createIdentity({ id: 'userA', keystore })
   const log = new Log(ipfs, identity, { logId: 'A', access })

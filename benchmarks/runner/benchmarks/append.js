@@ -1,5 +1,4 @@
 const startIPFS = require('./utils/start-ipfs')
-const releaseRepo = require('./utils/release-repo')
 const createLog = require('./utils/create-log')
 
 const base = {
@@ -12,7 +11,7 @@ const base = {
     await log.append('Hello', 32)
   },
   teardown: async function ({ repo }) {
-    await releaseRepo(repo)
+    await repo.close()
   }
 }
 
