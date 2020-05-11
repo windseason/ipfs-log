@@ -14,7 +14,7 @@ module.exports = {
   devtool: 'source-map',
   node: {
     console: false,
-    process: 'mock',
+    process: true,
     Buffer: true
   },
   plugins: [
@@ -26,7 +26,7 @@ module.exports = {
     new webpack.IgnorePlugin(/mongo|redis/)
   ],
   externals: {
-    fs: '{}',
+    fs: '{ existsSync: () => true }',
     fatfs: '{}',
     'fs-extra': '{ copy: () => {} }',
     rimraf: '{ sync: () => {} }',

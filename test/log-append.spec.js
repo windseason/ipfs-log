@@ -15,7 +15,7 @@ const {
   stopIpfs
 } = require('orbit-db-test-utils')
 
-let ipfs, testIdentity
+let ipfsd, ipfs, testIdentity
 
 Object.keys(testAPIs).forEach((IPFS) => {
   describe('Log - Append (' + IPFS + ')', function () {
@@ -39,11 +39,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
       signingKeystore = new Keystore(signingKeysPath)
 
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      ipfs = await startIpfs(IPFS, ipfsConfig)
+      ipfsd = await startIpfs(IPFS, ipfsConfig)
+      ipfs = ipfsd.api
     })
 
     after(async () => {
-      await stopIpfs(ipfs)
+      await stopIpfs(ipfsd)
       rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
