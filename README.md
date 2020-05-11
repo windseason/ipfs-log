@@ -92,19 +92,24 @@ npm install ipfs-log ipfs
 Run a simple program:
 
 ```javascript
-const IPFS = require('ipfs')
-const Log  = require('ipfs-log')
-const IdentityProvider = require('orbit-db-identity-provider')
 
-const identity = await IdentityProvider.createIdentity({ id: 'peerid' })
-const ipfs = new IPFS()
-const log  = new Log(ipfs, identity)
+// For js-ipfs >= 0.38
 
-ipfs.on('ready' , async () => {
-  await log.append({ some: 'data' })
-  await log.append('text'))
-  console.log(log.values.map(e => e.payload))
-})
+const Log = require("ipfs-log");
+const IdentityProvider = require("orbit-db-identity-provider");
+const IPFS = require("ipfs");
+
+const start = async () => {
+  const identity = await IdentityProvider.createIdentity({ id: "peerid" });
+  const ipfs = await IPFS.create({ repo: "./path-for-js-ipfs-repo" });
+  const log = new Log(ipfs, identity);
+
+  await log.append({ some: "data" });
+  await log.append("text");
+  console.log(log.values.map((e) => e.payload));
+};
+
+start();
 
 // [ { some: 'data' }, 'text' ]
 ```
