@@ -1,7 +1,6 @@
 const Log = require('../../../src/log')
 const startIPFS = require('./utils/start-ipfs')
 const createLog = require('./utils/create-log')
-const releaseRepo = require('./utils/release-repo')
 
 const base = {
   prepare: async function () {
@@ -20,7 +19,7 @@ const base = {
     await Log.fromEntry(ipfs, identity, log.heads, { access })
   },
   teardown: async function ({ repo }) {
-    await releaseRepo(repo)
+    await repo.close()
   }
 }
 
