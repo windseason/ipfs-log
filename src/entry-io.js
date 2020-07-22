@@ -40,6 +40,7 @@ class EntryIO {
     let running = 0 // keep track of how many entries are being fetched at any time
     let maxClock = 0 // keep track of the latest clock time during load
     let minClock = 0 // keep track of the minimum clock time during load
+    shouldExclude = shouldExclude || () => false
 
     // shouldExclude = shouldExclude ? shouldExclude : ((hash) => false)
 
