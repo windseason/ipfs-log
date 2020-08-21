@@ -23,7 +23,7 @@ class LogIO {
     if (!isDefined(ipfs)) throw LogError.IPFSNotDefinedError()
     if (!isDefined(log)) throw LogError.LogNotDefinedError()
     if (!isDefined(format)) format = 'dag-cbor'
-    if (log.values.length < 1) throw new Error(`Can't serialize an empty log`)
+    if (log.values.length < 1) throw new Error('Can\'t serialize an empty log')
 
     return io.write(ipfs, format, log.toJSON(), { links: IPLD_LINKS })
   }
@@ -120,7 +120,7 @@ class LogIO {
 
     // Make sure we only have Entry objects as input
     if (!Array.isArray(sourceEntries) && !Entry.isEntry(sourceEntries)) {
-      throw new Error(`'sourceEntries' argument must be an array of Entry instances or a single Entry`)
+      throw new Error('\'sourceEntries\' argument must be an array of Entry instances or a single Entry')
     }
 
     if (!Array.isArray(sourceEntries)) {

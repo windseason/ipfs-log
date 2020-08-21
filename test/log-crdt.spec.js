@@ -250,7 +250,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('join is idempotent', async () => {
         const expectedElementsCount = 3
 
-        let logA = new Log(ipfs, testIdentity, { logId: 'X' })
+        const logA = new Log(ipfs, testIdentity, { logId: 'X' })
         await logA.append('helloA1')
         await logA.append('helloA2')
         await logA.append('helloA3')

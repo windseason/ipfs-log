@@ -39,7 +39,7 @@ const stress = {
 }
 
 const counts = [1, 100, 1000, 10000]
-let benchmarks = []
+const benchmarks = []
 for (const count of counts) {
   const c = { count }
   if (count < 1000) benchmarks.push({ name: `fromEntryHash-${count}-baseline`, ...base, ...c, ...baseline })

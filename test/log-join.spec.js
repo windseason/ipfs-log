@@ -74,9 +74,9 @@ Object.keys(testAPIs).forEach((IPFS) => {
       })
 
       it('joins logs', async () => {
-        let items1 = []
-        let items2 = []
-        let items3 = []
+        const items1 = []
+        const items2 = []
+        const items3 = []
         const amount = 100
         for (let i = 1; i <= amount; i++) {
           const prev1 = last(items1)

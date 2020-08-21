@@ -11,7 +11,7 @@ if (!isNode) {
   const signingStore = levelup(level('./orbitdb/identity/signingkeys'))
   const identityStore = levelup(level('./orbitdb/identity/identitykeys'))
 
-  let copyFixtures = []
+  const copyFixtures = []
   copyFixtures.push(signingStore.open())
   copyFixtures.push(identityStore.open())
 

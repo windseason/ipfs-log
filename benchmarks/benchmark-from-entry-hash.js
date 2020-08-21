@@ -17,7 +17,7 @@ let entriesLoadedPerSecond = 0
 let lastTenSeconds = 0
 let total = 0
 
-let run = (() => {
+const run = (() => {
   console.log('Starting benchmark...')
 
   const repoConf = {

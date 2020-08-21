@@ -62,8 +62,8 @@ Object.keys(testAPIs).forEach(IPFS => {
         await log1.join(log2)
         await log2.join(log1)
 
-        let hash1 = await log1.toMultihash()
-        let hash2 = await log2.toMultihash()
+        const hash1 = await log1.toMultihash()
+        const hash2 = await log2.toMultihash()
 
         assert.strictEqual(hash1, hash2)
         assert.strictEqual(log1.length, 20)
@@ -82,8 +82,8 @@ Object.keys(testAPIs).forEach(IPFS => {
         await log1.append('same')
         await log2.append('same')
 
-        let hash1 = await log1.toMultihash()
-        let hash2 = await log2.toMultihash()
+        const hash1 = await log1.toMultihash()
+        const hash2 = await log2.toMultihash()
 
         assert.strictEqual(hash1, hash2)
         assert.strictEqual(log1.length, 41)

@@ -6,7 +6,7 @@ const path = require('path')
 
 module.exports = {
   // TODO: put all tests in a .js file that webpack can use as entry point
-  entry: glob.sync('./test/*.spec.js', { 'ignore': ['./test/replicate.spec.js'] }),
+  entry: glob.sync('./test/*.spec.js', { ignore: ['./test/replicate.spec.js'] }),
   output: {
     filename: '../test/browser/bundle.js'
   },
@@ -20,7 +20,7 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV)
       }
     }),
     new webpack.IgnorePlugin(/mongo|redis/)
@@ -33,7 +33,7 @@ module.exports = {
     'idb-readable-stream': '{}',
     runtimejs: '{}',
     net: '{}',
-    'child_process': {},
+    child_process: {},
     dns: '{}',
     tls: '{}',
     bindings: '{}'

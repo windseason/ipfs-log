@@ -59,11 +59,11 @@ class Log extends GSet {
     }
 
     if (isDefined(entries) && !Array.isArray(entries)) {
-      throw new Error(`'entries' argument must be an array of Entry instances`)
+      throw new Error('\'entries\' argument must be an array of Entry instances')
     }
 
     if (isDefined(heads) && !Array.isArray(heads)) {
-      throw new Error(`'heads' argument must be an array`)
+      throw new Error('\'heads\' argument must be an array')
     }
 
     if (!isDefined(sortFn)) {
@@ -203,7 +203,7 @@ class Log extends GSet {
     // Cache for checking if we've processed an entry already
     let traversed = {}
     // End result
-    let result = {}
+    const result = {}
     let count = 0
     // Named function for getting an entry from the log
     const getEntry = e => this.get(e)
@@ -270,7 +270,7 @@ class Log extends GSet {
     // If pointer count is 512, returns 9 references
     // If pointer count is 2048, returns 11 references
     const getEveryPow2 = (maxDistance) => {
-      let entries = new Set()
+      const entries = new Set()
       for (let i = 1; i <= maxDistance; i *= 2) {
         const index = Math.min(i - 1, all.length - 1)
         entries.add(all[index])
@@ -356,11 +356,11 @@ class Log extends GSet {
     if (lte && !Array.isArray(lte)) throw LogError.LtOrLteMustBeStringOrArray()
     if (lt && !Array.isArray(lt)) throw LogError.LtOrLteMustBeStringOrArray()
 
-    let start = (lte || (lt || this.heads)).filter(isDefined)
-    let endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
-    let count = endHash ? -1 : amount || -1
+    const start = (lte || (lt || this.heads)).filter(isDefined)
+    const endHash = gte ? this.get(gte).hash : gt ? this.get(gt).hash : null
+    const count = endHash ? -1 : amount || -1
 
-    let entries = this.traverse(start, count, endHash)
+    const entries = this.traverse(start, count, endHash)
     let entryValues = Object.values(entries)
 
     // Strip off last entry if gt is non-inclusive
@@ -372,7 +372,7 @@ class Log extends GSet {
     }
 
     return (function * () {
-      for (let i in entryValues) {
+      for (const i in entryValues) {
         yield entryValues[i]
       }
     })()
@@ -711,9 +711,9 @@ class Log extends GSet {
   }
 
   static difference (a, b) {
-    let stack = Object.keys(a._headsIndex)
-    let traversed = {}
-    let res = {}
+    const stack = Object.keys(a._headsIndex)
+    const traversed = {}
+    const res = {}
 
     const pushToStack = hash => {
       if (!traversed[hash] && !b.get(hash)) {
