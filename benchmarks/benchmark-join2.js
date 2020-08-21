@@ -12,25 +12,25 @@ let ipfs
 let log1, log2
 
 // Metrics
-let totalQueries = 0
-const queryLoop = async () => {
-  try {
-    await Promise.all([
-      log1.append('a' + totalQueries),
-      log2.append('b' + totalQueries)
-    ])
+// const totalQueries = 0
+// const queryLoop = async () => {
+//   try {
+//     await Promise.all([
+//       log1.append('a' + totalQueries),
+//       log2.append('b' + totalQueries)
+//     ])
+//
+//     await log1.join(log2)
+//     await log2.join(log1)
+//     totalQueries++
+//     setImmediate(queryLoop)
+//   } catch (e) {
+//     console.error(e)
+//     process.exit(0)
+//   }
+// }
 
-    await log1.join(log2)
-    await log2.join(log1)
-    totalQueries++
-    setImmediate(queryLoop)
-  } catch (e) {
-    console.error(e)
-    process.exit(0)
-  }
-}
-
-let run = (() => {
+const run = (() => {
   console.log('Starting benchmark...')
 
   const repoConf = {

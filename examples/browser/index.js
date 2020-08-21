@@ -20,7 +20,7 @@ ipfs.on('ready', async () => {
   const outputElm = document.getElementById('output')
 
   // When IPFS is ready, add some log entries
-  let log = new Log(ipfs, identity, { logId: 'example-log' })
+  const log = new Log(ipfs, identity, { logId: 'example-log' })
 
   await log.append('one')
   const values = JSON.stringify(log.values, null, 2)

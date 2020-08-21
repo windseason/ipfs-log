@@ -89,8 +89,8 @@ Object.keys(testAPIs).forEach((IPFS) => {
       const logId = 'A'
 
       let log1, log2, input1, input2
-      let buffer1 = []
-      let buffer2 = []
+      const buffer1 = []
+      const buffer2 = []
       let processing = 0
 
       const handleMessage = async (message) => {
@@ -159,7 +159,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
         console.log('Waiting for all to process')
         await whileProcessingMessages(config.timeout)
 
-        let result = new Log(ipfs1, testIdentity, { logId })
+        const result = new Log(ipfs1, testIdentity, { logId })
         await result.join(log1)
         await result.join(log2)
 
