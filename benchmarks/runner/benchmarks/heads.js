@@ -35,7 +35,7 @@ const stress = {
 }
 
 const counts = [1, 100, 1000, 10000]
-let benchmarks = []
+const benchmarks = []
 for (const count of counts) {
   const c = { count }
   benchmarks.push({ name: `heads-${count}-baseline`, ...base, ...c, ...baseline })

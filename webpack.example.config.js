@@ -27,7 +27,7 @@ module.exports = {
     'idb-readable-stream': '{}',
     runtimejs: '{}',
     net: '{}',
-    'child_process': {},
+    child_process: {},
     dns: '{}',
     tls: '{}',
     bindings: '{}'

@@ -8,7 +8,7 @@ const base = {
     const { log } = await createLog(ipfs, 'A')
 
     process.stdout.clearLine()
-    let entries = []
+    const entries = []
     for (let i = 1; i < this.count + 1; i++) {
       process.stdout.write(`\r${this.name} / Preparing / Writing: ${i}/${this.count}`)
       const entry = await log.append(`Hello World: ${i}`)
@@ -38,7 +38,7 @@ const stress = {
 }
 
 const counts = [1, 100, 1000, 10000]
-let benchmarks = []
+const benchmarks = []
 for (const count of counts) {
   const c = { count }
   benchmarks.push({ name: `findHeads-${count}-baseline`, ...base, ...c, ...baseline })

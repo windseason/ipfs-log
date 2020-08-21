@@ -56,10 +56,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
       it('creates entries with references', async () => {
         const amount = 64
         const maxReferenceDistance = 2
-        let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
-        let log2 = new Log(ipfs, testIdentity, { logId: 'B' })
-        let log3 = new Log(ipfs, testIdentity, { logId: 'C' })
-        let log4 = new Log(ipfs, testIdentity, { logId: 'D' })
+        const log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+        const log2 = new Log(ipfs, testIdentity, { logId: 'B' })
+        const log3 = new Log(ipfs, testIdentity, { logId: 'C' })
+        const log4 = new Log(ipfs, testIdentity, { logId: 'D' })
 
         for (let i = 0; i < amount; i++) {
           await log1.append(i.toString(), maxReferenceDistance)
@@ -114,7 +114,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       inputs.forEach(input => {
         it(`has ${input.refLength} references, max distance ${input.referenceCount}, total of ${input.amount} entries`, async () => {
           const test = async (amount, referenceCount, refLength) => {
-            let log1 = new Log(ipfs, testIdentity, { logId: 'A' })
+            const log1 = new Log(ipfs, testIdentity, { logId: 'A' })
             for (let i = 0; i < amount; i++) {
               await log1.append((i + 1).toString(), referenceCount)
             }

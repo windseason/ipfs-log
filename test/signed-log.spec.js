@@ -192,7 +192,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
     })
 
     it('throws an error upon join if entry doesn\'t have append access', async () => {
-      let testACL = {
+      const testACL = {
         canAppend: (entry) => entry.identity.id !== testIdentity2.id
       }
       const log1 = new Log(ipfs, testIdentity, { logId: 'A', access: testACL })

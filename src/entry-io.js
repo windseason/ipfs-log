@@ -29,10 +29,10 @@ class EntryIO {
    * @returns {Promise<Array<Entry>>}
    */
   static async fetchAll (ipfs, hashes, { length = -1, exclude = [], timeout, onProgressCallback, onStartProgressCallback, concurrency = 32, delay = 0 } = {}) {
-    let result = []
-    let cache = {}
-    let loadingCache = {}
-    let loadingQueue = Array.isArray(hashes)
+    const result = []
+    const cache = {}
+    const loadingCache = {}
+    const loadingQueue = Array.isArray(hashes)
       ? { 0: hashes.slice() }
       : { 0: [hashes] }
     let running = 0 // keep track of how many entries are being fetched at any time
@@ -78,7 +78,7 @@ class EntryIO {
         return
       }
 
-      return new Promise(async (resolve, reject) => {
+      return new Promise((resolve, reject) => {
         // Resolve the promise after a timeout (if given) in order to
         // not get stuck loading a block that is unreachable
         const timer = timeout && timeout > 0
@@ -136,24 +136,24 @@ class EntryIO {
           onStartProgressCallback(hash, null, 0, result.length)
         }
 
-        try {
-          // Load the entry
-          const entry = await Entry.fromMultihash(ipfs, hash)
+        // Load the entry
+        Entry.fromMultihash(ipfs, hash).then(async (entry) => {
+          try {
+            // Add it to the results
+            addToResults(entry)
 
-          // Add it to the results
-          addToResults(entry)
-
-          // Simulate network latency (for debugging purposes)
-          if (delay > 0) {
-            const sleep = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms))
-            await sleep(delay)
+            // Simulate network latency (for debugging purposes)
+            if (delay > 0) {
+              const sleep = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms))
+              await sleep(delay)
+            }
+            resolve()
+          } catch (e) {
+            reject(e)
+          } finally {
+            clearTimeout(timer)
           }
-          resolve()
-        } catch (e) {
-          reject(e)
-        } finally {
-          clearTimeout(timer)
-        }
+        })
       })
     }
 

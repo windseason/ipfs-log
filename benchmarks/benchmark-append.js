@@ -25,7 +25,7 @@ const queryLoop = async () => {
   setImmediate(queryLoop)
 }
 
-let run = (() => {
+const run = (() => {
   console.log('Starting benchmark...')
 
   const repoConf = {

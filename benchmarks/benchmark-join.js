@@ -36,7 +36,7 @@ const queryLoop = async () => {
   }
 }
 
-let run = (() => {
+const run = (() => {
   console.log('Starting benchmark...')
 
   const repoConf = {
