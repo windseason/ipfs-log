@@ -153,7 +153,7 @@ class EntryIO {
           } finally {
             clearTimeout(timer)
           }
-        })
+        }).catch(reject)
       })
     }
 
