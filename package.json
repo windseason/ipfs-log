@@ -83,7 +83,7 @@
     "build:dist": "webpack --config webpack.config.js --display-modules --sort-modules-by size --mode production",
     "build:es5": "babel src --out-dir ./lib/es5/ --presets @babel/preset-env --plugins @babel/plugin-transform-runtime",
     "lint": "standard",
-    "benchmark": "benchmark-runner -r --grep baseline",
+    "benchmark": "nyc benchmark-runner -r --grep baseline",
     "benchmark:stress": "benchmark-runner -r --grep stress",
     "examples": "http-server examples/browser"
   },
