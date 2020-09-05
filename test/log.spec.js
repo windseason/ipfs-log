@@ -379,7 +379,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
           const multihash = await log.toMultihash({ format: 'dag-pb' })
           assert.strictEqual(multihash, expectedMultihash)
           const result = await ipfs.object.get(multihash)
-          const res = JSON.parse(result.toJSON().data.toString())
+          const res = JSON.parse(Buffer.from(result.Data).toString())
           assert.deepStrictEqual(res.heads, expectedData.heads)
         })
 
