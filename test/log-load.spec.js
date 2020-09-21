@@ -38,9 +38,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     this.timeout(config.timeout)
 
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
-    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
-      repo: config.defaultIpfsConfig.repo + '-log-load' + new Date().getTime()
-    })
 
     const firstWriteExpectedData = [
       'entryA6', 'entryA7', 'entryA8', 'entryA9',
@@ -52,7 +49,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     let keystore, signingKeystore
 
     before(async () => {
-      rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
@@ -65,7 +61,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
       testIdentity3 = await IdentityProvider.createIdentity({ id: 'userD', keystore, signingKeystore })
       testIdentity4 = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      ipfsd = await startIpfs(IPFS, ipfsConfig)
+      ipfsd = await startIpfs(IPFS, config.daemon1)
       ipfs = ipfsd.api
 
       const memstore = new MemStore()
@@ -75,7 +71,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     after(async () => {
       await stopIpfs(ipfsd)
-      rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
 

@@ -23,14 +23,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
     this.timeout(config.timeout)
 
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
-    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
-      repo: config.defaultIpfsConfig.repo + '-log-join' + new Date().getTime()
-    })
 
     let keystore, signingKeystore
 
     before(async () => {
-      rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
@@ -42,13 +38,12 @@ Object.keys(testAPIs).forEach((IPFS) => {
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
       testIdentity2 = await IdentityProvider.createIdentity({ id: 'userB', keystore, signingKeystore })
       testIdentity3 = await IdentityProvider.createIdentity({ id: 'userC', keystore, signingKeystore })
-      ipfsd = await startIpfs(IPFS, ipfsConfig)
+      ipfsd = await startIpfs(IPFS, config.daemon1)
       ipfs = ipfsd.api
     })
 
     after(async () => {
       await stopIpfs(ipfsd)
-      rmrf.sync(ipfsConfig.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
 

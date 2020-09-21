@@ -26,27 +26,18 @@ Object.keys(testAPIs).forEach((IPFS) => {
     let ipfsd1, ipfsd2, ipfs1, ipfs2, id1, id2, testIdentity, testIdentity2
 
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
-    const ipfsConfig1 = Object.assign({}, config.daemon1, {
-      repo: config.daemon1.repo + new Date().getTime()
-    })
-    const ipfsConfig2 = Object.assign({}, config.daemon2, {
-      repo: config.daemon2.repo + new Date().getTime()
-    })
 
     let keystore, signingKeystore
 
     before(async () => {
-      rmrf.sync(ipfsConfig1.repo)
-      rmrf.sync(ipfsConfig2.repo)
-
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
 
       // Start two IPFS instances
-      ipfsd1 = await startIpfs(IPFS, ipfsConfig1)
-      ipfsd2 = await startIpfs(IPFS, ipfsConfig2)
+      ipfsd1 = await startIpfs(IPFS, config.daemon1)
+      ipfsd2 = await startIpfs(IPFS, config.daemon2)
       ipfs1 = ipfsd1.api
       ipfs2 = ipfsd2.api
 
@@ -74,8 +65,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
     after(async () => {
       await stopIpfs(ipfsd1)
       await stopIpfs(ipfsd2)
-      rmrf.sync(ipfsConfig1.repo)
-      rmrf.sync(ipfsConfig2.repo)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
 

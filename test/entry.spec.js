@@ -28,14 +28,10 @@ Object.keys(testAPIs).forEach((IPFS) => {
 
     const testACL = new AccessController()
     const { identityKeyFixtures, signingKeyFixtures, identityKeysPath, signingKeysPath } = config
-    const ipfsConfig = Object.assign({}, config.defaultIpfsConfig, {
-      repo: config.defaultIpfsConfig.repo + '-entry' + new Date().getTime()
-    })
 
     let keystore, signingKeystore
 
     before(async () => {
-      rmrf.sync(ipfsConfig.repo)
       await fs.copy(identityKeyFixtures, identityKeysPath)
       await fs.copy(signingKeyFixtures, signingKeysPath)
 
@@ -43,7 +39,7 @@ Object.keys(testAPIs).forEach((IPFS) => {
       signingKeystore = new Keystore(signingKeysPath)
 
       testIdentity = await IdentityProvider.createIdentity({ id: 'userA', keystore, signingKeystore })
-      ipfsd = await startIpfs(IPFS, ipfsConfig)
+      ipfsd = await startIpfs(IPFS, config.daemon1)
       ipfs = ipfsd.api
     })
 
@@ -53,7 +49,6 @@ Object.keys(testAPIs).forEach((IPFS) => {
       await fs.copy(signingKeyFixtures, signingKeysPath)
       rmrf.sync(identityKeysPath)
       rmrf.sync(signingKeysPath)
-      rmrf.sync(ipfsConfig.repo)
       await keystore.close()
       await signingKeystore.close()
     })
